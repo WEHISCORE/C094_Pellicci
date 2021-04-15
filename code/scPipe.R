@@ -1,6 +1,6 @@
 # Process C118 (NN215) with scPipe
 # Peter Hickey
-# 2021-04-06
+# 2021-04-15
 
 # Setup ------------------------------------------------------------------------
 
@@ -30,8 +30,11 @@ header_row <- read_excel(
   skip = 2,
   n_max = 1)
 
-# NOTE: No FACS data
-header_row <- paste0(colnames(header_row), header_row[1, ])
+# NOTE: FACS data in columns >= "K"
+facs_data_idx <- seq(which(LETTERS == "K"), ncol(header_row))
+header_row <- c(
+  paste0(colnames(header_row[, -facs_data_idx]), header_row[1, -facs_data_idx]),
+  unlist(header_row[1, facs_data_idx], use.names = FALSE))
 header_row <- gsub("^\\.\\.\\.[0-9]+", "", header_row)
 sample_sheet_nn215 <- read_excel(
   path = file_nn215,
@@ -43,15 +46,21 @@ sample_sheet_nn215 <- read_excel(
   #       (https://github.com/tidyverse/readxl/issues/414#issuecomment-352437730)
   guess_max = 1048576)
 # Tidy up names and empty rows/columns.
-sample_sheet_nn215 <- clean_names(sample_sheet_nn215)
+sample_sheet_nn215 <- bind_cols(
+  clean_names(sample_sheet_nn215[, -facs_data_idx]),
+  clean_names(sample_sheet_nn215[, facs_data_idx], case = "parsed"))
 sample_sheet_nn215 <- remove_empty(
   sample_sheet_nn215,
   which = c("rows", "cols"))
-
 sample_sheet_nn215 <- filter(
   sample_sheet_nn215,
   !is.na(plate_number),
   illumina_index_index_number_separate_index_read != "removed")
+# Ensure FACS columns are stored as numeric (readxl sometimes fails, presumably
+# to weird pattern of empty cells).
+sample_sheet_nn215 <- sample_sheet_nn215 %>%
+  mutate_at(facs_data_idx, as.numeric)
+facs_markers <- colnames(sample_sheet_nn215)[facs_data_idx]
 
 # Some final tidying.
 sample_sheet_nn215 <- sample_sheet_nn215 %>%
@@ -267,6 +276,9 @@ assay(sce, withDimnames = FALSE) <- as(
 sce <- splitAltExps(
   sce,
   ifelse(grepl("^ERCC", rownames(sce)), "ERCC", "Endogenous"))
+facs_data <- as.matrix(endoapply(colData(sce)[, facs_markers], as.numeric))
+colData(sce)[, facs_markers] <- NULL
+altExp(sce, "FACS") <- SummarizedExperiment(assays = list(raw = t(facs_data)))
 saveRDS(
   sce,
   file.path(outdir, "C094_Pellicci.scPipe.SCE.rds"),
