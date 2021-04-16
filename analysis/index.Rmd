@@ -1,0 +1,23 @@
+---
+title: "Analysis of the Pellicci gamma-delta T-cell data set"
+description: |
+author:
+  - name: Peter Hickey 
+    url: https://peterhickey.org
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/shalin-naik/3310/score
+date: "`r Sys.Date()`"
+bibliography: ref.bib
+---
+
+# Overview
+
+**TODO** Write
+
+This analysis is adapted from the [**Orchestrating Single-Cell Analysis with Bioconductor book**](https://osca.bioconductor.org).
+
+# Analysis version information  {.appendix}
+
+**R version**: `r R.version.string`
+
+**Bioconductor version**: `r BiocManager::version()`

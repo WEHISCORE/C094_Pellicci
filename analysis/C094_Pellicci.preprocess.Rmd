@@ -1,0 +1,626 @@
+---
+title: "Preprocessing the Pellicci gamma-delta T-cell data set"
+description: |
+author:
+  - name: Peter Hickey 
+    url: https://peterhickey.org
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+```{r setup}
+library(here)
+library(BiocStyle)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(scater)
+library(cowplot)
+library(patchwork)
+library(scales)
+
+# NOTE: Using >= 4 cores seizes up my laptop. Can use more on unix box.
+options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 3L))
+
+knitr::opts_chunk$set(
+  fig.path = "C094_Pellicci.preprocess_files/")
+```
+
+# Setting up the data
+
+The count data were processed using `r Biocpkg("scPipe")` and available in a *SingleCellExperiment* object, along with their metadata (see [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds)).
+
+```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.scPipe.SCE.rds"))
+```
+
+## Incorporating cell-based annotations
+
+Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
+
+```{r}
+# NOTE: Some `sample_name` include `sample_gate`; remove this redundanct.
+sce$sample_name <- sub(" P[0-9]$", "", sce$sample_name)
+# Create factor columns, which are easier to work with.
+# NOTE: Manually order some factors' levels, others we don't care about the 
+#       level order.
+sce$sample_type <- factor(
+  sce$sample_type,
+  c("Single cell", "50 cells", "100 cells"))
+sce$sample_name <- factor(
+  sce$sample_name, 
+  c(paste("Blood", 1:3), 
+    paste("Thymus", 1:3),
+    "Cell line"))
+colData(sce) <- DataFrame(
+  endoapply(colData(sce), function(x) {
+    if (is.character(x)) {
+      as.factor(x)
+    } else {
+      x
+    }
+  }),
+  row.names = colnames(sce))
+```
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the cell-based metadata.
+
+```{r}
+# TODO: Customise skimr?
+skimr::skim(colData(sce))
+```
+
+Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
+
+```{r}
+# TODO: Set up colours
+p1 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = sample_type),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10)
+p2 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = sample_name),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10)
+p3 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = sample_gate),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10)
+p4 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = plate_number)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 10)
+p1 + p2 + p3 + p4 + plot_layout()
+```
+
+## Incorporating gene-based annotation
+
+I used the `r BiocStyle::Biocpkg("Homo.sapiens")` package and the `EnsDb.Hsapiens.v98` resource, which respectively cover the NCBI/RefSeq and Ensembl databases, to obtain gene-based annotations, such as the chromosome and gene symbol.
+
+```{r}
+# Extract rownames (Ensembl IDs) to use as key in database lookups.
+ensembl <- rownames(sce)
+
+# Pull out useful gene-based annotations from the Ensembl-based database.
+library(AnnotationHub)
+library(ensembldb)
+ah <- AnnotationHub()
+ensdb <- query(ah, c("EnsDb", "Homo Sapiens", 98))[[1]]
+# NOTE: These columns were customised for this project.
+ensdb_columns <- c(
+  "GENEBIOTYPE", "GENENAME", "GENESEQSTART", "GENESEQEND", "SEQNAME", "SYMBOL")
+names(ensdb_columns) <- paste0("ENSEMBL.", ensdb_columns)
+stopifnot(all(ensdb_columns %in% columns(ensdb)))
+ensdb_df <- DataFrame(
+  lapply(ensdb_columns, function(column) {
+    mapIds(
+      x = ensdb, 
+      # NOTE: Need to remove gene version number prior to lookup.
+      keys = gsub("\\.[0-9]+$", "", ensembl),
+      keytype = "GENEID",
+      column = column,
+      multiVals = "CharacterList")
+  }),
+  row.names = ensembl)
+# NOTE: Can't look up GENEID column with GENEID key, so have to add manually.
+ensdb_df$ENSEMBL.GENEID <- ensembl
+# NOTE: Homo.sapiens combines org.Hs.eg.db and
+#       TxDb.Hsapiens.UCSC.hg38.knownGene (as well as others) and therefore 
+#       uses entrez gene and RefSeq based data.
+library(Homo.sapiens)
+# NOTE: These columns were customised for this project.
+ncbi_columns <- c(
+  # From TxDB: None required
+  # From OrgDB
+  "ALIAS", "ENTREZID", "GENENAME", "REFSEQ", "SYMBOL")
+names(ncbi_columns) <- paste0("NCBI.", ncbi_columns)
+stopifnot(all(ncbi_columns %in% columns(Homo.sapiens)))
+ncbi_df <- DataFrame(
+  lapply(ncbi_columns, function(column) {
+    mapIds(
+      x = Homo.sapiens, 
+      # NOTE: Need to remove gene version number prior to lookup.
+      keys = gsub("\\.[0-9]+$", "", ensembl),
+      keytype = "ENSEMBL",
+      column = column,
+      multiVals = "CharacterList")
+  }),
+  row.names = ensembl)
+rowData(sce) <- cbind(ensdb_df, ncbi_df)
+```
+
+Having quantified gene expression against the GENCODE gene annotation, we have Ensembl-style identifiers for the genes. 
+These identifiers are used as they are unambiguous and highly stable. 
+However, they are difficult to interpret compared to the gene symbols which are more commonly used in the literature.
+Henceforth, we will use gene symbols (where available) to refer to genes in our analysis and otherwise use the Ensembl-style gene identifiers^[Some care is taken to account for missing and duplicate gene symbols; missing symbols are replaced with the Ensembl identifier and duplicated symbols are concatenated with the (unique) Ensembl identifiers.].
+
+```{r}
+# Replace the row names of the SCE by the gene symbols (where available).
+rownames(sce) <- uniquifyFeatureNames(
+  ID = rownames(sce), 
+  # NOTE: An Ensembl ID may map to 0, 1, 2, 3, ... gene symbols.
+  #       When there are multiple matches only the 1st match is used.
+  names = vapply(rowData(sce)$ENSEMBL.SYMBOL, function(x) {
+    if (length(x)) {
+      x[[1]]
+    } else {
+      NA_character_
+    }
+    },
+    character(1)))
+```
+
+We also construct some useful gene sets: mitochondrial genes, ribosomal protein genes, sex chromosome genes, and pseudogenes.
+
+```{r}
+# Some useful gene sets
+mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes 
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+## Incorporating FACS data
+
+We store the values from the FACS measurements as an 'alternative experiment'.
+We store both the 'raw' data and the 'pseudolog-transformed' data.
+
+```{r}
+pseudoLog <- scales::pseudo_log_trans(sigma = 150 / 2)$transform
+assay(altExp(sce, "FACS"), "pseudolog") <- pseudoLog(
+  assay(altExp(sce, "FACS"), "raw"))
+```
+
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'raw' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "raw")) %>% 
+  skimr::skim()
+```
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'pseudolog-transformed' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "pseudolog")) %>% 
+  skimr::skim()
+```
+
+# Quality control of cells
+
+## Defining the quality control metrics
+
+Low-quality cells need to be removed to ensure that technical effects do not distort downstream analysis results.
+We use several quality control (QC) metrics to measure the quality of the cells:
+
+- `sum`: This measures the library size of the cells, which is the total sum of UMI counts across both genes and spike-in transcripts. We want cells to have high library sizes as this means more RNA has been successfully captured during library preparation. 
+- `detected`: This is the number of expressed features^[The number of expressed genes refers to the number of genes which have non-zero counts (ie. they have been identified in the cell at least once)] in each cell. Cells with few expressed features are likely to be of poor quality, as the diverse transcript population has not been successful captured. 
+- `altexps_ERCC_detected`: This measures the proportion of reads which are mapped to spike-in transcripts relative to the library size of each cell. High proportions are indicative of poor-quality cells, where endogenous RNA has been lost during processing (e.g., due to cell lysis or RNA degradation). 
+The same amount of spike-in RNA to each cell, so an enrichment in spike-in counts is symptomatic of loss of endogenous RNA.
+- `subsets_Mt_percent`: This measures the proportion of reads which are mapped to mitochondrial RNA. If there is a higher than expected proportion of mitochondrial RNA this is often symptomatic of a cell which is under stress and is therefore of low quality and will not be used for the analysis. 
+- `subsets_Ribo_percent`: This measures the proportion of UMIs which are mapped to ribosomal protein genes. If there is a higher than expected proportion of ribosomal protein gene expression this is often symptomatic of a cell which is of compromised quality and we may want to exclude it from the analysis. 
+
+For CEL-Seq2 data, we typically observe library sizes that are in the tens of thousands^[This is consistent with the use of UMI counts rather than read counts, as each transcript molecule can only produce one UMI count but can yield many reads after fragmentation.] and several thousand expressed genes per cell.
+
+```{r, results = "hide"}
+is_mito <- rownames(sce) %in% mito_set
+summary(is_mito)
+is_ribo <- rownames(sce) %in% ribo_set
+summary(is_ribo)
+sce <- addPerCellQC(
+  sce, 
+  subsets = list(Mt = which(is_mito), ribo = which(is_ribo)),
+  use.altexps = "ERCC")
+```
+
+## Visualizing the QC metrics
+
+Figure \@ref(fig:qcplot) compares the QC metrics of the single-cells to the mini-bulk samples within the 'experimental' (i.e. `sample_name` not set as `Cell line`) and 'control' (i.e. `sample_name` set as `Cell line`) samples.
+As expected, within each group, the mini-bulk samples have more UMIs and genes detected than the single-cells.
+The number of UMIs, number of gene detected, and percentage of UMIs that are mapped to ERCC spike-ins are all higher in the 'experimental' samples than in the 'control' samples
+This likely reflects that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells (rather than this result being due to technical factors, although we cannot rule this out entirely).
+
+```{r qcplot, fig.cap = "Distributions of various QC metrics for all cells in the dataset.", fig.asp = 1}
+sce$cell_line <- sce$sample_name == "Cell line"
+p1 <- plotColData(
+  sce,
+  "sum",
+  x = "sample_type",
+  point_alpha = 1,
+  other_fields = "cell_line",
+  colour_by = "sample_type",
+  point_size = 0.5) +
+  scale_y_log10() +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm")) +
+  theme(axis.text.x = element_blank()) +
+  facet_grid(~cell_line, labeller = label_both)
+p2 <-plotColData(
+  sce,
+  "detected",
+  x = "sample_type",
+  point_alpha = 1,
+  other_fields = "cell_line",
+  colour_by = "sample_type",
+  point_size = 0.5) +
+  scale_y_log10() +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm")) +
+  theme(axis.text.x = element_blank()) +
+  facet_grid(~cell_line, labeller = label_both)
+p3 <- plotColData(
+  sce,
+  "subsets_Mt_percent",
+  x = "sample_type",
+  point_alpha = 1,
+  other_fields = "cell_line",
+  colour_by = "sample_type",
+  point_size = 0.5) +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) +
+  facet_grid(~cell_line, labeller = label_both)
+p4 <- plotColData(
+  sce,
+  "subsets_ribo_percent",
+  x = "sample_type",
+  point_alpha = 1,
+  other_fields = "cell_line",
+  colour_by = "sample_type",
+  point_size = 0.5) +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) +
+  facet_grid(~cell_line, labeller = label_both)
+p5 <- plotColData(
+  sce,
+  "altexps_ERCC_percent",
+  x = "sample_type",
+  point_alpha = 1,
+  other_fields = "cell_line",
+  colour_by = "sample_type",
+  point_size = 0.5) +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) +
+  facet_grid(~cell_line, labeller = label_both)
+p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 2, guides = "collect")
+```
+
+### Single-cell samples
+
+Figure \@ref(fig:qcplot-single-cells) compares the QC metrics of the single-cell samples across the different `sample_name` and Figure \@ref(fig:qcplot-single-cells-by-plate-number) further stratifies by `plate_number`.
+Together, these figures show that the vast majority of single-cell samples are good-quality:
+
+- The median library size is around `r number(median(sce$sum[sce$sample_type == "Single cell"]), accuracy = 100, big.mark = ",")`.
+- The median number of genes detected is around `r number(median(sce$detected[sce$sample_type == "Single cell"]), accuracy = 100, big.mark = ",")`.
+- The median percentage of UMIs that are mapped to mitochondrial RNA is around  `r percent(median(sce$subsets_Mt_percent[sce$sample_type == "Single cell"]), scale = 1)`.
+- The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_ribo_percent[sce$sample_type == "Single cell"]), scale = 1)`.
+- The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent[sce$sample_type == "Single cell"]), scale = 1)`.
+
+We observe that the plates are generally consistent, although with some exceptions (e.g., the `Blood 2` samples on plate `LCE511` have poorer QC metrics than the `Blood 2` samples on the other plates).
+
+```{r qcplot-single-cells, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset.", fig.asp = 1}
+p1 <- plotColData(
+  sce[, sce$sample_type == "Single cell"],
+  "sum",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm")) +
+  theme(axis.text.x = element_blank())
+p2 <- plotColData(
+  sce[, sce$sample_type == "Single cell"],
+  "detected",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample_name") +
+  theme(axis.text.x = element_blank())
+p3 <- plotColData(
+  sce[, sce$sample_type == "Single cell"],
+  "subsets_Mt_percent",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank())
+p4 <- plotColData(
+  sce[, sce$sample_type == "Single cell"],
+  "subsets_ribo_percent",
+  x = "sample_name",
+  other_fields = c("plate_number", "sample_type"),
+  point_size = 0.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank())
+p5 <- plotColData(
+  sce[, sce$sample_type == "Single cell"],
+  "altexps_ERCC_percent",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank())
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("Single-cell samples")
+```
+
+```{r qcplot-single-cells-by-plate-number, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
+p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
+p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
+p3 <- p3 + facet_wrap(~plate_number, ncol = 3)
+p4 <- p4 + facet_wrap(~plate_number, ncol = 3)
+p5 <- p5 + facet_wrap(~plate_number, ncol = 3)
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("Single-cell samples")
+```
+
+### Mini-bulk samples
+
+Figure \@ref(fig:qcplot-mini-bulks) compares the QC metrics of the mini-bulk samples across the different `sample_name` and Figure \@ref(fig:qcplot-mini-bulks-by-plate-number) further stratifies by `plate_number`.
+Together, these figures show that the vast majority of mini-bulk samples are good-quality:
+
+- The median library size is around `r number(median(sce$sum[sce$sample_type != "Single cell"]), accuracy = 100, big.mark = ",")`.
+- The median number of genes detected is around `r number(median(sce$detected[sce$sample_type != "Single cell"]), accuracy = 100, big.mark = ",")`.
+- The median percentage of UMIs that are mapped to mitochondrial RNA is around  `r percent(median(sce$subsets_Mt_percent[sce$sample_type != "Single cell"]), scale = 1)`.
+- The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_ribo_percent[sce$sample_type != "Single cell"]), scale = 1)`.
+- The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent[sce$sample_type != "Single cell"]), scale = 1)`.
+
+We observe that the thymus samples have more UMIs, genes detected, and lower percentage of UMIs that are mapped to mitochondrial RNA, compared to the blood samples.
+
+```{r qcplot-mini-bulks, fig.cap = "Distributions of various QC metrics for all **mini-bulk** samples in the dataset.", fig.asp = 1}
+p1 <- plotColData(
+  sce[, sce$sample_type != "Single cell"],
+  "sum",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 1.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm")) +
+  theme(axis.text.x = element_blank())
+p2 <- plotColData(
+  sce[, sce$sample_type != "Single cell"],
+  "detected",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 1.5,
+  colour_by = "sample_name") +
+  theme(axis.text.x = element_blank())
+p3 <- plotColData(
+  sce[, sce$sample_type != "Single cell"],
+  "subsets_Mt_percent",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 1.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank())
+p4 <- plotColData(
+  sce[, sce$sample_type != "Single cell"],
+  "subsets_ribo_percent",
+  x = "sample_name",
+  other_fields = c("plate_number", "sample_type"),
+  point_size = 1.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank())
+p5 <- plotColData(
+  sce[, sce$sample_type != "Single cell"],
+  "altexps_ERCC_percent",
+  x = "sample_name",
+  other_fields = "plate_number",
+  point_size = 1.5,
+  colour_by = "sample_name") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank())
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("Mini-bulk samples")
+```
+
+```{r qcplot-mini-bulks-by-plate-number, fig.cap = "Distributions of various QC metrics for all **mini-bulk** in the dataset, stratified by `plate_number`.", fig.asp = 1}
+p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
+p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
+p3 <- p3 + facet_wrap(~plate_number, ncol = 3)
+p4 <- p4 + facet_wrap(~plate_number, ncol = 3)
+p5 <- p5 + facet_wrap(~plate_number, ncol = 3)
+
+p1 + p2 + p3 + p4 + p5 +
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("Mini-bulk samples")
+```
+
+**TODO** UP TO HERE. Save mini-bulk separately, and continue with single-cells.
+
+## Identifying outliers by each metric
+
+Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. 
+We remove small and large outliers for the library size and the number of expressed features, and large outliers for the spike-in proportions. 
+Removal of low-quality cells is then performed by combining the filters for all of the metrics.
+
+Due to the differences in the QC metrics by `plate_number` and `sample_name`, we will compute the separate outlier thresholds for each combination of `plate_number` and `sample_name`.
+
+```{r}
+# TODO: Compare to just using `sample_name`.
+sce$batch <- factor(paste0(sce$plate_number, ".", sce$sample_name))
+
+libsize_drop <- isOutlier(
+  metric = sce$sum, 
+  nmads = 3,
+  type = "lower", 
+  log = TRUE,
+  batch = sce$batch)
+feature_drop <- isOutlier(
+  metric = sce$detected,
+  nmads = 3, 
+  type = "lower", 
+  log = TRUE,
+  batch = sce$batch)
+spike_drop <- isOutlier(
+  metric = sce$altexps_ERCC_percent, 
+  nmads = 3, 
+  type = "higher",
+  batch = sce$batch)
+mito_drop <- isOutlier(
+  metric = sce$subsets_Mt_percent, 
+  nmads = 3, 
+  type = "higher",
+  batch = sce$batch)
+ribo_drop <- isOutlier(
+  metric = sce$subsets_ribo_percent, 
+  nmads = 3, 
+  type = "higher",
+  batch = sce$batch)
+```
+
+The following table summarises the QC cutoffs:
+
+```{r}
+libsize_drop_df <- data.frame(
+  batch = colnames(attributes(libsize_drop)$thresholds),
+  cutoff = attributes(libsize_drop)$thresholds["lower", ])
+feature_drop_df <- data.frame(
+  batch = colnames(attributes(feature_drop)$thresholds),
+  cutoff = attributes(feature_drop)$thresholds["lower", ])
+spike_drop_df <- data.frame(
+  batch = colnames(attributes(spike_drop)$thresholds),
+  cutoff = attributes(spike_drop)$thresholds["higher", ])
+mito_drop_df <- data.frame(
+  batch = colnames(attributes(mito_drop)$thresholds),
+  cutoff = attributes(mito_drop)$thresholds["higher", ])
+# TODO: Filter on ribo%?
+ribo_drop_df <- data.frame(
+  batch = colnames(attributes(ribo_drop)$thresholds),
+  cutoff = attributes(ribo_drop)$thresholds["higher", ])
+qc_cutoffs_df <- Reduce(
+  function(x, y) dplyr::inner_join(x, y, by = "batch"),
+  list(
+    libsize_drop_df,
+    feature_drop_df, 
+    spike_drop_df, 
+    mito_drop_df, 
+    ribo_drop_df))
+colnames(qc_cutoffs_df) <- c(
+  "batch", "total counts", "total features", "%ERCC", "%mito", "%ribo")
+qc_cutoffs_df %>%
+  knitr::kable(caption = "QC cutoffs", digits = 1)
+```
+
+```{r}
+sce_pre_QC_outlier_removal <- sce
+keep <- !(libsize_drop | feature_drop | spike_drop | mito_drop | ribo_drop)
+sce <- sce[, keep]
+```
+
+The table below summarises the number of cells per plate left following removal of outliers based on the QC metrics.
+The vast majority of cells are retained for most plates, with the exception of the citrobacter-stimulated cells on plate LC377.
+More cells are removed due to high percentages of ERCC transcripts or mitochondrial RNA than due to low library size and number of expressed genes.
+In total, we remove `r sum(!keep)` cells based on these QC metrics, and retain `r sum(keep)` cells.
+
+```{r}
+dplyr::inner_join(
+  dplyr::distinct(
+    as.data.frame(colData(sce)), 
+    batch, plate_number, tissue, stimulus, tomato),
+  data.frame(
+    ByLibSize = tapply(
+      libsize_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum),
+    ByFeature = tapply(
+      feature_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum), 
+    BySpike = tapply(
+      spike_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum,
+      na.rm = TRUE),
+    ByMito = tapply(
+      mito_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum,
+      na.rm = TRUE),
+    Remaining = as.vector(
+      unname(table(sce$batch))),
+    PercRemaining = round(
+      100 * as.vector(
+        unname(
+          table(sce$batch))) /
+        as.vector(
+          unname(
+            table(
+              paste0(sce_pre_QC_outlier_removal$batch)))),
+      1)) %>%
+    tibble::rownames_to_column("batch")) %>%
+  dplyr::select(-batch) %>%
+  dplyr::arrange(dplyr::desc(PercRemaining)) %>%
+  knitr::kable(
+    caption = "Number of samples removed by each QC step and the number of samples remaining, ordered by the percentage of cells remaining.")
+```
+
