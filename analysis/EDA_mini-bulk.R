@@ -186,12 +186,12 @@ sample_name_markers <- findMarkers(
   direction = "up",
   pval.type = "all")
 blood_sample_name_markers <- findMarkers(
-  sce[sce$tissue == "Blood"],
+  sce[, sce$tissue == "Blood"],
   sce$sample_name[sce$tissue == "Blood"],
   direction = "up",
   pval.type = "all")
 thymus_sample_name_markers <- findMarkers(
-  sce[sce$tissue == "Thymus"],
+  sce[, sce$tissue == "Thymus"],
   sce$sample_name[sce$tissue == "Thymus"],
   direction = "up",
   pval.type = "all")
@@ -205,3 +205,38 @@ dir.create(file.path(outdir, "blood"), recursive = TRUE)
 createClusterMarkerOutputs(sce, file.path(outdir, "blood"), blood_sample_name_markers, k = 50)
 dir.create(file.path(outdir, "thymus"), recursive = TRUE)
 createClusterMarkerOutputs(sce, file.path(outdir, "thymus"), thymus_sample_name_markers, k = 50)
+
+# DE of thymus3 and thymus1 ----------------------------------------------------
+
+library(edgeR)
+x <- SE2DGEList(sce)
+x <- x[, x$samples$sample_name %in% c("Thymus 3", "Thymus 1")]
+x$genes <- x$genes[, c("ENSEMBL.GENEID", "ENSEMBL.SYMBOL", "ENSEMBL.GENEBIOTYPE")]
+x$samples$group <- x$samples$sample_name
+table(x$samples$group)
+
+design <- model.matrix(~sample_name, x$samples)
+# NOTE: Decreasing `min.count` in order to test a few more genes.
+keep <- filterByExpr(x, min.count = 2)
+table(keep)
+x <- x[keep, , keep.lib.sizes = FALSE]
+x <- calcNormFactors(x)
+x <- estimateDisp(x, design)
+fit <- glmQLFit(x, design)
+qlf <- glmQLFTest(fit, coef = 2)
+summary(decideTests(qlf))
+
+fit <- glmFit(x, design)
+lrt <- glmLRT(fit, coef=2)
+summary(decideTests(lrt))
+
+library(Glimma)
+glMDPlot(
+  lrt,
+  counts = x$counts,
+  groups = x$samples$group,
+  status = decideTests(lrt),
+  transform = TRUE,
+  path = here("output"),
+  html = "thymus3_vs_thymus1",
+  launch = FALSE)
