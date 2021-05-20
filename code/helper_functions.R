@@ -100,3 +100,18 @@
       sce
     }))
 }
+
+# Take a DataFrame with AtomicList columns and return a DataFrame where these
+# columns have been flattened by paste-ing together the elements separated by
+# `sep`.
+flattenDF <- function(x, sep = "; ") {
+  DataFrame(
+    endoapply(x, function(xx) {
+      if (!is(xx, "AtomicList")) {
+        return(xx)
+      }
+      unstrsplit(as(xx, "CharacterList"), sep = sep)
+    }),
+    row.names = rownames(x))
+}
+
