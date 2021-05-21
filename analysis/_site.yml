@@ -1,7 +1,7 @@
 name: "C094_Pellicci"
 output_dir: "../docs"
 navbar:
-  title: "C093"
+  title: "C094"
   left:
     - text: "Introduction"
       href: index.html
