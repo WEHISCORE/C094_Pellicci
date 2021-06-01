@@ -1,0 +1,20 @@
+Gene ,Protein,Thymus Stage 1,Thymus Stage 2,Thymus Stage 3,Blood
+CD4,CD4,+++,-,-,+
+KLRB1,CD161,-,-,+++,+++
+CD38,CD38,+++,++,+,-
+DPP4,CD26,-,-,++,++
+KLRD1,CD94,-,-,++,++
+CCR6,CCR6,-,+,++,++
+CCR5,CCR5,-,+,++,++
+CXCR3,CXCR3,-,+,++,++
+PECAM1,CD31,+++,++,+,-
+IL-18R1,CD218,-,+,+++,+++
+PRF1,perforin,-,+,+++,+++
+GZMB,granzyme B,-,-,+,+++
+PTPRC,CD45RA,-,+,++,+++
+CD1a ,CD1a,+++,++,+,-
+ZBTB16,PLZF,-,+,+++,++
+Rorc,Rorgt,+++,++,+,+
+Tbox21,Tbet,-,+,+++,+++
+IFNg,IFNg,-,+,+++,+++
+TNF,TNF,-,+,+++,+++
