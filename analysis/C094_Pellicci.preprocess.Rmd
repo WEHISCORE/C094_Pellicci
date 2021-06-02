@@ -48,6 +48,20 @@ Cell-based annotations are included in the *colData* of the *SingleCellExperimen
 # NOTE: Some `sample_name` include `sample_gate`; remove this redundancy.
 sce$sample_name <- sub(" P[0-9]$", "", sce$sample_name)
 sce$sample_gate[is.na(sce$sample_gate)] <- "NA"
+# NOTE: `sample_name` = <tissue>_<donor>
+sce$tissue <- factor(
+  dplyr::case_when(
+    grepl("Blood", sce$sample_name) ~ "Blood",
+    grepl("Thymus", sce$sample_name) ~ "Thymus",
+    sce$sample_name == "Cell line" ~ "SKW3"),
+  levels = c("Blood", "Thymus", "SKW3"))
+sce$donor <- factor(
+  dplyr::case_when(
+    grepl("1", sce$sample_name) ~ "1",
+    grepl("2", sce$sample_name) ~ "2",
+    grepl("3", sce$sample_name) ~ "3",
+    sce$sample_name == "Cell line" ~ "NA"),
+  levels = c("1", "2", "3", "NA"))
 # Create factor columns, which are easier to work with.
 # NOTE: Manually order some factors' levels, others we don't care about the 
 #       level order.
@@ -82,22 +96,38 @@ sample_name_colours <- setNames(
   levels(sce$sample_name))
 sce$colours$sample_name_colours <- sample_name_colours[sce$sample_name]
 sample_gate_colours <- setNames(
-  palette.colors(nlevels(sce$sample_gate), "Accent"),
+  palette.colors(nlevels(sce$sample_gate), "Tableau 10"),
   levels(sce$sample_gate))
 sce$colours$sample_gate_colours <- sample_gate_colours[sce$sample_gate]
 plate_number_colours <- setNames(
   palette.colors(nlevels(sce$plate_number), "Dark 2"),
   levels(sce$plate_number))
 sce$colours$plate_number_colours <- plate_number_colours[sce$plate_number]
+tissue_colours <- setNames(
+  palette.colors(nlevels(sce$tissue), "ggplot2"),
+  levels(sce$tissue))
+sce$colours$tissue_colours <- tissue_colours[sce$tissue]
+donor_colours <- setNames(
+  palette.colors(nlevels(sce$donor), "Set 1"),
+  levels(sce$donor))
+sce$colours$donor_colours <- donor_colours[sce$donor]
 ```
 
 The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the cell-based metadata.
+
+<aside>
+The format of the `sample_name` is `<tissue>_<donor>`, e.g., `Blood_1` = `Blood` sample from donor `1`.
+</aside>
 
 ```{r}
 skimr::skim(colData(sce))
 ```
 
 Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
+
+<aside>
+The `Cell line` is 'SKW-3', originally thought to originate from the peripheral blood of a 61 year old male patient with T cell chronic lymphocytic leukemia. (although [this is known to be problematic](https://web.expasy.org/cellosaurus/CVCL_2197)).
+</aside>
 
 ```{r coldata, fig.cap = "Breakdown of experiment by plate."}
 p1 <- ggcells(sce) + 
@@ -130,6 +160,184 @@ p4 <- ggcells(sce) +
   theme_cowplot(font_size = 10) +
   scale_fill_manual(values = plate_number_colours)
 p1 + p2 + p3 + p4
+```
+
+Figure \@ref(fig:plate-map) shows the design of each plate.
+
+```{r plate-map, fig.cap = "Plate maps.", fig.asp = 0.8}
+p <- lapply(levels(sce$plate_number), function(p) {
+  z <- sce[, sce$plate_number == p]
+  plotPlatePosition(
+    z,
+    as.character(z$well_position),
+    point_size = 2,
+    point_alpha = 1,
+    theme_size = 5,
+    colour_by = "sample_name",
+    shape_by = "sample_type") + 
+    scale_colour_manual(values = sample_name_colours, name = "sample_name") +
+    scale_shape_manual(
+      values = c("Single cell" = 16, "50 cells" = 17, "100 cells" = 18),
+      name = "sample_type") + 
+    ggtitle(p) +
+    theme(
+      legend.text = element_text(size = 6),
+      legend.title = element_text(size = 6)) +
+    guides(
+      colour = guide_legend(override.aes = list(size = 4)),
+      shape = guide_legend(override.aes = list(size = 4)))
+})
+
+wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
+```
+
+## Incorporating FACS data
+
+We store the values from the FACS measurements as an 'alternative experiment'.
+We store both the 'raw' data and the 'pseudolog-transformed' data.
+
+```{r}
+pseudoLog <- scales::pseudo_log_trans(sigma = 150 / 2)$transform
+assay(altExp(sce, "FACS"), "pseudolog") <- pseudoLog(
+  assay(altExp(sce, "FACS"), "raw"))
+```
+
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'raw' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "raw")) %>% 
+  skimr::skim()
+```
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'pseudolog-transformed' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "pseudolog")) %>% 
+  skimr::skim()
+```
+
+### *Post hoc* gating of single cells
+
+The `sample_gate` metadata column describes which FACS gate each sample came from and were based on the expression of CD4 and CD161:
+
+- `P6`: CD4+/CD151- 
+- `P7`: CD4-/CD161-
+- `P8`: CD4-/CD161+
+- `P5`: All cells are within the `P5` gate (i.e. (`P6`, `P7`, `P8`) $\subset$ `P5`)
+
+At the time of the sort, all the single-cells were gated as `P5` whereas the mini-bulk samples were gated as either `P6`, `P7`, or `P8` (see the `sample_gate` column).
+Casey *post-hoc* gated the single-cells into P5, P6, P7, or P8 gates using the index sorting data^[`P5` was defined as any cell not falling into any of `P6`, `P7`, or `P8`.].
+
+```{r}
+library(readxl)
+file_nn215 <- here(
+  "data",
+  "sample_sheets",
+  "C094_DanPellici_SC_MB_NN215_AdjustedGates.xlsx")
+
+# NOTE: Header row is split across 2 lines, which I combine into 1 before
+#       reading in the rest of the spreadsheet.
+header_row <- read_excel(
+  path = file_nn215,
+  sheet = "Samples and indexing",
+  skip = 2,
+  n_max = 1)
+
+facs_data_idx <- seq(which(LETTERS == "K"), ncol(header_row))
+header_row <- c(
+  paste0(colnames(header_row[, -facs_data_idx]), header_row[1, -facs_data_idx]),
+  unlist(header_row[1, facs_data_idx], use.names = FALSE))
+header_row <- gsub("^\\.\\.\\.[0-9]+", "", header_row)
+sample_sheet_nn215 <- read_excel(
+  path = file_nn215,
+  sheet = "Samples and indexing",
+  skip = 4,
+  col_names = header_row,
+  # NOTE: Setting the max guess_max value avoids problems with incorrectly
+  #       guessed columns
+  #       (https://github.com/tidyverse/readxl/issues/414#issuecomment-352437730)
+  guess_max = 1048576)
+
+# Tidy up names and empty rows/columns.
+sample_sheet_nn215 <- bind_cols(
+  clean_names(sample_sheet_nn215[, -facs_data_idx]),
+  clean_names(sample_sheet_nn215[, facs_data_idx], case = "parsed"))
+sample_sheet_nn215 <- remove_empty(
+  sample_sheet_nn215,
+  which = c("rows", "cols"))
+sample_sheet_nn215 <- dplyr::filter(
+  sample_sheet_nn215,
+  !is.na(plate_number),
+  illumina_index_index_number_separate_index_read != "removed")
+# Ensure FACS columns are stored as numeric (readxl sometimes fails, presumably
+# to weird pattern of empty cells).
+sample_sheet_nn215 <- sample_sheet_nn215 %>%
+  mutate_at(facs_data_idx, as.numeric)
+facs_markers <- colnames(sample_sheet_nn215)[facs_data_idx]
+
+# Some final tidying.
+sample_sheet_nn215 <- sample_sheet_nn215 %>%
+  mutate(
+    # NOTE: There are some wonky well_positions (e.g., 'I19=A1') that need to
+    #       be fixed (these occur because it means well I19 with primer A1,
+    #       in SCORE's terminology. I've asked for this to be avoided going
+    #       forward.).
+    well_position = gsub(" ", "", well_position),
+    well_position = sapply(strsplit(well_position, "="), "[[", 1),
+    well_position = factor(
+      x = well_position,
+      levels = unlist(
+        lapply(LETTERS[1:16], function(x) paste0(x, 1:24)),
+        use.names = TRUE)),
+    sequencing_run = "NN215",
+    post_hoc_sample_gate = factor(sample_gate)) %>%
+  arrange(well_position)
+
+# NOTE: A poor-man's inner_join() to avoid the lossy coercion of colData(sce) 
+#       to a data.frame.
+j <- match(
+  colnames(sce),
+  paste0(sample_sheet_nn215$plate_number, "_", sample_sheet_nn215$well_position))
+colData(sce) <- cbind(
+  colData(sce), 
+  sample_sheet_nn215[, "post_hoc_sample_gate", drop = FALSE])
+```
+
+Figure \@ref(fig:facs) shows the expression of CD4 and CD161, as measured by FACS, for all single-cells.
+We observe that boundaries between `P6`, `P7`, and `P8` appear rather arbitrary^[It should be remembered that the gates are set using more cells than are collected for scRNA-seq and so the boundaries may appear more defined in the original FACS files. Furthermore, the data here are shown on a 'pseudolog' scale, which may be different to the scale used when viewing the data in FlowJo.] and that the `P5` cells are a *potpourri* that includes cells that are intermediate between `P6`, `P7`, and `P8` as well as a handful of CD4+/CD161+ cells.
+
+```{r facs, fig.cap = "Expression of key FACS markers, used for *post hoc* gating, in single-cells (excluding the cell line samples). Shown are all cells (left hand side) and highlighting cells in each `post_hoc_sample_gate` (right hand side).", fig.asp = 1 / 2}
+z <- sce[, sce$sample_type == "Single cell" & sce$sample_name != "Cell line"]
+colData(z) <- droplevels(colData(z))
+
+x <- makePerCellDF(
+  z, 
+  features = c("V525_50_A_CD4_BV510", "B530_30_A_CD161_FITC"),
+  assay.type = "pseudolog")
+
+p1 <- ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
+  geom_point(data = x, colour = "black", size = 0.5) +
+  theme_cowplot(font_size = 10) +
+  xlab("CD4") + 
+  ylab("CD161")
+
+bg <- dplyr::select(x, -post_hoc_sample_gate)
+p2 <- ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  facet_wrap(~ post_hoc_sample_gate, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  xlab("CD4") + 
+  ylab("CD161")
+p1 | p2
 ```
 
 ## Incorporating gene-based annotation
@@ -228,31 +436,6 @@ pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
-## Incorporating FACS data
-
-We store the values from the FACS measurements as an 'alternative experiment'.
-We store both the 'raw' data and the 'pseudolog-transformed' data.
-
-```{r}
-pseudoLog <- scales::pseudo_log_trans(sigma = 150 / 2)$transform
-assay(altExp(sce, "FACS"), "pseudolog") <- pseudoLog(
-  assay(altExp(sce, "FACS"), "raw"))
-```
-
-
-The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'raw' FACS measurements.
-
-```{r}
-t(assay(altExp(sce, "FACS"), "raw")) %>% 
-  skimr::skim()
-```
-
-The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'pseudolog-transformed' FACS measurements.
-
-```{r}
-t(assay(altExp(sce, "FACS"), "pseudolog")) %>% 
-  skimr::skim()
-```
 
 # Quality control of cells
 
@@ -370,8 +553,6 @@ Together, these figures show that the vast majority of single-cell samples are g
 - The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_Ribo_percent[sce$sample_type == "Single cell"]), scale = 1)`.
 - The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent[sce$sample_type == "Single cell"]), scale = 1)`.
 
-We observe that the plates are generally consistent, although with some exceptions (e.g., the `Blood 2` samples on plate `LCE511` have poorer QC metrics than the `Blood 2` samples on the other plates).
-
 ```{r qcplot-single-cells, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset.", fig.asp = 1}
 p1 <- plotColData(
   sce[, sce$sample_type == "Single cell"],
@@ -430,6 +611,8 @@ p1 + p2 + p3 + p4 + p5 +
   plot_annotation("Single-cell samples")
 ```
 
+Figure \@ref(fig:qcplot-single-cells-by-plate-number) shows that QC metrics are generally consistent across plates, although the `Blood 2` cells on plate `LCE511` have poorer QC metrics than the `Blood 2` cells on the other plates.
+
 ```{r qcplot-single-cells-by-plate-number, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
 p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
 p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
@@ -440,6 +623,82 @@ p1 + p2 + p3 + p4 + p5 +
   plot_layout(ncol = 2, guides = "collect") +
   plot_annotation("Single-cell samples")
 ```
+
+### Plate alignment issue (LCE511)
+
+Casey and Dan reported that plate `LCE511` came out alignment during the sort, specifically while sorting the final row, which contains the `Blood 2` cells (see Figure \@ref(fig:plate-map)).
+Depending on how exactly the plate came out of alignment, this may have resulted in the wells in the adjacent row (row O) containing 2 cells (i.e. doublets with 1 cell from those intended for row O and 1 cells from those intended for row P).
+These doublets may be detectable as different QC metrics for those cells in row O compared to the other rows containing cells from the same sample (rows L - N).
+However, figure \@ref(fig:qc-lce511) does not reveal any strong differences in the QC metrics for those row O cells compared to cells in rows L - N.
+
+```{r qc-lce511, fig.cap = "Distributions of various QC metrics for all samples on plate `LCE511`.", fig.asp = 1}
+z <- sce[, sce$plate_number == "LCE511"]
+
+p1 <- plotColData(
+  z, 
+  y = "sum",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$sample_name,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "sample_name") + 
+  scale_y_log10() + 
+  scale_colour_manual(values = sample_name_colours) +
+  guides(colour = FALSE) +
+  xlab("Row.sample_name") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p2 <- plotColData(
+  z, 
+  y = "detected",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$sample_name,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "sample_name") + 
+  scale_y_log10() + 
+  scale_colour_manual(values = sample_name_colours) +
+  guides(colour = FALSE) +
+  xlab("Row.sample_name") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p3 <- plotColData(
+  z, 
+  y = "subsets_Mito_percent",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$sample_name,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "sample_name") + 
+  scale_colour_manual(values = sample_name_colours) +
+  guides(colour = FALSE) +
+  xlab("Row.sample_name") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p4 <- plotColData(
+  z, 
+  y = "altexps_ERCC_percent",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$sample_name,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "sample_name") + 
+  scale_colour_manual(values = sample_name_colours) +
+  guides(colour = FALSE) +
+  xlab("Row.sample_name") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p1 + p2 + p3 + p4 + 
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("LCE511")
+```
+
+At this stage, it seems the plate alignment issue is restricted to row P of plate `LCE511`.
+Nonetheless, we will keep a close eye on those cells from rows O and P on plate `LCE511` in downstream analyses.
 
 ### Mini-bulk samples
 
@@ -726,7 +985,7 @@ glMDPlot(
 Another concern is whether the cells removed during QC preferentially derive from particular experimental groups.
 Reassuringly, Figure \@ref(fig:barplot-highlighting-outliers) shows that this is not the case, beyond the aforementioned loss of `Blood 2` cells.
 
-```{r barplot-highlighting-outliers, fig.cap = "Droplets removed during QC, stratified by experimental group. "}
+```{r barplot-highlighting-outliers, fig.cap = "Cells removed during QC, stratified by experimental group. "}
 ggcells(sce_pre_QC_outlier_removal, exprs_values = "counts") +
   geom_bar(aes(x = batch, fill = keep)) + 
   ylab("Number of cells") + 
@@ -734,7 +993,7 @@ ggcells(sce_pre_QC_outlier_removal, exprs_values = "counts") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Finally, Figure \@ref(fig:qcplot-highlighting-outliers) compares the QC metrics of the discarded and retained droplets.
+Finally, Figure \@ref(fig:qcplot-highlighting-outliers) compares the QC metrics of the discarded and retained cells.
 
 ```{r qcplot-highlighting-outliers, fig.cap = "Distribution of QC metrics for each plate in the dataset. Each point represents a cell and is colored according to whether it was discarded during the QC process. Note that a cell will only be kept if it passes the relevant threshold for all QC metrics.", fig.asp = 1}
 p1 <- plotColData(
@@ -1091,7 +1350,7 @@ legend(
   "topright", 
   legend = levels(sce$batch), 
   col = batch_colours,
-  lwd = 1,
+  lwd = 2,
   title = "Plate number",
   ncol = 2,
   cex = 0.8)
@@ -1234,40 +1493,136 @@ set.seed(785146)
 sce <- runUMAP(sce, dimred = "PCA")
 ```
 
-Figure \@ref(fig:umap) visualizes the droplets using the UMAP co-ordinates, highlighting cells from each `plate_number` and colouring cells by `sample_name`.
+Figure \@ref(fig:umap) visualizes the cells using the UMAP co-ordinates, colouring the cells by key experimental factors, and Figures \@ref(fig:umap-tissue-post-hoc-sample-gate) use facetting to further tease out associations between UMAP co-ordinates and experimental factors.
 
-```{r umap, fig.cap = "UMAP plot of the dataset. Each point represents a droplets and is coloured by `sample_name`. Each panel highlights droplets from a particular `plate_number", fig.asp = 2 / 3}
+```{r umap, fig.cap = "UMAP plot of the dataset. Each point represents a cell and is coloured according to the legend.", fig.asp = 1}
+p1 <- plotUMAP(sce, colour_by = "donor", point_size = 0.5, point_alpha = 1) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  theme_cowplot(font_size = 10)
+p2 <- plotUMAP(
+  sce, 
+  colour_by = "plate_number", 
+  point_size = 0.5, 
+  point_alpha = 1) +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10)
+p3 <- plotUMAP(
+  sce, 
+  colour_by = "post_hoc_sample_gate",
+  point_size = 0.5, 
+  point_alpha = 1) +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10)
+p4 <- plotUMAP(sce, colour_by = "tissue", point_size = 0.5, point_alpha = 1) +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10)
+p5 <- plotUMAP(
+  sce,
+  colour_by = data.frame(`log10(sum)` = log10(sce$sum), check.names = FALSE),
+  point_size = 0.5, 
+  point_alpha = 1) +
+  theme_cowplot(font_size = 10)
+
+p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 2)
+```
+
+```{r umap-donor, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `donor`.", fig.asp = 1}
 umap_df <- makePerCellDF(sce)
-bg <- dplyr::select(umap_df, -plate_number, -sample_name)
+bg <- dplyr::select(umap_df, -donor)
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = sample_name), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = sample_name_colours, name = "sample_name") +
-  scale_colour_manual(values = sample_name_colours, name = "sample_name") +
+  geom_point(aes(colour = donor), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = donor_colours, name = "donor") +
+  scale_colour_manual(values = donor_colours, name = "donor") +
   theme_cowplot(font_size = 10) +
   xlab("UMAP 1") +
   ylab("UMAP 2") +
-  facet_wrap(~ plate_number, ncol = 3) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1)))
+  facet_wrap(~donor, ncol = 2, labeller = label_both) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  guides(colour = FALSE)
 ```
 
-Figure \@ref(fig:umap) shows the small cluster(s) of cells are associated with larger library sizes.
+```{r umap-plate-number, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number`.", fig.asp = 2 / 3}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -plate_number)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
 
-```{r umap-libsize, fig.cap = "UMAP plot of the dataset. Each point represents a droplets and is coloured according to the legend."}
-plotUMAP(
-  sce,
-  colour_by = data.frame(`log10(sum)` = log10(sce$sum), check.names = FALSE))
+```{r umap-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate`.", fig.asp = 2 / 3}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -tissue)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue` and `post_hoc_sample_gate` and further coloured by `plate_number`.", fig.asp = 1.2}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -tissue, -post_hoc_sample_gate)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_grid(post_hoc_sample_gate ~ tissue) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1)))
 ```
 
 ## Summary
 
-Although Figures \@ref(fig:umap) - \@ref(fig:umap-libsize) are only a preliminary summaries of the data, there are few points worth highlighting:
+Although Figures \@ref(fig:umap) - \@ref(fig:umap-tissue-post-hoc-sample-gate) are only preliminary summaries of the data, there are few points worth highlighting:
 
-- The biggest differences are associated with library size, which is itself largely driven by `sample_name` (namely, `Cell line` samples have larger library sizes).
-- There are some plate-associated differences.
+- There are no strong `donor`-associated differences.
+- There are strong `plate_number`-associated differences.
+- There are no strong `post_hoc_sample_gate`-associated differences.
+- There are strong `tissue`-associated differences.
+- There are library size-associated differences, which is itself largely driven by differences in library size between the `Cell line` and non-`Cell line` samples.
 
 However, it is premature to draw any strong conclusions
-We will seek to mitigate the library size-associated differences in downstream analyses so that we might better investigate the `sample_name`-specific differences.
+We will seek to mitigate the differences associated with technical factors (e.g., `plate_number` and library size) in downstream analyses so that we might better investigate the biological factors (i.e. `tissue` and `post_hoc_sample_gate`).
 
 # Concluding remarks
 
@@ -1298,3 +1653,10 @@ sessioninfo::session_info()
 ```
 
 </details>
+
+# TODOs
+
+- [ ] Discuss *post hoc* gating results with SCORE and Dan.
+  - [ ] How did Casey actually do this?
+  - [ ] Should we 'manually' tweak the gates?
+  - [ ] Should the `Cell line` have a gate (some do, some are NA)?
