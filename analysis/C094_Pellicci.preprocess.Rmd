@@ -1617,7 +1617,7 @@ Although Figures \@ref(fig:umap) - \@ref(fig:umap-tissue-post-hoc-sample-gate) a
 
 - There are no strong `donor`-associated differences.
 - There are strong `plate_number`-associated differences.
-- There are no strong `post_hoc_sample_gate`-associated differences.
+- There are strong `post_hoc_sample_gate`-associated differences.
 - There are strong `tissue`-associated differences.
 - There are library size-associated differences, which is itself largely driven by differences in library size between the `Cell line` and non-`Cell line` samples.
 
