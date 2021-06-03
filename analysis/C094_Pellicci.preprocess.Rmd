@@ -301,7 +301,7 @@ j <- match(
   paste0(sample_sheet_nn215$plate_number, "_", sample_sheet_nn215$well_position))
 colData(sce) <- cbind(
   colData(sce), 
-  sample_sheet_nn215[, "post_hoc_sample_gate", drop = FALSE])
+  sample_sheet_nn215[j, "post_hoc_sample_gate", drop = FALSE])
 ```
 
 Figure \@ref(fig:facs) shows the expression of CD4 and CD161, as measured by FACS, for all single-cells.
