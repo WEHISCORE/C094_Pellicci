@@ -221,7 +221,7 @@ t(assay(altExp(sce, "FACS"), "pseudolog")) %>%
 
 The `sample_gate` metadata column describes which FACS gate each sample came from and were based on the expression of CD4 and CD161:
 
-- `P6`: CD4+/CD151- 
+- `P6`: CD4+/CD161- 
 - `P7`: CD4-/CD161-
 - `P8`: CD4-/CD161+
 - `P5`: All cells are within the `P5` gate (i.e. (`P6`, `P7`, `P8`) $\subset$ `P5`)

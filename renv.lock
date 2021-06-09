@@ -326,6 +326,12 @@
       "Repository": "CRAN",
       "Hash": "1c0aa18b97e6aaa17f93b8b866c0ace5"
     },
+    "ResidualMatrix": {
+      "Package": "ResidualMatrix",
+      "Version": "1.0.0",
+      "Source": "Bioconductor",
+      "Hash": "a6359ebe8106451188623f982fb9af20"
+    },
     "Rhdf5lib": {
       "Package": "Rhdf5lib",
       "Version": "1.12.1",
@@ -420,6 +426,12 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "543776ae6848fde2f48ff3816d0628bc"
+    },
+    "batchelor": {
+      "Package": "batchelor",
+      "Version": "1.6.3",
+      "Source": "Bioconductor",
+      "Hash": "0c3bf79f82d71c38d2fc14d89a1be249"
     },
     "beachmat": {
       "Package": "beachmat",
@@ -1038,6 +1050,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c446b30cb33ec125ff02588b60660ccb"
+    },
+    "pheatmap": {
+      "Package": "pheatmap",
+      "Version": "1.0.12",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "db1fb0021811b6693741325bbe916e58"
     },
     "pillar": {
       "Package": "pillar",
