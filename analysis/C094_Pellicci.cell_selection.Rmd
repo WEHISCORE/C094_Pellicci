@@ -265,29 +265,32 @@ p6 <- ggcells(sce) +
 
 NOTE:
 **TODO: double check these notes**
+
+  For `sample_name`,
+    - cluster 5 with most cells from `Blood 3`, but no cells from `Blood 1`
+    - cluster 3 with most cells from `Thymus`
+    - almost all cells in cluster 1 were from `Cell line`
+  
+  For `post_hoc_sample_gate`,
+    - cluster 3 with more cells from phase `P5`, `P6`, and `P7`
+    - cluster 1 with almost all cells from `P5`, but no cells from `P7`
+  
+  For `plate_number`,
+    - cluster 2 with more cells from plate `LCE511`
+    - cluster 5 with more cells from plate `LCE509`
+    - cluster 6 with more `LCE514`
+  
+  For `tissue`,
+    - cluster 5 with cells mostly from `Blood`
+    - cluster 3 with cells mostly from `Thymus` 
+    - cluster 1 are mostly SKW3 cell line, accompanied with some `Thymus 2` and `Thymus 3` cells
+
+  For `donor`,
+    - cluster 5 with almost all cells from `donor 3`
+
+Is `cluster 5` a unique cell type, or contamination from `Blood 3` of `donor 3` only ? Remove or keep ???
+
 **TODO: need to check for plate-specific clusters, donor-/ sample_name-specific cluster**
-
-For `sample_name`,
-- cluster 5 with most cells from `Blood 3`, but no cells from `Blood 1`
-- cluster 3 with most cells from `Thymus`
-- almost all cells in cluster 1 were from `Cell line`
-
-For `post_hoc_sample_gate`,
-- cluster 3 with more cells from phase `P5`, `P6`, and `P7`
-- cluster 1 with almost all cells from `P5`, but no cells from `P7`
-
-For `plate_number`,
-- cluster 2 with more cells from plate `LCE511`
-- cluster 5 with more cells from plate `LCE509`
-- cluster 6 with more `LCE514`
-
-For `tissue`,
-- cluster 5 with cells mostly from `Blood`
-- cluster 3 with cells mostly from `Thymus` 
-- cluster 1 are mostly SKW3 cell line, accompanied with some `Thymus 2` and `Thymus 3` cells
-
-For `donor`,
-- cluster 5 with almost all cells from `donor 3`
 
 # Data integration
 
@@ -322,9 +325,13 @@ We treat each plate as a batch and also test to manually provide the merge order
 **TODO: check if need to treat BOTH plate_number and donor/sample_name as batch !?**
 
 ```{r}
-sce$batch <- sce$plate_number
+sce0 <- sce
+```
 
-var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
+```{r}
+sce0$batch <- sce0$plate_number
+
+var_fit <- modelGeneVarWithSpikes(sce0, "ERCC", block = sce0$batch)
 hvg <- getTopHVGs(var_fit, var.threshold = 0)
 hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
 ```
@@ -335,20 +342,20 @@ set.seed(1819)
 
 # auto merge
 mnn_out_1 <- fastMNN(
-  multiBatchNorm(sce, batch = sce$batch),
-  batch = sce$batch,
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
   cos.norm = FALSE,
-  d = ncol(reducedDim(sce, "PCA")),
+  d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = TRUE,
   subset.row = hvg)
 
 # manual merge 1
-# NOTE: order defined based on the difference in cell number between plates for each`sample_name`
+# NOTE: order defined based on the similarities in cell number between plates for each`sample_name`
 mnn_out_2 <- fastMNN(
-  multiBatchNorm(sce, batch = sce$batch),
-  batch = sce$batch,
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
   cos.norm = FALSE,
-  d = ncol(reducedDim(sce, "PCA")),
+  d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = FALSE,
   merge.order = list(list("LCE508", "LCE511", "LCE512", "LCE513", "LCE514"), "LCE509"),
   subset.row = hvg)
@@ -356,10 +363,10 @@ mnn_out_2 <- fastMNN(
 # manual merge 2
 # NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
 mnn_out_3 <- fastMNN(
-  multiBatchNorm(sce, batch = sce$batch),
-  batch = sce$batch,
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
   cos.norm = FALSE,
-  d = ncol(reducedDim(sce, "PCA")),
+  d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = FALSE,
   merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
   subset.row = hvg)
@@ -402,8 +409,6 @@ Among the 3 merge, the manual merge 2 lead to the least loss of biological varia
 
 
 ```{r}
-# test
-sce0 <- sce
 reducedDim(sce0, "corrected_1") <- reducedDim(mnn_out_1, "corrected")
 reducedDim(sce0, "corrected_2") <- reducedDim(mnn_out_2, "corrected")
 reducedDim(sce0, "corrected_3") <- reducedDim(mnn_out_3, "corrected")
@@ -535,25 +540,25 @@ p1 + p2 + p3 + p4 +
   plot_layout(ncol = 4, guides = "collect")
 ```
 
-```{r batch-correction-test-fixed-cluster, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected and -corrected (by auto and 2 different manual merge orders)", layout="l-page"}
+```{r batch-correction-test-fixed-cluster, fig.asp = 1/4, fig.cap = "Comparison between batch-uncorrected and -corrected (by auto and 2 different manual merge orders)", layout="l-page"}
 
-p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = plate_number_colours, name = "plate_number")
-p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = plate_number_colours, name = "plate_number")
-p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = plate_number_colours, name = "plate_number")
-p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = plate_number_colours, name = "plate_number")
-
-p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_name_colours, name = "sample_name")
-p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_name_colours, name = "sample_name")
-p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_name_colours, name = "sample_name")
-p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# 
+# p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
 
 # NOTE: just to test if the correction can give better resolution than unmerged (by tracing for the change of the original cell grouping)
 p9 <- plotReducedDim(sce0, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
@@ -566,39 +571,39 @@ p12 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "cluster", theme_siz
   scale_colour_manual(values = cluster_colours, name = "cluster")
 # comment: seems those "brown cells becoming more scattered after the merge; loss of resolution ? Or brown cells should not forming a cluster in the first place ??
 
-p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
-p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
-p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
-p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# 
+# p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# 
+# p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
 
-p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = tissue_colours, name = "tissue")
-p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = tissue_colours, name = "tissue")
-p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = tissue_colours, name = "tissue")
-p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = tissue_colours, name = "tissue")
-
-p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = donor_colours, name = "donor")
-p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = donor_colours, name = "donor")
-p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = donor_colours, name = "donor")
-p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = donor_colours, name = "donor")
-
-p1 + p2 + p3 + p4 +
-  p5 + p6 + p7 + p8 +
+# p1 + p2 + p3 + p4 +
+#   p5 + p6 + p7 + p8 +
   p9 + p10 + p11 + p12 +
-  p13 + p14 + p15 + p16 +
-  p17 + p18 + p19 + p20 +
-  p21 + p22 + p23 + p24 +
+  # p13 + p14 + p15 + p16 +
+  # p17 + p18 + p19 + p20 +
+  # p21 + p22 + p23 + p24 +
   plot_layout(ncol = 4, guides = "collect")
 ```
 
@@ -779,8 +784,17 @@ ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
 
 NOTE:
 **TODO: double check this note**
-- Blood is in P8, thymus contains cells from all 4 phases, i.e. P5, P6, P7 and P8.
-- Cell line seems contain cells in P5, P6, and P8 (not P7)
+  - Blood is in P8, thymus contains cells from all 4 phases, i.e. P5, P6, P7 and P8.
+  - Cell line seems contain cells in P5, P6, and P8 (not P7)
+  - the batch correction may potentially mask the brown cluster in the unmerge data; if is an additional transition phase of P8 (then it is "to keep"), but if the merges help remove unnecessary extra groups (then it is "not to keep") and one should perform MNN; or simply decrease k to increase number of cluster during search of SNNs (as there is obvious plate-based grouping, though it was not picked up by clustering .... !?
+
+
+
+
+
+
+
+
 
 
 
@@ -790,12 +804,984 @@ NOTE:
 
 ## MNN2: All cells (cell line-guiding merge)
 
+We treat each plate as a batch and also test to manually provide the merge order.
+
+**TODO: check if need to treat BOTH plate_number and donor/sample_name as batch !?**
+
+```{r}
+sce0 <- sce
+```
+
+```{r}
+sce0$batch <- sce0$plate_number
+
+var_fit <- modelGeneVarWithSpikes(sce0, "ERCC", block = sce0$batch)
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
+```
+
+```{r, results = "hide"}
+library(batchelor)
+set.seed(1819)
+
+# auto merge
+mnn_out_1 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = TRUE,
+  restrict = list(sce0$sample_name == "Cell line"), 
+  subset.row = hvg)
+
+# manual merge 1
+# NOTE: order defined based on the similarities in cell number between plates for each`sample_name`
+mnn_out_2 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE508", "LCE511", "LCE512", "LCE513", "LCE514"), "LCE509"),
+  restrict = list(sce0$sample_name == "Cell line"), 
+  subset.row = hvg)
+
+# manual merge 2
+# NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
+mnn_out_3 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
+  restrict = list(sce0$sample_name == "Cell line"), 
+  subset.row = hvg)
+```
+
+One useful diagnostic of the MNN algorithm is the proportion of variance within each batch that is lost during MNN correction^[Specifically, this refers to the within-batch variance that is removed during orthogonalization with respect to the average correction vector at each merge step.].
+Large proportions of lost variance ($>10 \%$) suggest that correction is removing genuine biological heterogeneity.
+This would occur due to violations of the assumption of orthogonality between the batch effect and the biological subspace [@haghverdi2018batch].
+
+<!-- In this case, the proportion of lost variance is small for most plates, indicating that non-orthogonality is not a major concern, except for the final merges incorporating plates `LC370` and `LC377`. -->
+<!-- Loss of some proportion of variance within each batch seems inevitable for these two plates as the experimental groups on these plates are not shared with other plates: -->
+
+<!-- - `LC370` contains the unique `PP.naive.tom+` and `PP.salmon.tom+` groups. -->
+<!-- - `LC377` is the most diverse plate in terms of experimental groups and is the only plate containing cells from the `LI.citro.tom-` and `SI.citro.tom-` groups. -->
+
+```{r}
+tab1 <- metadata(mnn_out_1)$merge.info$lost.var
+knitr::kable(
+  100 * tab1,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (auto). Ideally, all these values should be small (e.g., < 5%).")
+# NOTE: compare to using all cells to merge, the variance loss is obviously higher in most merge
+
+tab2 <- metadata(mnn_out_2)$merge.info$lost.var
+knitr::kable(
+  100 * tab2,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual). Ideally, all these values should be small (e.g., < 5%).")
+
+tab3 <- metadata(mnn_out_3)$merge.info$lost.var
+knitr::kable(
+  100 * tab3,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual). Ideally, all these values should be small (e.g., < 5%).")
+```
+
+NOTE:
+**TODO: double check this note**
+Relatively, the manual merge 2 still lead to the least loss of biological variance from the dataset, thus preferred.
+
+```{r}
+reducedDim(sce0, "corrected_1") <- reducedDim(mnn_out_1, "corrected")
+reducedDim(sce0, "corrected_2") <- reducedDim(mnn_out_2, "corrected")
+reducedDim(sce0, "corrected_3") <- reducedDim(mnn_out_3, "corrected")
+
+# generate UMAP
+set.seed(18191)
+sce0 <- runUMAP(sce0, dimred = "PCA", name = "UMAP")
+uncorrected_umap <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP")[, 1],
+    y = reducedDim(sce0, "UMAP")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_1", name = "UMAP_corrected_1")
+corrected_umap_1 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_1")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_1")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_2", name = "UMAP_corrected_2")
+corrected_umap_2 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_2")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_2")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_3", name = "UMAP_corrected_3")
+corrected_umap_3 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_3")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_3")[, 2]),
+  as.data.frame(colData(sce0)))
+
+# re-clustering after each MNN correction
+set.seed(4759)
+snn_gr_1 <- buildSNNGraph(sce0, use.dimred = "corrected_1")
+clusters_1 <- igraph::cluster_louvain(snn_gr_1)
+sce0$cluster_1 <- factor(clusters_1$membership)
+cluster_colours_1 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_1))],
+  levels(sce0$cluster_1))
+sce0$colours$cluster_colours_1 <- cluster_colours_1[sce0$cluster_1]
+
+set.seed(4759)
+snn_gr_2 <- buildSNNGraph(sce0, use.dimred = "corrected_2")
+clusters_2 <- igraph::cluster_louvain(snn_gr_2)
+sce0$cluster_2 <- factor(clusters_2$membership)
+cluster_colours_2 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_2))],
+  levels(sce0$cluster_2))
+sce0$colours$cluster_colours_2 <- cluster_colours_2[sce0$cluster_2]
+
+set.seed(4759)
+snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected_3")
+clusters_3 <- igraph::cluster_louvain(snn_gr_3)
+sce0$cluster_3 <- factor(clusters_3$membership)
+cluster_colours_3 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_3))],
+  levels(sce0$cluster_3))
+sce0$colours$cluster_colours_3 <- cluster_colours_3[sce0$cluster_3]
+```
+
+```{r batch-correction-test-cell-line-guided, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected and -corrected (by auto and 2 different manual merge orders)", layout="l-page"}
+
+p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+
+p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+
+p9 <- plotReducedDim(sce0, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p10 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "cluster_1", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_1, name = "cluster_1")
+p11 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "cluster_2", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_2, name = "cluster_2")
+p12 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "cluster_3", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_3, name = "cluster_3")
+
+p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+
+p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+
+p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+
+p1 + p2 + p3 + p4 +
+  p5 + p6 + p7 + p8 +
+  p9 + p10 + p11 + p12 +
+  p13 + p14 + p15 + p16 +
+  p17 + p18 + p19 + p20 +
+  p21 + p22 + p23 + p24 +
+  plot_layout(ncol = 4, guides = "collect")
+```
+
+```{r batch-correction-test-fixed-cluster-cell-line-guided, fig.asp = 1/4, fig.cap = "Comparison between batch-uncorrected and -corrected (by auto and 2 different manual merge orders)", layout="l-page"}
+
+# p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# 
+# p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+
+# NOTE: just to test if the correction can give better resolution than unmerged (by tracing for the change of the original cell grouping)
+p9 <- plotReducedDim(sce0, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p10 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p11 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p12 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+# comment: seems those "brown cells becoming more scattered after the merge; loss of resolution ? Or brown cells should not forming a cluster in the first place ??
+
+# p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# 
+# p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# 
+# p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+
+# p1 + p2 + p3 + p4 +
+#   p5 + p6 + p7 + p8 +
+  p9 + p10 + p11 + p12 +
+  # p13 + p14 + p15 + p16 +
+  # p17 + p18 + p19 + p20 +
+  # p21 + p22 + p23 + p24 +
+  plot_layout(ncol = 4, guides = "collect")
+```
+
+```{r umap-plate-number-cell-line-guided, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -plate_number)
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_1.1, y = UMAP_corrected_1.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_2.1, y = UMAP_corrected_2.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-post-hoc-sample-gate-cell-line-guided, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_1.1, y = UMAP_corrected_1.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_2.1, y = UMAP_corrected_2.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue-cell-line-guided, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -tissue)
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_1.1, y = UMAP_corrected_1.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_2.1, y = UMAP_corrected_2.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+NOTE:
+**TODO: double check this note**
+  - auto and manual merge 1 can correct the batch effect, but not manual merge 2 (seems make it even worst)
+  - but intriguingly, the clustering for manual merge 2 is not following plate, but show to be orthogonal to the "plate-specific distribution"
+  - in terms of conclusion drawn, similar to using all cells, I can still see:
+  1) shifting of cells P6 to P7, then P8 in unmerge and even all merges
+  2) blood contains cells at the final P8 stage, while thymus contain cells from all 4 stage
+  3) small bit of thymus cells seems to transccriptonally superimpoed with the SKW3 cell line
+
+
+
+
+
+
+
+
 
 
 
 
 
 ## MNN3: Cell line removed (all cells remained-guiding merge)
+
+We treat each plate as a batch and also test to manually provide the merge order.
+
+**TODO: check if need to treat BOTH plate_number and donor/sample_name as batch !?**
+
+```{r}
+sce0 <- sce
+```
+
+```{r, results = "hide"}
+# subset to remove "Cell line"
+sce0 <- sce0[, !(sce0$sample_name == "Cell line")]
+droplevels(sce0$sample_name)
+```
+
+```{r}
+sce0$batch <- sce0$plate_number
+
+var_fit <- modelGeneVarWithSpikes(sce0, "ERCC", block = sce0$batch)
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
+```
+
+```{r, results = "hide"}
+library(batchelor)
+set.seed(1819)
+
+# auto merge
+mnn_out_1 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = TRUE,
+  subset.row = hvg)
+
+# manual merge 1
+# NOTE: order defined based on the similarities in cell number between plates for each`sample_name`
+mnn_out_2 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE508", "LCE511", "LCE512", "LCE513", "LCE514"), "LCE509"),
+  subset.row = hvg)
+
+# manual merge 2
+# NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
+mnn_out_3 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
+  subset.row = hvg)
+```
+
+One useful diagnostic of the MNN algorithm is the proportion of variance within each batch that is lost during MNN correction^[Specifically, this refers to the within-batch variance that is removed during orthogonalization with respect to the average correction vector at each merge step.].
+Large proportions of lost variance ($>10 \%$) suggest that correction is removing genuine biological heterogeneity.
+This would occur due to violations of the assumption of orthogonality between the batch effect and the biological subspace [@haghverdi2018batch].
+
+<!-- In this case, the proportion of lost variance is small for most plates, indicating that non-orthogonality is not a major concern, except for the final merges incorporating plates `LC370` and `LC377`. -->
+<!-- Loss of some proportion of variance within each batch seems inevitable for these two plates as the experimental groups on these plates are not shared with other plates: -->
+
+<!-- - `LC370` contains the unique `PP.naive.tom+` and `PP.salmon.tom+` groups. -->
+<!-- - `LC377` is the most diverse plate in terms of experimental groups and is the only plate containing cells from the `LI.citro.tom-` and `SI.citro.tom-` groups. -->
+
+```{r}
+tab1 <- metadata(mnn_out_1)$merge.info$lost.var
+knitr::kable(
+  100 * tab1,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (auto). Ideally, all these values should be small (e.g., < 5%).")
+# NOTE: no ground (?); this seems like merging plate with adjacent number first !? (i.e. LCE513 + LCE514, + LCE509, LCE508, LCE511, LCE512) (remark: all plates were in the same sequencing run, i.e. NN215)
+
+tab2 <- metadata(mnn_out_2)$merge.info$lost.var
+knitr::kable(
+  100 * tab2,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual). Ideally, all these values should be small (e.g., < 5%).")
+
+tab3 <- metadata(mnn_out_3)$merge.info$lost.var
+knitr::kable(
+  100 * tab3,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual). Ideally, all these values should be small (e.g., < 5%).")
+```
+
+NOTE:
+**TODO: double check this note**
+when `Cell line` is removed from all plates, the variance loss of some merge increase (as a result of loss of cells in common between plates !?), but some decrease instead ... ? But among all, manual merge 2 still work the best !
+
+```{r}
+reducedDim(sce0, "corrected_1") <- reducedDim(mnn_out_1, "corrected")
+reducedDim(sce0, "corrected_2") <- reducedDim(mnn_out_2, "corrected")
+reducedDim(sce0, "corrected_3") <- reducedDim(mnn_out_3, "corrected")
+
+# generate UMAP
+set.seed(18191)
+sce0 <- runUMAP(sce0, dimred = "PCA", name = "UMAP")
+uncorrected_umap <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP")[, 1],
+    y = reducedDim(sce0, "UMAP")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_1", name = "UMAP_corrected_1")
+corrected_umap_1 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_1")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_1")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_2", name = "UMAP_corrected_2")
+corrected_umap_2 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_2")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_2")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_3", name = "UMAP_corrected_3")
+corrected_umap_3 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_3")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_3")[, 2]),
+  as.data.frame(colData(sce0)))
+
+# re-clustering after each MNN correction
+set.seed(4759)
+snn_gr_1 <- buildSNNGraph(sce0, use.dimred = "corrected_1")
+clusters_1 <- igraph::cluster_louvain(snn_gr_1)
+sce0$cluster_1 <- factor(clusters_1$membership)
+cluster_colours_1 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_1))],
+  levels(sce0$cluster_1))
+sce0$colours$cluster_colours_1 <- cluster_colours_1[sce0$cluster_1]
+
+set.seed(4759)
+snn_gr_2 <- buildSNNGraph(sce0, use.dimred = "corrected_2")
+clusters_2 <- igraph::cluster_louvain(snn_gr_2)
+sce0$cluster_2 <- factor(clusters_2$membership)
+cluster_colours_2 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_2))],
+  levels(sce0$cluster_2))
+sce0$colours$cluster_colours_2 <- cluster_colours_2[sce0$cluster_2]
+
+set.seed(4759)
+snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected_3")
+clusters_3 <- igraph::cluster_louvain(snn_gr_3)
+sce0$cluster_3 <- factor(clusters_3$membership)
+cluster_colours_3 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_3))],
+  levels(sce0$cluster_3))
+sce0$colours$cluster_colours_3 <- cluster_colours_3[sce0$cluster_3]
+```
+
+```{r batch-correction-test-cell-line-removed, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected and -corrected (by auto and 2 different manual merge orders)", layout="l-page"}
+
+p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+
+p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+
+p9 <- plotReducedDim(sce0, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p10 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "cluster_1", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_1, name = "cluster_1")
+p11 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "cluster_2", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_2, name = "cluster_2")
+p12 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "cluster_3", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_3, name = "cluster_3")
+
+p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+
+p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+
+p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+
+p1 + p2 + p3 + p4 +
+  p5 + p6 + p7 + p8 +
+  p9 + p10 + p11 + p12 +
+  p13 + p14 + p15 + p16 +
+  p17 + p18 + p19 + p20 +
+  p21 + p22 + p23 + p24 +
+  plot_layout(ncol = 4, guides = "collect")
+```
+
+```{r batch-correction-test-fixed-cluster-cell-line-removed, fig.asp = 1/4, fig.cap = "Comparison between batch-uncorrected and -corrected (by auto and 2 different manual merge orders)", layout="l-page"}
+
+# p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = plate_number_colours, name = "plate_number")
+# 
+# p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+# p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_name_colours, name = "sample_name")
+
+# NOTE: just to test if the correction can give better resolution than unmerged (by tracing for the change of the original cell grouping)
+p9 <- plotReducedDim(sce0, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p10 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p11 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p12 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+# comment: seems those "brown cells becoming more scattered after the merge; loss of resolution ? Or brown cells should not forming a cluster in the first place ??
+
+# p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+# 
+# p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = tissue_colours, name = "tissue")
+# 
+# p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+# p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+#   scale_colour_manual(values = donor_colours, name = "donor")
+
+# p1 + p2 + p3 + p4 +
+#   p5 + p6 + p7 + p8 +
+  p9 + p10 + p11 + p12 +
+  # p13 + p14 + p15 + p16 +
+  # p17 + p18 + p19 + p20 +
+  # p21 + p22 + p23 + p24 +
+  plot_layout(ncol = 4, guides = "collect")
+```
+
+```{r umap-plate-number-cell-line-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -plate_number)
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_1.1, y = UMAP_corrected_1.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_2.1, y = UMAP_corrected_2.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-post-hoc-sample-gate-cell-line-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_1.1, y = UMAP_corrected_1.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_2.1, y = UMAP_corrected_2.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue-cell-line-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -tissue)
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_1.1, y = UMAP_corrected_1.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_2.1, y = UMAP_corrected_2.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+NOTE:
+**TODO: double check this note**
+  - similar conclusion as the previous 2 methods can still be drawn
+  - even after cell line was removed from all plate, we can still see a remote cluster, which are cells in `P5`, `P7`, and `P8` (not `P6`) and can be found in both `blood` and `thymus` samples
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
