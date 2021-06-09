@@ -19,7 +19,7 @@ plotColData(z, "sum", x = "col", other_fields = "row", colour_by = I(sapply(strs
   facet_grid(~row) +
   geom_vline(xintercept = c(3, 22), lty = 2, col = "blue")
 
-# TODO: Order wells and make a matrix of libsizes. then row normalize and heatmap
+# Order wells and make a matrix of libsizes. then row normalize and heatmap
 zz <- matrix(
   log10(z$sum),
   ncol = 24,
@@ -43,7 +43,7 @@ plot(
 abline(h = 0, lty = 2, col = "red")
 abline(v = c(3, 22), lty = 2, col = "blue")
 
-z1 <- z[, z$row %in% c("N")]
+z1 <- z[, z$row %in% "N"]
 z2 <- z[, z$row %in% "O"]
 
 a <- tapply(z1$sum, z1$col, median)
@@ -53,7 +53,7 @@ plot(
   log10(a / b),
   ylim = c(-1, 1),
   xlab = "col",
-  ylab = "log(O / median(L, M, N)",
+  ylab = "log(O / N)",
   main = "Library size ratios")
 abline(h = 0, lty = 2, col = "red")
 abline(v = c(3, 22), lty = 2, col = "blue")
