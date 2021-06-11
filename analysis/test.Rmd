@@ -1,0 +1,995 @@
+---
+title: "Preprocessing the Pellicci gamma-delta T-cell data set"
+description: |
+author:
+  - name: Peter Hickey 
+    url: https://peterhickey.org
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+```{r setup}
+library(here)
+library(BiocStyle)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(scater)
+library(cowplot)
+library(patchwork)
+library(scales)
+
+# NOTE: Using >= 4 cores seizes up my laptop. Can use more on unix box.
+options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 3L))
+
+knitr::opts_chunk$set(
+  fig.path = "test/")
+
+source(here("code", "helper_functions.R"))
+```
+
+# Setting up the data
+
+The count data were processed using `r Biocpkg("scPipe")` and available in a *SingleCellExperiment* object, along with their metadata (see [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds)).
+
+```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.scPipe.SCE.rds"))
+```
+
+## Incorporating cell-based annotations
+
+Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
+
+```{r}
+# NOTE: Some `sample_name` include `sample_gate`; remove this redundancy.
+sce$sample_name <- sub(" P[0-9]$", "", sce$sample_name)
+sce$sample_gate[is.na(sce$sample_gate)] <- "NA"
+# NOTE: `sample_name` = <tissue>_<donor>
+sce$tissue <- factor(
+  dplyr::case_when(
+    grepl("Blood", sce$sample_name) ~ "Blood",
+    grepl("Thymus", sce$sample_name) ~ "Thymus",
+    sce$sample_name == "Cell line" ~ "SKW3"),
+  levels = c("Blood", "Thymus", "SKW3"))
+sce$donor <- factor(
+  dplyr::case_when(
+    grepl("1", sce$sample_name) ~ "1",
+    grepl("2", sce$sample_name) ~ "2",
+    grepl("3", sce$sample_name) ~ "3",
+    sce$sample_name == "Cell line" ~ "NA"),
+  levels = c("1", "2", "3", "NA"))
+# Create factor columns, which are easier to work with.
+# NOTE: Manually order some factors' levels, others we don't care about the 
+#       level order.
+sce$sample_type <- factor(
+  sce$sample_type,
+  c("Single cell", "50 cells", "100 cells"))
+sce$sample_name <- factor(
+  sce$sample_name, 
+  c(paste("Blood", 1:3), 
+    paste("Thymus", 1:3),
+    "Cell line"))
+colData(sce) <- DataFrame(
+  endoapply(colData(sce), function(x) {
+    if (is.character(x)) {
+      as.factor(x)
+    } else {
+      x
+    }
+  }),
+  row.names = colnames(sce))
+```
+
+```{r}
+# Some useful colours
+sce$colours <- S4Vectors::make_zero_col_DFrame(ncol(sce))
+sample_type_colours <- setNames(
+  palette.colors(nlevels(sce$sample_type), "R4"),
+  levels(sce$sample_type))
+sce$colours$sample_type_colours <- sample_type_colours[sce$sample_type]
+sample_name_colours <- setNames(
+  palette.colors(nlevels(sce$sample_name), "Okabe-Ito"),
+  levels(sce$sample_name))
+sce$colours$sample_name_colours <- sample_name_colours[sce$sample_name]
+sample_gate_colours <- setNames(
+  palette.colors(nlevels(sce$sample_gate), "Tableau 10"),
+  levels(sce$sample_gate))
+sce$colours$sample_gate_colours <- sample_gate_colours[sce$sample_gate]
+plate_number_colours <- setNames(
+  palette.colors(nlevels(sce$plate_number), "Dark 2"),
+  levels(sce$plate_number))
+sce$colours$plate_number_colours <- plate_number_colours[sce$plate_number]
+tissue_colours <- setNames(
+  palette.colors(nlevels(sce$tissue), "ggplot2"),
+  levels(sce$tissue))
+sce$colours$tissue_colours <- tissue_colours[sce$tissue]
+donor_colours <- setNames(
+  palette.colors(nlevels(sce$donor), "Set 1"),
+  levels(sce$donor))
+sce$colours$donor_colours <- donor_colours[sce$donor]
+```
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the cell-based metadata.
+
+<aside>
+The format of the `sample_name` is `<tissue>_<donor>`, e.g., `Blood_1` = `Blood` sample from donor `1`.
+</aside>
+
+```{r}
+skimr::skim(colData(sce))
+```
+
+Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
+
+<aside>
+The `Cell line` is 'SKW-3', originally thought to originate from the peripheral blood of a 61 year old male patient with T cell chronic lymphocytic leukemia. (although [this is known to be problematic](https://web.expasy.org/cellosaurus/CVCL_2197)).
+</aside>
+
+```{r coldata, fig.cap = "Breakdown of experiment by plate."}
+p1 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = sample_type),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10) +
+  scale_fill_manual(values = sample_type_colours)
+p2 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = sample_name),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10) +
+  scale_fill_manual(values = sample_name_colours)
+p3 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = sample_gate),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10) +
+  scale_fill_manual(values = sample_gate_colours)
+p4 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = plate_number)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 10) +
+  scale_fill_manual(values = plate_number_colours)
+p1 + p2 + p3 + p4
+```
+
+Figure \@ref(fig:plate-map) shows the design of each plate.
+
+```{r plate-map, fig.cap = "Plate maps.", fig.asp = 0.8}
+p <- lapply(levels(sce$plate_number), function(p) {
+  z <- sce[, sce$plate_number == p]
+  plotPlatePosition(
+    z,
+    as.character(z$well_position),
+    point_size = 2,
+    point_alpha = 1,
+    theme_size = 5,
+    colour_by = "sample_name",
+    shape_by = "sample_type") + 
+    scale_colour_manual(values = sample_name_colours, name = "sample_name") +
+    scale_shape_manual(
+      values = c("Single cell" = 16, "50 cells" = 17, "100 cells" = 18),
+      name = "sample_type") + 
+    ggtitle(p) +
+    theme(
+      legend.text = element_text(size = 6),
+      legend.title = element_text(size = 6)) +
+    guides(
+      colour = guide_legend(override.aes = list(size = 4)),
+      shape = guide_legend(override.aes = list(size = 4)))
+})
+
+wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
+```
+
+## Incorporating FACS data
+
+We store the values from the FACS measurements as an 'alternative experiment'.
+We store both the 'raw' data and the 'pseudolog-transformed' data.
+
+```{r}
+pseudoLog <- scales::pseudo_log_trans(sigma = 150 / 2)$transform
+assay(altExp(sce, "FACS"), "pseudolog") <- pseudoLog(
+  assay(altExp(sce, "FACS"), "raw"))
+```
+
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'raw' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "raw")) %>% 
+  skimr::skim()
+```
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'pseudolog-transformed' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "pseudolog")) %>% 
+  skimr::skim()
+```
+
+### *Post hoc* gating of single cells
+
+The `sample_gate` metadata column describes which FACS gate each sample came from and were based on the expression of CD4 and CD161:
+
+- `P6`: CD4+/CD161- 
+- `P7`: CD4-/CD161-
+- `P8`: CD4-/CD161+
+- `P5`: All cells are within the `P5` gate (i.e. (`P6`, `P7`, `P8`) $\subset$ `P5`)
+
+At the time of the sort, all the single-cells were gated as `P5` whereas the mini-bulk samples were gated as either `P6`, `P7`, or `P8` (see the `sample_gate` column).
+Casey *post-hoc* gated the single-cells into P5, P6, P7, or P8 gates using the index sorting data^[`P5` was defined as any cell not falling into any of `P6`, `P7`, or `P8`.].
+
+```{r}
+library(readxl)
+file_nn215 <- here(
+  "data",
+  "sample_sheets",
+  "C094_DanPellici_SC_MB_NN215_AdjustedGates.xlsx")
+
+# NOTE: Header row is split across 2 lines, which I combine into 1 before
+#       reading in the rest of the spreadsheet.
+header_row <- read_excel(
+  path = file_nn215,
+  sheet = "Samples and indexing",
+  skip = 2,
+  n_max = 1)
+
+facs_data_idx <- seq(which(LETTERS == "K"), ncol(header_row))
+header_row <- c(
+  paste0(colnames(header_row[, -facs_data_idx]), header_row[1, -facs_data_idx]),
+  unlist(header_row[1, facs_data_idx], use.names = FALSE))
+header_row <- gsub("^\\.\\.\\.[0-9]+", "", header_row)
+sample_sheet_nn215 <- read_excel(
+  path = file_nn215,
+  sheet = "Samples and indexing",
+  skip = 4,
+  col_names = header_row,
+  # NOTE: Setting the max guess_max value avoids problems with incorrectly
+  #       guessed columns
+  #       (https://github.com/tidyverse/readxl/issues/414#issuecomment-352437730)
+  guess_max = 1048576)
+
+# Tidy up names and empty rows/columns.
+sample_sheet_nn215 <- bind_cols(
+  clean_names(sample_sheet_nn215[, -facs_data_idx]),
+  clean_names(sample_sheet_nn215[, facs_data_idx], case = "parsed"))
+sample_sheet_nn215 <- remove_empty(
+  sample_sheet_nn215,
+  which = c("rows", "cols"))
+sample_sheet_nn215 <- dplyr::filter(
+  sample_sheet_nn215,
+  !is.na(plate_number),
+  illumina_index_index_number_separate_index_read != "removed")
+# Ensure FACS columns are stored as numeric (readxl sometimes fails, presumably
+# to weird pattern of empty cells).
+sample_sheet_nn215 <- sample_sheet_nn215 %>%
+  mutate_at(facs_data_idx, as.numeric)
+facs_markers <- colnames(sample_sheet_nn215)[facs_data_idx]
+
+# Some final tidying.
+sample_sheet_nn215 <- sample_sheet_nn215 %>%
+  mutate(
+    # NOTE: There are some wonky well_positions (e.g., 'I19=A1') that need to
+    #       be fixed (these occur because it means well I19 with primer A1,
+    #       in SCORE's terminology. I've asked for this to be avoided going
+    #       forward.).
+    well_position = gsub(" ", "", well_position),
+    well_position = sapply(strsplit(well_position, "="), "[[", 1),
+    well_position = factor(
+      x = well_position,
+      levels = unlist(
+        lapply(LETTERS[1:16], function(x) paste0(x, 1:24)),
+        use.names = TRUE)),
+    sequencing_run = "NN215",
+    post_hoc_sample_gate = factor(sample_gate)) %>%
+  arrange(well_position)
+
+# NOTE: A poor-man's inner_join() to avoid the lossy coercion of colData(sce) 
+#       to a data.frame.
+j <- match(
+  colnames(sce),
+  paste0(sample_sheet_nn215$plate_number, "_", sample_sheet_nn215$well_position))
+colData(sce) <- cbind(
+  colData(sce), 
+  sample_sheet_nn215[j, "post_hoc_sample_gate", drop = FALSE])
+```
+
+Figure \@ref(fig:facs) shows the expression of CD4 and CD161, as measured by FACS, for all single-cells.
+We observe that boundaries between `P6`, `P7`, and `P8` appear rather arbitrary^[It should be remembered that the gates are set using more cells than are collected for scRNA-seq and so the boundaries may appear more defined in the original FACS files. Furthermore, the data here are shown on a 'pseudolog' scale, which may be different to the scale used when viewing the data in FlowJo.] and that the `P5` cells are a *potpourri* that includes cells that are intermediate between `P6`, `P7`, and `P8` as well as a handful of CD4+/CD161+ cells.
+
+```{r facs, fig.cap = "Expression of key FACS markers, used for *post hoc* gating, in single-cells (excluding the cell line samples). Shown are all cells (left hand side) and highlighting cells in each `post_hoc_sample_gate` (right hand side).", fig.asp = 1 / 2}
+z <- sce[, sce$sample_type == "Single cell" & sce$sample_name != "Cell line"]
+colData(z) <- droplevels(colData(z))
+
+x <- makePerCellDF(
+  z, 
+  features = c("V525_50_A_CD4_BV510", "B530_30_A_CD161_FITC"),
+  assay.type = "pseudolog")
+
+p1 <- ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
+  geom_point(data = x, colour = "black", size = 0.5) +
+  theme_cowplot(font_size = 10) +
+  xlab("CD4") + 
+  ylab("CD161")
+
+bg <- dplyr::select(x, -post_hoc_sample_gate)
+p2 <- ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  facet_wrap(~ post_hoc_sample_gate, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  xlab("CD4") + 
+  ylab("CD161")
+p1 | p2
+```
+
+## Incorporating gene-based annotation
+
+I used the `r BiocStyle::Biocpkg("Homo.sapiens")` package and the `EnsDb.Hsapiens.v98` resource, which respectively cover the NCBI/RefSeq and Ensembl databases, to obtain gene-based annotations, such as the chromosome and gene symbol.
+
+```{r}
+# Extract rownames (Ensembl IDs) to use as key in database lookups.
+ensembl <- rownames(sce)
+
+# Pull out useful gene-based annotations from the Ensembl-based database.
+library(AnnotationHub)
+library(ensembldb)
+ah <- AnnotationHub()
+ensdb <- query(ah, c("EnsDb", "Homo Sapiens", 98))[[1]]
+# NOTE: These columns were customised for this project.
+ensdb_columns <- c(
+  "GENEBIOTYPE", "GENENAME", "GENESEQSTART", "GENESEQEND", "SEQNAME", "SYMBOL")
+names(ensdb_columns) <- paste0("ENSEMBL.", ensdb_columns)
+stopifnot(all(ensdb_columns %in% columns(ensdb)))
+ensdb_df <- DataFrame(
+  lapply(ensdb_columns, function(column) {
+    mapIds(
+      x = ensdb, 
+      # NOTE: Need to remove gene version number prior to lookup.
+      keys = gsub("\\.[0-9]+$", "", ensembl),
+      keytype = "GENEID",
+      column = column,
+      multiVals = "CharacterList")
+  }),
+  row.names = ensembl)
+# NOTE: Can't look up GENEID column with GENEID key, so have to add manually.
+ensdb_df$ENSEMBL.GENEID <- ensembl
+# NOTE: Homo.sapiens combines org.Hs.eg.db and
+#       TxDb.Hsapiens.UCSC.hg38.knownGene (as well as others) and therefore 
+#       uses entrez gene and RefSeq based data.
+library(Homo.sapiens)
+# NOTE: These columns were customised for this project.
+ncbi_columns <- c(
+  # From TxDB: None required
+  # From OrgDB
+  "ALIAS", "ENTREZID", "GENENAME", "REFSEQ", "SYMBOL")
+names(ncbi_columns) <- paste0("NCBI.", ncbi_columns)
+stopifnot(all(ncbi_columns %in% columns(Homo.sapiens)))
+ncbi_df <- DataFrame(
+  lapply(ncbi_columns, function(column) {
+    mapIds(
+      x = Homo.sapiens, 
+      # NOTE: Need to remove gene version number prior to lookup.
+      keys = gsub("\\.[0-9]+$", "", ensembl),
+      keytype = "ENSEMBL",
+      column = column,
+      multiVals = "CharacterList")
+  }),
+  row.names = ensembl)
+rowData(sce) <- cbind(ensdb_df, ncbi_df)
+```
+
+Having quantified gene expression against the GENCODE gene annotation, we have Ensembl-style identifiers for the genes. 
+These identifiers are used as they are unambiguous and highly stable. 
+However, they are difficult to interpret compared to the gene symbols which are more commonly used in the literature.
+Henceforth, we will use gene symbols (where available) to refer to genes in our analysis and otherwise use the Ensembl-style gene identifiers^[Some care is taken to account for missing and duplicate gene symbols; missing symbols are replaced with the Ensembl identifier and duplicated symbols are concatenated with the (unique) Ensembl identifiers.].
+
+```{r}
+# Replace the row names of the SCE by the gene symbols (where available).
+rownames(sce) <- uniquifyFeatureNames(
+  ID = rownames(sce), 
+  # NOTE: An Ensembl ID may map to 0, 1, 2, 3, ... gene symbols.
+  #       When there are multiple matches only the 1st match is used.
+  names = vapply(rowData(sce)$ENSEMBL.SYMBOL, function(x) {
+    if (length(x)) {
+      x[[1]]
+    } else {
+      NA_character_
+    }
+    },
+    character(1)))
+```
+
+We also construct some useful gene sets: mitochondrial genes, ribosomal protein genes, sex chromosome genes, and pseudogenes.
+
+```{r}
+# Some useful gene sets
+mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes 
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+
+
+## Filtering out low-abundance genes
+
+Low-abundance genes are problematic as zero or near-zero counts do not contain much information for reliable statistical inference [@bourgon2010independent].
+These genes typically do not provide enough evidence to reject the null hypothesis during testing, yet they still increase the severity of the multiple testing correction.
+In addition, the discreteness of the counts may interfere with statistical procedures, e.g., by compromising the accuracy of continuous approximations.
+Thus, low-abundance genes are often removed in many RNA-seq analysis pipelines before the application of downstream methods.
+
+The 'optimal' choice of filtering strategy depends on the downstream application.
+A more aggressive filter is usually required to remove discreteness (e.g., for normalization) compared to that required for removing underpowered tests.
+For hypothesis testing, the filter statistic should also be independent of the test statistic under the null hypothesis.
+Thus, we (or the relevant function) will filter at each step as needed, rather than applying a single filter for the entire analysis.
+
+Several metrics can be used to define low-abundance genes.
+The most obvious is the average count for each gene, computed across all cells in the data set.
+We typically observe a peak of moderately expressed genes following a plateau of lowly expressed genes (Figure \@ref(fig:abhist)).
+
+```{r abhist, fig.cap = "Histogram of log-average counts for all genes in the combined data set.", results = "hide"}
+ave_counts <- calculateAverage(sce)
+par(mfrow = c(1, 1))
+hist(
+  x = log10(ave_counts), 
+  breaks = 100, 
+  main = "", 
+  col = "grey",
+  xlab = expression(Log[10] ~ "average count"))
+to_keep <- ave_counts > 0
+sce <- sce[to_keep, ]
+```
+
+<!-- We remove `r number(sum(!to_keep), big.mark = ",")` genes that are not expressed in any cell. -->
+<!-- Such genes provide no information and would be removed by any filtering strategy. -->
+<!-- We retain `r number(sum(to_keep), big.mark = ",")` for downstream analysis. -->
+
+# Normalization
+
+UMI counts are subject to differences in capture efficiency and sequencing depth between cells [@stegle2015computational].
+Normalization is required to eliminate these cell-specific biases prior to downstream quantitative analyses.
+This is often done by assuming that most genes are not differentially expressed (DE) between cells.
+Any systematic difference in count size across the non-DE majority of genes between two cells is assumed to represent bias and is removed by scaling.
+More specifically, 'size factors' are calculated that represent the extent to which counts should be scaled in each library.
+
+## Using the deconvolution method to deal with zero counts
+
+Size factors can be computed with several different approaches, e.g., using the `estimateSizeFactorsFromMatrix` function in the `r Biocpkg("DESeq2")` package [@anders2010differential;@love2014moderated], or with the `calcNormFactors` function [@robinson2010scaling] in the `r Biocpkg("edgeR")` package.
+However, single-cell data can be problematic for these bulk data-based methods due to the dominance of low and zero counts.
+To overcome this, we pool counts from many cells to increase the count size for accurate size factor estimation [@lun2016pooling].
+Pool-based size factors are then 'deconvolved' into cell-based factors for cell-specific normalization.
+This removes scaling biases associated with cell-specific differences in capture efficiency, sequencing depth and composition biases.
+
+```{r, results = "hide"}
+library(scran)
+set.seed(9434887)
+clusters <- quickCluster(sce)
+#round(prop.table(table(clusters, sce$batch), 1), 2)
+sce <- computeSumFactors(sce, clusters = clusters, min.mean = 0.1)
+summary(sizeFactors(sce))
+```
+
+We check that the size factors are roughly aligned with the total library sizes (Figure \@ref(fig:normplot)).
+Deviations from the diagonal correspond to composition biases due to differential expression between cell subpopulations.
+
+```{r normplot, fig.cap = "Size factors from deconvolution, plotted against library sizes for all cells in each dataset. Axes are shown on a log-scale.", results = "hide", fig.asp = 1}
+xlim <- c(0.1, max(sce$sum) / 1e3)
+ylim <- range(sizeFactors(sce))
+par(mfrow = c(3, 3))
+lapply(levels(sce$batch), function(b) {
+  sce <- sce[, sce$batch == b]
+  plot(
+    x = sce$sum / 1e3, 
+    y = sizeFactors(sce), 
+    log = "xy",
+    xlab = "Library size (thousands)", 
+    ylab = "Size factor",
+    xlim = xlim,
+    ylim = ylim,
+    main = b,
+    pch = 16,
+    cex = 0.5)
+})
+```
+
+## Applying the size factors to normalize gene expression
+
+The count data are used to compute normalized log-expression values for use in downstream analyses.
+Each value is defined as the log~2~-ratio of each count to the size factor for the corresponding cell, after adding a prior count of 1 to avoid undefined values at zero counts.
+Division by the size factor ensures that any cell-specific biases are removed.
+
+```{r, results = "hide"}
+# NOTE: No need for multiBatchNorm() since the size factors were computed 
+#       jointly using all samples.
+sce <- logNormCounts(sce)
+```
+
+## Computing separate size factors for spike-in transcripts
+
+Size factors computed from the counts for endogenous genes are usually not appropriate for normalizing the counts for spike-in transcripts. 
+To ensure normalization is performed correctly, we compute a separate set of size factors for the spike-in set.
+For each cell, the spike-in-specific size factor is defined as the total count across all transcripts in the spike-in set. 
+This assumes that none of the spike-in transcripts are differentially expressed, which is reasonable given that the same amount and composition of spike-in RNA should have been added to each cell [@lun2017assessing]. 
+
+```{r}
+sizeFactors(altExp(sce, "ERCC")) <- librarySizeFactors(altExp(sce, "ERCC"))
+```
+
+# Feature selection
+
+## Motivation
+
+We often use scRNA-seq data in exploratory analyses to characterize heterogeneity across cells.
+Procedures like dimensionality reduction and clustering compare cells based on their gene expression profiles, which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells.
+The choice of genes to use in this calculation has a major impact on the behaviour of the metric and the performance of downstream methods.
+We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise.
+This aims to preserve interesting biological structure without the variance that obscures that structure.
+It also reduces the size of the dataset to improve computational efficiency of later steps.
+
+## Quantifying per-gene variation
+
+### Variance of the log-counts
+
+The simplest approach to quantifying per-gene variation is to simply compute the variance of the log-normalized expression values (referred to as "log-counts" for simplicity) for each gene across all cells in the population [@lun2016step].
+This has an advantage in that the feature selection is based on the same log-values that are used for later downstream steps.
+In particular, genes with the largest variances in log-values will contribute the most to the Euclidean distances between cells.
+By using log-values here, we ensure that our quantitative definition of heterogeneity is consistent throughout the entire analysis.
+
+Calculation of the per-gene variance is simple but feature selection requires modelling of the mean-variance relationship.
+
+### Quantifying technical noise
+
+To account for the mean-variance relationship, we fit a trend to the variance with respect to abundance across the ERCC spike-in transcripts.
+The premise here is that spike-ins should not be affected by biological variation, so the fitted value of the spike-in trend should represent a better estimate of the technical component for each gene.
+
+### Accounting for blocking factors
+
+Data containing multiple batches will often exhibit batch effects.
+We are usually not interested in highly variable genes (HVGs) that are driven by batch effects. 
+Rather, we want to focus on genes that are highly variable within each batch.
+This is naturally achieved by performing trend fitting and variance decomposition separately for each batch.
+Here we treat each plate as a separate batch.
+
+```{r}
+sce$batch <- sce$plate_number
+batch_colours <- plate_number_colours
+var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
+```
+
+The use of a batch-specific trend fit is useful as it accommodates differences in the mean-variance trends between batches.
+This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage or in the amount of spike-in RNA added.
+
+Figure \@ref(fig:trendplots) visualizes the quality of the batch-specific trend fits and Figure \@ref(fig:trendplots-fits) highlights the need for batch-specific estimates of these fits.
+The analysis of each plate yields estimates of the biological and technical components for each gene, which are averaged across plates to take advantage of information from multiple batches.
+
+```{r trendplots, fig.cap = "Variance of normalized log-expression values for each gene in each plate, plotted against the mean log-expression. The coloured line represents the mean-dependent trend fitted to the variances of the spike-in transcripts (red).", results = "hide", fig.asp = 2 / 3}
+xlim <- c(0, max(sapply(var_fit$per.block, function(x) max(x$mean))))
+ylim <- c(0, max(sapply(var_fit$per.block, function(x) max(x$total))))
+par(mfrow = c(2, 3))
+blocked_stats <- var_fit$per.block
+for (i in colnames(blocked_stats)) {
+  current <- blocked_stats[[i]]
+  plot(
+    current$mean,
+    current$total,
+    main = i,
+    pch = 16,
+    cex = 0.5,
+    xlab = "Mean of log-expression",
+    ylab = "Variance of log-expression",
+    xlim = xlim,
+    ylim = ylim)
+  curfit <- metadata(current)
+  points(curfit$mean, curfit$var, col = "red", pch = 16)
+  curve(curfit$trend(x), col = batch_colours[[i]], add = TRUE, lwd = 2) 
+}
+```
+
+```{r trendplots-fits, fig.cap = "An overlay of the trend fits from the previous figure, highlighting the need for the batch-specific trend fits. Each line is a the trend line for a particular batch (with colours matching the previous plot).", results = "hide", fig.asp = 1}
+par(mfrow = c(1, 1))
+# NOTE: 'Fake' plot with right dimensions to overlay trends.
+plot(
+  x = current$mean, 
+  y = current$total, 
+  pch = 0,
+  cex = 0.6, 
+  xlab = "Mean log-expression", 
+  ylab = "Variance of log-expression", 
+  main = "Trends", 
+  xlim = xlim, 
+  ylim = ylim,
+  col = "white")
+lapply(colnames(blocked_stats), function(b) {
+  curve(
+    metadata(var_fit$per.block[[b]])$trend(x), 
+    col = batch_colours[b], 
+    lwd = 1, 
+    add = TRUE)
+})
+legend(
+  "topright", 
+  legend = levels(sce$batch), 
+  col = batch_colours,
+  lwd = 2,
+  title = "Plate number",
+  ncol = 2,
+  cex = 0.8)
+```
+
+## Selecting highly variable genes (HVGs)
+
+Once we have quantified the per-gene variation, the next step is to select the subset of HVGs to use in downstream analyses.
+A larger subset will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes, at the cost of increasing noise from irrelevant genes that might obscure said signal.
+It is difficult to determine the optimal trade-off for any given application as noise in one context may be useful signal in another.
+For example, heterogeneity in T cell activation responses is an interesting phenomena but may be irrelevant noise in studies that only care about distinguishing the major immunophenotypes.
+
+We opt to only remove the obviously uninteresting genes with variances below the trend.
+By doing so, we avoid the need to make any judgement calls regarding what level of variation is interesting enough to retain.
+This approach represents one extreme of the bias-variance trade-off where bias is minimized at the cost of maximizing noise.
+
+```{r}
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+```
+
+### Exclusion of gene sets from HVGs
+
+```{r}
+is_mito <- hvg %in% mito_set
+is_ribo <- hvg %in% ribo_set
+is_pseudogene <- hvg %in% pseudogene_set
+is_sex <- hvg %in% sex_set
+```
+
+We find that the most highly variable genes in this dataset are somewhat enriched for pseudogenes (n = `r sum(is_pseudogene)`), with Figure \@ref(fig:hvg-check) showing around 1/3 of the top-500 HVGs are pseudogenes.
+Figure \@ref(fig:hvg-check) also shows the percentage of the top-k HVGs that are ribosomal protein genes^[Here, ribosomal protein genes are defined as those gene symbols starting with "Rpl" or "Rps" or otherwise found in the ["KEGG_RIBOSOME" gene set published by MSigDB](https://www.gsea-msigdb.org/gsea/msigdb/cards/KEGG_RIBOSOME.html), namely: `r glue::glue_collapse(sort(ribo_set), sep = ", ")`] (n = `r sum(is_ribo)`), genes on the sex chromosomes (n = `r sum(is_sex)`), and mitochondrial genes (n = `r sum(is_mito)`).
+
+```{r hvg-check, fig.cap = "Percentage of top-K HVGs that are genes of a given class."}
+plot(
+  100 * cumsum(is_mito) / seq_along(hvg),
+  log = "x",
+  ylim = c(0, 100),
+  ylab = "%",
+  xlab = "Top-k genes",
+  col = "#DF536B",
+  pch = 16)
+points(100 * cumsum(is_ribo) / seq_along(hvg), col = "#61D04F", pch = 16)
+points(100 * cumsum(is_pseudogene) / seq_along(hvg), col = "#2297E6", pch = 16)
+points(100 * cumsum(is_sex) / seq_along(hvg), col = "#28E2E5", pch = 16)
+points(
+  100 * cumsum(is_mito | is_ribo | is_pseudogene | is_sex) / seq_along(hvg), 
+  col = "black",
+  pch = 16)
+legend(
+  "topright",
+  pch = 16,
+  col = c("black",  "#2297E6", "#61D04F", "#28E2E5", "#DF536B"),
+  legend = c("Union", "Pseudogene", "Ribosomal protein", "Sex", "Mitochondrial"))
+```
+
+Generally speaking, pseudogenes, ribosomal protein genes, and mitochondrial genes are of lesser biological relevance, so we tend may exclude them from the HVGs.
+This means that these genes can no longer **directly** influence some of the subsequent steps in the analysis, including:
+
+- Dimensionality reduction
+  - Principal component analysis (PCA)
+  - Uniform manifold approximation and projection (UMAP)
+- Data integration
+  - Mutual nearest neighbours (MNN)
+- Clustering
+
+Although the exclusion of these genes from the HVGs prevents them from directly influencing these analyses, they may still **indirectly**  associated with these steps or their outcomes.
+For example, if there is a set of (non ribosomal protein) genes that are strongly associated with ribosomal protein gene expression, then we may still see a cluster associated with ribosomal protein gene expression.
+
+Finally, and to emphasise, we have only excluded these gene sets from the HVGs, i.e. we have not excluded them entirely from the dataset.
+In particular, this means that these genes may appear in downstream results (e.g., gene lists resulting from a differential expression analysis between cells in different clusters or with different genotypes).
+
+```{r}
+hvg <- hvg[!(is_mito | is_ribo | is_pseudogene)]
+```
+
+## Summary
+
+We are left with `r scales::number(length(hvg), big.mark = ",")` HVGs by this approach^[This is a large number of HVGs but the results don't qualitatively change by reducing this to, say, the top-1000 HVGs.].
+Figure \@ref(fig:hvgs) shows the expression of the top-10 HVGs.
+
+```{r hvgs, fig.cap = "Violin plots of normalized log-expression values for the top-10 HVGs. Each point represents the log-expression value in a single cell."}
+plotExpression(object = sce, features = hvg[1:10])
+```
+
+# Dimensionality reduction
+
+Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes.
+In these applications, each individual gene represents a dimension of the data. 
+If we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell.
+Dimensionality reduction extends this idea to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
+
+As the name suggests, dimensionality reduction aims to reduce the number of separate dimensions in the data.
+This is possible because different genes are correlated if they are affected by the same biological process.
+Thus, we do not need to store separate information for individual genes, but can instead compress multiple features into a single dimension.
+This reduces computational work in downstream analyses, as calculations only need to be performed for a few dimensions rather than thousands of genes; reduces noise by averaging across multiple genes to obtain a more precise representation of the patterns in the data; and enables effective plotting of the data, for those of us who are not capable of visualizing more than 3 dimensions.
+
+## Principal component analysis
+
+Principal components analysis (PCA) discovers axes in high-dimensional space that capture the largest amount of variation.
+In PCA, the first axis (or "principal component", PC) is chosen such that it captures the greatest variance across cells.
+The next PC is chosen such that it is orthogonal to the first and captures the greatest remaining amount of variation, and so on.
+
+By definition, the top PCs capture the dominant factors of heterogeneity in the data set.
+Thus, we can perform dimensionality reduction by restricting downstream analyses to the top PCs.
+This strategy is simple, highly effective and widely used throughout the data sciences.
+
+When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner.
+This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes.
+By comparison, random technical or biological noise is expected to affect each gene independently.
+There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs.
+This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise.
+
+We perform the PCA on the log-normalized expression values.
+PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure.
+This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs, as done in [Feature selection].
+
+The choice of the number of PCs is a decision that is analogous to the choice of the number of HVGs to use.
+Using more PCs will avoid discarding biological signal in later PCs, at the cost of retaining more noise.
+
+We use the strategy of retaining all PCs until the percentage of total variation explained reaches some threshold.
+We derive a suitable value for this threshold by calculating the proportion of variance in the data that is attributed to the biological component.
+This is done using the the variance modelling results from [Quantifying per-gene variation].
+
+```{r}
+set.seed(557)
+sce <- denoisePCA(sce, var_fit, subset.row = hvg)
+```
+
+This retains `r ncol(reducedDim(sce, "PCA"))` dimensions, which represents the lower bound on the number of PCs required to retain all biological variation.
+Any fewer PCs will definitely discard some aspect of biological signal^[Note that the converse is not true, i.e., there is no guarantee that the retained PCs capture all of the signal, which is only generally possible if no dimensionality reduction is performed at all.].
+This approach provides a reasonable choice when we want to retain as much signal as possible while still removing some noise.
+
+## Dimensionality reduction for visualization
+
+We use the uniform manifold approximation and projection (UMAP) method [@McInnes2018-hy] to perform further dimensionality reduction for visualization.
+
+```{r}
+library(uwot)
+set.seed(785146)
+sce <- runUMAP(sce, dimred = "PCA")
+```
+
+
+```{r umap-donor, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `donor`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -donor)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = donor), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = donor_colours, name = "donor") +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~donor, ncol = 2, labeller = label_both) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  guides(colour = FALSE)
+```
+
+```{r umap-plate-number, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number`.", fig.asp = 2 / 3}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -plate_number)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate`.", fig.asp = 2 / 3}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -tissue)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue` and `post_hoc_sample_gate` and further coloured by `plate_number`.", fig.asp = 1.2}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -tissue, -post_hoc_sample_gate)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_grid(post_hoc_sample_gate ~ tissue) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1)))
+```
+
+## Summary
+
+Although Figures \@ref(fig:umap) - \@ref(fig:umap-tissue-post-hoc-sample-gate) are only preliminary summaries of the data, there are few points worth highlighting:
+
+- There are no strong `donor`-associated differences.
+- There are strong `plate_number`-associated differences.
+- There are strong `post_hoc_sample_gate`-associated differences.
+- There are strong `tissue`-associated differences.
+- There are library size-associated differences, which is itself largely driven by differences in library size between the `Cell line` and non-`Cell line` samples.
+
+However, it is premature to draw any strong conclusions
+We will seek to mitigate the differences associated with technical factors (e.g., `plate_number` and library size) in downstream analyses so that we might better investigate the biological factors (i.e. `tissue` and `post_hoc_sample_gate`).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Cluster-specific upregulated genes (per row)
+
+```{r}
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce, use.dimred = "PCA")
+clusters <- igraph::cluster_louvain(snn_gr)
+sce$cluster <- factor(clusters$membership)
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
+  levels(sce$cluster))
+sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+```
+
+We look for genes that are specifically upregulated in row P compared to row L, M, N, O of plate LCE511
+
+```{r}
+# subset to plate- and row-of-interest
+sce2 <- sce[, sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) %in% c("L", "M", "N", "O", "P")]
+sce2$row <- factor(sub("^([[:alpha:]]*).*", "\\1", sce2$well_position))
+
+# set row colours
+library(Polychrome)
+row_colours <- setNames(
+  Polychrome::kelly.colors(nlevels(sce2$row)+1)[-1],
+  levels(sce2$row))
+sce2$row_colours <- row_colours[sce2$row]
+```
+
+```{r}
+row_markers <- findMarkers(
+  sce2,
+  groups = sce2$row,
+  direction = "up",
+  pval.type = "all",
+  row.data = rowData(sce))
+```
+
+Most rows do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+
+```{r}
+print(sapply(row_markers, function(x) sum(x$FDR < 0.05)))
+```
+
+The heatmaps below highlight the top-50 genes for each row
+
+```{r, fig.asp = 6}
+collected <- list()
+for (lab in names(row_markers)) {
+  lab_markers <- row_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce2,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("row", "cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      row = row_colours,
+      cluster = cluster_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

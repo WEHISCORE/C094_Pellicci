@@ -266,29 +266,40 @@ p6 <- ggcells(sce) +
 NOTE:
 **TODO: double check these notes**
 
-  For `sample_name`,
-    - cluster 5 with most cells from `Blood 3`, but no cells from `Blood 1`
-    - cluster 3 with most cells from `Thymus`
-    - almost all cells in cluster 1 were from `Cell line`
-  
-  For `post_hoc_sample_gate`,
-    - cluster 3 with more cells from phase `P5`, `P6`, and `P7`
-    - cluster 1 with almost all cells from `P5`, but no cells from `P7`
-  
-  For `plate_number`,
-    - cluster 2 with more cells from plate `LCE511`
-    - cluster 5 with more cells from plate `LCE509`
-    - cluster 6 with more `LCE514`
-  
-  For `tissue`,
-    - cluster 5 with cells mostly from `Blood`
-    - cluster 3 with cells mostly from `Thymus` 
-    - cluster 1 are mostly SKW3 cell line, accompanied with some `Thymus 2` and `Thymus 3` cells
+  For the unmerged data, 
+    - cluster 2, 4, and 6 represent the 3 types/status of cells within P8 and can be found in all blood and thymus samples
+    - most of the cells in P5, P6 and P7 form 1 single cluster, i.e. cluster 3, and they found mostly in thymus sample only
+    - cluster 1 and 5 are the only standalone clusters separated from the major group (and they are the only two clusters, need to decided "to keep or not to keep" during cell selection)
+    - cluster 1 is basically the control cell line, accompanied with a small amount of cells from thymus 2 and 3
+    - cluster 5 are formed from cells mostly from blood 3 and thymus 3 only, implying it was originated from donor 3 only somehow
+    - merging or not will be decided based on if the feature above can be preserved/ sharpened
 
-  For `donor`,
-    - cluster 5 with almost all cells from `donor 3`
+<!-- NOTE: -->
+<!-- **TODO: double check these notes** -->
 
-Is `cluster 5` a unique cell type, or contamination from `Blood 3` of `donor 3` only ? Remove or keep ???
+<!--   For `sample_name`, -->
+<!--     - cluster 5 with most cells from `Blood 3`, but no cells from `Blood 1` -->
+<!--     - cluster 3 with most cells from `Thymus` -->
+<!--     - almost all cells in cluster 1 were from `Cell line` -->
+
+<!--   For `post_hoc_sample_gate`, -->
+<!--     - cluster 3 with more cells from phase `P5`, `P6`, and `P7` -->
+<!--     - cluster 1 with almost all cells from `P5`, but no cells from `P7` -->
+
+<!--   For `plate_number`, -->
+<!--     - cluster 2 with more cells from plate `LCE511` -->
+<!--     - cluster 5 with more cells from plate `LCE509` -->
+<!--     - cluster 6 with more `LCE514` -->
+
+<!--   For `tissue`, -->
+<!--     - cluster 5 with cells mostly from `Blood` -->
+<!--     - cluster 3 with cells mostly from `Thymus`  -->
+<!--     - cluster 1 are mostly SKW3 cell line, accompanied with some `Thymus 2` and `Thymus 3` cells -->
+
+<!--   For `donor`, -->
+<!--     - cluster 5 with almost all cells from `donor 3` -->
+
+<!-- Is `cluster 5` a unique cell type, or contamination from `Blood 3` of `donor 3` only ? Remove or keep ??? -->
 
 **TODO: need to check for plate-specific clusters, donor-/ sample_name-specific cluster**
 
@@ -784,7 +795,8 @@ ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
 
 NOTE:
 **TODO: double check this note**
-  - Blood is in P8, thymus contains cells from all 4 phases, i.e. P5, P6, P7 and P8.
+
+  - Blood contains cells mostly from P8 only, whilst thymus contains cells from all 4 phases, i.e. P5, P6, P7 and P8.
   - Cell line seems contain cells in P5, P6, and P8 (not P7)
   - the batch correction may potentially mask the brown cluster in the unmerge data; if is an additional transition phase of P8 (then it is "to keep"), but if the merges help remove unnecessary extra groups (then it is "not to keep") and one should perform MNN; or simply decrease k to increase number of cluster during search of SNNs (as there is obvious plate-based grouping, though it was not picked up by clustering .... !?
 
@@ -1270,12 +1282,13 @@ ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
 
 NOTE:
 **TODO: double check this note**
+
   - auto and manual merge 1 can correct the batch effect, but not manual merge 2 (seems make it even worst)
   - but intriguingly, the clustering for manual merge 2 is not following plate, but show to be orthogonal to the "plate-specific distribution"
   - in terms of conclusion drawn, similar to using all cells, I can still see:
-  1) shifting of cells P6 to P7, then P8 in unmerge and even all merges
+  1) shifting of cells P6 to P7, then P8 in unmerged and even all merges
   2) blood contains cells at the final P8 stage, while thymus contain cells from all 4 stage
-  3) small bit of thymus cells seems to transccriptonally superimpoed with the SKW3 cell line
+  3) small bit of thymus cells seems to transcriptonally superimposed with the SKW3 cell line
 
 
 
@@ -1289,7 +1302,7 @@ NOTE:
 
 
 
-## MNN3: Cell line removed (all cells remained-guiding merge)
+## MNN3: Cell line removed (all cells remained-guiding the merge)
 
 We treat each plate as a batch and also test to manually provide the merge order.
 
@@ -1760,6 +1773,7 @@ ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
 
 NOTE:
 **TODO: double check this note**
+
   - similar conclusion as the previous 2 methods can still be drawn
   - even after cell line was removed from all plate, we can still see a remote cluster, which are cells in `P5`, `P7`, and `P8` (not `P6`) and can be found in both `blood` and `thymus` samples
 
@@ -1786,14 +1800,106 @@ NOTE:
 
 
 
+### Cluster-specific upregulated genes (unmerge dataset)
 
-
-
-
-
+We look for genes that are specifically upregulated in each cluster compared to all other clusters.
 
 ```{r}
-knitr::knit_exit()
+cluster_markers <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  direction = "up",
+  pval.type = "all",
+  row.data = rowData(sce))
+```
+
+Most clusters do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+
+```{r}
+print(sapply(cluster_markers, function(x) sum(x$FDR < 0.05)))
+```
+
+The heatmaps below highlight the top-50 genes for each cluster.
+
+```{r, fig.asp = 6}
+collected <- list()
+for (lab in names(cluster_markers)) {
+  lab_markers <- cluster_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      cluster = cluster_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+```
+
+If we focus on the top 50 cluster-specific marker of cluster 1 and narrow down the heatmap to look only at cells from:
+1) cluster 1; or
+2) cluster 2 and is from Thymus 2; or 
+3) cluster 2 and is from Thymus 3
+
+```{r}
+sce1 <- sce[, (sce$cluster == "1") | (sce$cluster == "2" & sce$sample_name == "Thymus 2" | sce$cluster == "2" & sce$sample_name == "Thymus 3" )]
+
+lab_markers <- cluster_markers[[1]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  
+ plotHeatmap(
+    object = sce1,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      cluster = cluster_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours)
+    )
+```
+
+CSVs of the gene lists are available in [`output/unmerged/cluster_markers`](../output/unmerged/cluster_markers).
+
+```{r}
+dir.create(here("output/unmerged/cluster_markers"), recursive = TRUE)
+for (n in names(cluster_markers)) {
+  message(n)
+  gzout <- gzfile(
+    description = file.path(
+      here("output/unmerged/cluster_markers"),
+      sprintf("cluster_%02d.csv.gz", as.integer(n))),
+    open = "wb")
+  write.csv(
+    as.data.frame(flattenDF(cluster_markers[[n]])),
+    gzout,
+    # NOTE: quote = TRUE needed because some fields contain commas.
+    quote = TRUE,
+    row.names = TRUE)
+  close(gzout)
+}
 ```
 
 
@@ -1828,6 +1934,101 @@ knitr::knit_exit()
 
 
 
+### Cluster-specific upregulated genes (per row)
+
+We look for genes that are specifically upregulated in row P compared to row L, M, N, O of plate LCE511
+
+```{r}
+# subset to plate- and row-of-interest
+sce2 <- sce[, sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) %in% c("L", "M", "N", "O", "P")]
+sce2$row <- factor(sub("^([[:alpha:]]*).*", "\\1", sce2$well_position))
+
+# set row colours
+library(Polychrome)
+row_colours <- setNames(
+  Polychrome::kelly.colors(nlevels(sce2$row)+1)[-1],
+  levels(sce2$row))
+sce2$row_colours <- row_colours[sce2$row]
+```
+
+```{r}
+row_markers <- findMarkers(
+  sce2,
+  groups = sce2$row,
+  direction = "up",
+  pval.type = "all",
+  row.data = rowData(sce))
+```
+
+Most rows do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+
+```{r}
+print(sapply(row_markers, function(x) sum(x$FDR < 0.05)))
+```
+
+The heatmaps below highlight the top-50 genes for each row
+
+```{r, fig.asp = 6}
+collected <- list()
+for (lab in names(row_markers)) {
+  lab_markers <- row_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce2,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("row", "cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      row = row_colours,
+      cluster = cluster_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+knitr::knit_exit()
+```
 
 
 

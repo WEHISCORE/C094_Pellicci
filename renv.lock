@@ -237,6 +237,13 @@
       "Source": "Bioconductor",
       "Hash": "dc29ad9ced0243adb1419cad92f21fc7"
     },
+    "Polychrome": {
+      "Package": "Polychrome",
+      "Version": "1.2.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "53b9435d839f323c832a4fb32ddd5088"
+    },
     "ProtGenerics": {
       "Package": "ProtGenerics",
       "Version": "1.22.0",
@@ -1297,6 +1304,13 @@
       "Version": "1.18.6",
       "Source": "Bioconductor",
       "Hash": "522082c4db93621132cbafb1a37b6df4"
+    },
+    "scatterplot3d": {
+      "Package": "scatterplot3d",
+      "Version": "0.3-41",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "0d3e8c286b735517c2df4ed48848e732"
     },
     "scran": {
       "Package": "scran",
