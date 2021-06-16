@@ -4,6 +4,19 @@
   setNames(as.data.frame(x), colnames(x))
 }
 
+# Collapse labels only found in fewer than `cutoff` proportion of cells in all
+# patients as 'other'
+.collapseLabel <- function(labels, patient, cutoff = 0.01) {
+  tmp <- table(labels, patient)
+  tmp2 <- apply(tmp, 2, function(x) (x / sum(x)) > cutoff)
+  tmp3 <- rownames(tmp2)[rowAnys(tmp2)]
+  tmp4 <- ifelse(
+    labels %in% tmp3,
+    as.character(labels),
+    "other")
+  factor(tmp4, names(sort(table(tmp4), decreasing = TRUE)))
+}
+
 # Helper function to Combine data from 2 SCEs using gene names.
 # NOTE: This assumes more than I'd like about the rowData and doesn't do much
 #       checking of these assumptions.
