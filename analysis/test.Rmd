@@ -23,13 +23,13 @@ library(cowplot)
 library(patchwork)
 library(scales)
 
+source(here("code", "helper_functions.R"))
+
 # NOTE: Using >= 4 cores seizes up my laptop. Can use more on unix box.
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 3L))
 
 knitr::opts_chunk$set(
   fig.path = "test/")
-
-source(here("code", "helper_functions.R"))
 ```
 
 # Setting up the data
@@ -436,7 +436,7 @@ pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
-
+**NOTE: skip QC in here in order to preserve row P data in the SCE object**
 
 ## Filtering out low-abundance genes
 
@@ -876,6 +876,32 @@ Although Figures \@ref(fig:umap) - \@ref(fig:umap-tissue-post-hoc-sample-gate) a
 
 However, it is premature to draw any strong conclusions
 We will seek to mitigate the differences associated with technical factors (e.g., `plate_number` and library size) in downstream analyses so that we might better investigate the biological factors (i.e. `tissue` and `post_hoc_sample_gate`).
+
+
+
+
+
+
+
+
+
+
+
+
+**TODO: For row P, start from un_QC data (in order to keep row P, ie blood 2), take thymus 2 vs blood 2 from other 5 plates (not LCE511, as they are supposed to be sorted properly), find the marker to distinguish thymus 2 and blood 2, then look into these genes for row L - P and (see if row O got marker from row P as well)**
+# i.e.
+# backup SCE
+# subset to remove plate LCE511
+# use plate remained to find marker for "groups = sample_name" ?
+# heatmap
+# then reapply the following scrip to look for row O and row P marker
+# see if row O got both marker from thymus 2 and blood 2 ???
+
+
+
+
+
+
 
 
 

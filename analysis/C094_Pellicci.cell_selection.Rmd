@@ -23,6 +23,7 @@ library(Glimma)
 library(BiocParallel)
 library(patchwork)
 library(pheatmap)
+library(janitor)
 source(here("code", "helper_functions.R"))
 # NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
@@ -309,6 +310,7 @@ library(batchelor)
 set.seed(1819)
 
 # auto merge
+# NOTE: auto merge does not make sense; this seems like merging plate with adjacent number first (i.e. LCE513 + LCE514, + LCE509, LCE508, LCE511, LCE512); remark: all plates were in the same sequencing run, i.e. NN215
 mnn_out_1 <- fastMNN(
   multiBatchNorm(sce0, batch = sce0$batch),
   batch = sce0$batch,
@@ -344,7 +346,7 @@ One useful diagnostic of the MNN algorithm is the proportion of variance within 
 Large proportions of lost variance ($>10 \%$) suggest that correction is removing genuine biological heterogeneity.
 This would occur due to violations of the assumption of orthogonality between the batch effect and the biological subspace [@haghverdi2018batch].
 
-Among the 3 merge orders, the *manual merge 2* (Table \@ref(tab:tab3)) lead to the least loss of biological variance from the dataset.
+Among the three merge orders, the *manual merge 2* (Table \@ref(tab:tab3)) lead to the least loss of biological variance from the dataset.
 
 ```{r tab1}
 tab1 <- metadata(mnn_out_1)$merge.info$lost.var
@@ -352,7 +354,6 @@ knitr::kable(
   100 * tab1,
   digits = 1,
   caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (auto). Ideally, all these values should be small (e.g., < 5%).")
-# NOTE: auto merge does not make sense; this seems like merging plate with adjacent number first (i.e. LCE513 + LCE514, + LCE509, LCE508, LCE511, LCE512); remark: all plates were in the same sequencing run, i.e. NN215
 ```
 
 ```{r tab2}
@@ -508,6 +509,7 @@ p1 + p2 + p3 + p4 +
 To get an insight, here we breakdown the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number)), `post_hoc_sample_gate` (Figure \@ref(fig:umap-post-hoc-sample-gate)), and `tissue` (Figure \@ref(fig:umap-tissue)).
 
 From the perspective of correcting the batch effect, the MNN correction can effectively alleviate the plate-specific grouping of cells (Figure \@ref(fig:umap-plate-number)).
+
 From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the "shifting" of the transcriptomic stages of cells P6 to P7, then P8 (Figure \@ref(fig:umap-post-hoc-sample-gate)); (ii) Blood contains cells mostly from P8 only, whilst thymus contains cells from all 3 phases, i.e. P6, P7 and P8 (Figure \@ref(fig:umap-tissue)).
 
 ```{r umap-plate-number, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
@@ -625,9 +627,8 @@ align ="h"
 )
 ```
 
-Furthermore, we also investigate the usefulness of the control cell line included for batch correction.
+Further, we also investigate the usefulness of the control cell line included for batch correction.
 Unfortunately, the cell line alone seems not be able to help with the batch correction, but either exacerbated or leave the batch impact unresolved (Figure \@ref(fig:umap-plate-number-cell-line-guided-MNN)).
-Together with the fact that the SKW3 cell line seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the thymus cell and form a standalone cluster in Figure \@ref(fig: umap-tissue)), we decide to remove the cell line proceed the analyses with only the sample cells.
 
 ```{r, results = "hide"}
 sce1 <- sce
@@ -768,46 +769,82 @@ align ="h"
 )
 ```
 
+Notably, the SKW3 cell line seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the thymus cell and form a standalone cluster in Figure \@ref(fig:umap-tissue)).
+To identify the identity of this cells, we perform cell annotation at cluster level with SingleR.
+
+## Cell type estimation
+
+Figure \@ref(fig:umap-with-fine-cluster-labels) overlays these cell type labels on the UMAP plot and shows that almost all cells of the big group formed by cluster `2`, `3`, `4` and `6` are corresponds to `Vd2 gd T cells`.
+Intriguingly, cluster `5` is annotated as `Intermediate monocytes`, whilst cluster `1` (formed mostly by the SKW3 cell line) is labelled as `Plasmablasts`.
 
 ```{r}
-knitr::knit_exit()
+library(SingleR)
+mi <- MonacoImmuneData()
+ref <- mi
+labels_fine <- ref$label.fine
+label_fine_collapsed_colours <- setNames(
+  c(
+    Polychrome::glasbey.colors(nlevels(factor(labels_fine)) + 1)[-1],
+    "orange"),
+  c(levels(factor(labels_fine)), "other"))
 ```
 
+```{r}
+pred_cluster_fine <- SingleR(
+  test = sce,
+  ref = ref[!grepl("^mt|^Rps|^Rpl", rownames(ref)), ],
+  labels = labels_fine,
+  cluster = sce$cluster,
+  BPPARAM = bpparam())
+sce$label_cluster_fine <- factor(pred_cluster_fine$pruned.labels[sce$cluster])
+sce$label_cluster_fine_collapsed <- .collapseLabel(
+  sce$label_cluster_fine,
+  sce$batch)
+sce$label_fine_collapsed_colours <- label_fine_collapsed_colours[
+  as.character(sce$label_cluster_fine)]
+umap_df <- makePerCellDF(sce)
+umap_df$label_cluster_fine_collapsed <- sce$label_cluster_fine_collapsed
+tabyl(
+  data.frame(label.fine = sce$label_cluster_fine, cluster = sce$cluster), 
+  cluster, 
+  label.fine) %>%
+  knitr::kable(
+    caption = "Cluster-level assignments using the fine labels of the MI reference.")
+```
 
+```{r umap-with-fine-cluster-labels, fig.asp = 2/3, fig.cap = "UMAP plot highlighting clusters (left) and 'fine' cluster-level labels (right) where each panel highlights droplets from a particular label. Labels with < 1% frequency are grouped together as `other`."}
+p1 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(
+    aes(colour = cluster),
+    alpha = 1,
+    size = 0.25) +
+  scale_fill_manual(values = cluster_colours) +
+  scale_colour_manual(values = cluster_colours) +
+  theme_cowplot(font_size = 10) +
+  xlab("Dimension 1") +
+  ylab("Dimension 2") +
+  ggtitle("Clusters")
+bg <- dplyr::select(umap_df, -label_cluster_fine_collapsed)
+p2 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(
+    aes(colour = label_cluster_fine_collapsed),
+    alpha = 1,
+    size = 0.25) +
+  scale_fill_manual(values = label_fine_collapsed_colours) +
+  scale_colour_manual(values = label_fine_collapsed_colours) +
+  theme_cowplot(font_size = 10) +
+  xlab("Dimension 1") +
+  ylab("Dimension 2") +
+  facet_wrap(~ label_cluster_fine_collapsed, ncol = 2) +
+  guides(colour = FALSE) + 
+  ggtitle("'fine' cluster-level label")
+p1 + p2 + plot_layout(widths = c(1, 2))
+```
 
+**TODO: based on the SingleR annotation, cluster 5 is potentially be a contaminant (intermediate monocytes and is not our interested gamma-delta T cells) that sneaked through the FACS gate and could considered to be removed**
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Cluster-specific upregulated genes (unmerged dataset)
+## Cluster-specific upregulated genes 
 
 We look for genes that are specifically upregulated in each cluster compared to all other clusters.
 
@@ -820,7 +857,7 @@ cluster_markers <- findMarkers(
   row.data = rowData(sce))
 ```
 
-Most clusters do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+Except for cluster `1`, most clusters do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
 
 ```{r}
 print(sapply(cluster_markers, function(x) sum(x$FDR < 0.05)))
@@ -828,7 +865,7 @@ print(sapply(cluster_markers, function(x) sum(x$FDR < 0.05)))
 
 The heatmaps below highlight the top-50 genes for each cluster.
 
-```{r, fig.asp = 6}
+```{r heatmap-unique, fig.asp = 6}
 collected <- list()
 for (lab in names(cluster_markers)) {
   lab_markers <- cluster_markers[[lab]]
@@ -857,20 +894,17 @@ for (lab in names(cluster_markers)) {
 wrap_plots(collected, ncol = 1)
 ```
 
-If we focus on the top 50 cluster-specific marker of cluster 1 and narrow down the heatmap to look only at cells from:
-1) cluster 1; or
-2) cluster 2 and is from Thymus 2; or 
-3) cluster 2 and is from Thymus 3
+If we zoom-in to the heatmap of the top 50 cluster-specific marker of cluster `1` (Figure \@ref(fig:heatmap-unique-focused)), we may notice that it maybe because of the likewise expression of markers (such as `H2AFZ`, `MIR1244-2`) drive the grouping of the cells from `Thymus 2` and `Thymus 3` with cells from the control cell line in forming the cluster `1`.
 
-```{r}
-sce1 <- sce[, (sce$cluster == "1") | (sce$cluster == "2" & sce$sample_name == "Thymus 2" | sce$cluster == "2" & sce$sample_name == "Thymus 3" )]
+```{r heatmap-unique-focused}
+sce2 <- sce[, (sce$cluster == "1") | (sce$cluster == "2" & sce$sample_name == "Thymus 2" | sce$cluster == "2" & sce$sample_name == "Thymus 3" )]
 
 lab_markers <- cluster_markers[[1]]
   # NOTE: Select top-50 markers for plotting.
   m <- head(rownames(lab_markers), 50)
   
  plotHeatmap(
-    object = sce1,
+    object = sce2,
     features = m,
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
@@ -909,89 +943,602 @@ for (n in names(cluster_markers)) {
 }
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Cluster-specific upregulated genes (per row)
-
-We look for genes that are specifically upregulated in row P compared to row L, M, N, O of plate LCE511
+Taken all of these evidences together, we decide to remove the cell line proceed the analyses with only the sample cells.
 
 ```{r}
-# subset to plate- and row-of-interest
-sce2 <- sce[, sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) %in% c("L", "M", "N", "O", "P")]
-sce2$row <- factor(sub("^([[:alpha:]]*).*", "\\1", sce2$well_position))
+sce <- sce[, !(sce$sample_name=="Cell line")]
+colData(sce) <- droplevels(colData(sce))
+```
 
-# set row colours
-library(Polychrome)
-row_colours <- setNames(
-  Polychrome::kelly.colors(nlevels(sce2$row)+1)[-1],
-  levels(sce2$row))
-sce2$row_colours <- row_colours[sce2$row]
+# Reprocessing
+
+```{r}
+sce$batch <- sce$plate_number
+
+var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
+
+set.seed(67726)
+sce <- denoisePCA(
+  sce, 
+  var_fit, 
+  subset.row = hvg,
+  BSPARAM = BiocSingular::IrlbaParam(deferred = TRUE))
+
+set.seed(853)
+sce <- runUMAP(sce, dimred = "PCA")
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce, use.dimred = "PCA")
+clusters <- igraph::cluster_louvain(snn_gr)
+sce$cluster <- factor(clusters$membership)
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
+  levels(sce$cluster))
+sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+```
+
+There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-CL-removed) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-CL-removed).
+
+```{r clusterplot-umap-CL-removed, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
+p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = cluster), size = 0.25) +
+  scale_colour_manual(values = cluster_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = sample_type), size = 0.25) +
+  scale_colour_manual(values = sample_type_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = sample_name), size = 0.25) +
+  scale_colour_manual(values = sample_name_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = post_hoc_sample_gate), size = 0.25) +
+  scale_colour_manual(values = sample_gate_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = plate_number), size = 0.25) +
+  scale_colour_manual(values = plate_number_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = tissue), size = 0.25) +
+  scale_colour_manual(values = tissue_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = donor), size = 0.25) +
+  scale_colour_manual(values = donor_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
+```
+
+```{r cluster-barplot-CL-removed, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+p1 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = sample_type),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_type_colours) +
+  # NOTE: Lots of levels, so need smaller font size.
+  theme_cowplot(font_size = 6)
+
+p2 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = sample_name),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_name_colours) +
+  theme_cowplot(font_size = 8)
+
+p3 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = post_hoc_sample_gate),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_gate_colours) +
+  theme_cowplot(font_size = 8)
+
+p4 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = plate_number_colours) +
+  theme_cowplot(font_size = 8)
+
+p5 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 8)
+
+p6 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = donor_colours) +
+  theme_cowplot(font_size = 8)
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) 
+```
+
+*NOTE* for the unmerged data:
+  
+  - there are one big and two tiny population
+  - the big population is subdivided into four cluster (i.e. cluster `1`, `2`, `3`, and `5`)
+  - the two tiny populations is categorized under the same cluster, cluster `4`, which is dominant by cells from `Thymus 3` and `Blood 3`, indicating its `donor_3` origin
+  - plate-specific batch effect seems prominent without MNN correction
+  - cluster `1` and `2` are mostly cells from `Thymus`
+  - except for cells in cluster `1`, cells in all other clusters are mostly in `P8`
+  
+# Data integration
+
+## MNN correction
+
+We treat each plate as a batch and also test to manually provide the merge order.
+
+```{r}
+# backup before test
+sce0 <- sce
+```
+
+```{r, results = "hide"}
+library(batchelor)
+set.seed(1819)
+
+# auto merge
+# NOTE: auto merge does not make sense; this seems like merging plate with adjacent number first (i.e. LCE513 + LCE514, + LCE509, LCE508, LCE511, LCE512); remark: all plates were in the same sequencing run, i.e. NN215
+mnn_out_1 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = TRUE,
+  subset.row = hvg)
+
+# manual merge 1
+# NOTE: order defined based on the similarities in cell number between plates for each`sample_name`
+mnn_out_2 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE508", "LCE511", "LCE512", "LCE513", "LCE514"), "LCE509"),
+  subset.row = hvg)
+
+# manual merge 2
+# NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
+mnn_out_3 <- fastMNN(
+  multiBatchNorm(sce0, batch = sce0$batch),
+  batch = sce0$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce0, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
+  subset.row = hvg)
+```
+
+Among the three merge orders, the *manual merge 2* (Table \@ref(tab:tab3-CL-removed)) lead to the least loss of biological variance from the dataset.
+
+```{r tab1-CL-removed}
+tab1 <- metadata(mnn_out_1)$merge.info$lost.var
+knitr::kable(
+  100 * tab1,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (auto). Ideally, all these values should be small (e.g., < 5%).")
+```
+
+```{r tab2-CL-removed}
+tab2 <- metadata(mnn_out_2)$merge.info$lost.var
+knitr::kable(
+  100 * tab2,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual 1). Ideally, all these values should be small (e.g., < 5%).")
+```
+
+```{r tab3-CL-removed}
+tab3 <- metadata(mnn_out_3)$merge.info$lost.var
+knitr::kable(
+  100 * tab3,
+  digits = 1,
+  caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual 2). Ideally, all these values should be small (e.g., < 5%).")
 ```
 
 ```{r}
-row_markers <- findMarkers(
-  sce2,
-  groups = sce2$row,
+reducedDim(sce0, "corrected_1") <- reducedDim(mnn_out_1, "corrected")
+reducedDim(sce0, "corrected_2") <- reducedDim(mnn_out_2, "corrected")
+reducedDim(sce0, "corrected_3") <- reducedDim(mnn_out_3, "corrected")
+
+# generate UMAP
+set.seed(18191)
+sce0 <- runUMAP(sce0, dimred = "PCA", name = "UMAP")
+uncorrected_umap <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP")[, 1],
+    y = reducedDim(sce0, "UMAP")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_1", name = "UMAP_corrected_1")
+corrected_umap_1 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_1")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_1")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_2", name = "UMAP_corrected_2")
+corrected_umap_2 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_2")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_2")[, 2]),
+  as.data.frame(colData(sce0)))
+
+set.seed(11901)
+sce0 <- runUMAP(sce0, dimred = "corrected_3", name = "UMAP_corrected_3")
+corrected_umap_3 <- cbind(
+  data.frame(
+    x = reducedDim(sce0, "UMAP_corrected_3")[, 1],
+    y = reducedDim(sce0, "UMAP_corrected_3")[, 2]),
+  as.data.frame(colData(sce0)))
+
+# re-clustering after each MNN correction
+set.seed(4759)
+snn_gr_1 <- buildSNNGraph(sce0, use.dimred = "corrected_1")
+clusters_1 <- igraph::cluster_louvain(snn_gr_1)
+sce0$cluster_1 <- factor(clusters_1$membership)
+cluster_colours_1 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_1))],
+  levels(sce0$cluster_1))
+sce0$colours$cluster_colours_1 <- cluster_colours_1[sce0$cluster_1]
+
+set.seed(4759)
+snn_gr_2 <- buildSNNGraph(sce0, use.dimred = "corrected_2")
+clusters_2 <- igraph::cluster_louvain(snn_gr_2)
+sce0$cluster_2 <- factor(clusters_2$membership)
+cluster_colours_2 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_2))],
+  levels(sce0$cluster_2))
+sce0$colours$cluster_colours_2 <- cluster_colours_2[sce0$cluster_2]
+
+set.seed(4759)
+snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected_3")
+clusters_3 <- igraph::cluster_louvain(snn_gr_3)
+sce0$cluster_3 <- factor(clusters_3$membership)
+cluster_colours_3 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_3))],
+  levels(sce0$cluster_3))
+sce0$colours$cluster_colours_3 <- cluster_colours_3[sce0$cluster_3]
+```
+
+Figure \@ref(fig:batch-correction-test-CL-removed) shows an overview of comparisons between the unmerged and merged (left to right: auto, manual 1, and manual 2) data.
+
+```{r batch-correction-test-CL-removed, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (leftmost column) and -corrected data by auto merge (2nd column) and two different manual merge orders (3rd and rightmost columns, respectively).", layout="l-page"}
+
+p1 <- plotReducedDim(sce0, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p2 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p3 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p4 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+
+p5 <- plotReducedDim(sce0, "UMAP", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p6 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p7 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+p8 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
+
+p9 <- plotReducedDim(sce0, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p10 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "cluster_1", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_1, name = "cluster_1")
+p11 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "cluster_2", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_2, name = "cluster_2")
+p12 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "cluster_3", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_3, name = "cluster_3")
+
+p13 <- plotReducedDim(sce0, "UMAP", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p14 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p15 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+p16 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
+
+p17 <- plotReducedDim(sce0, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p18 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p19 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p20 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+
+p21 <- plotReducedDim(sce0, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p22 <- plotReducedDim(sce0, "UMAP_corrected_1", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p23 <- plotReducedDim(sce0, "UMAP_corrected_2", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p24 <- plotReducedDim(sce0, "UMAP_corrected_3", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+
+p1 + p2 + p3 + p4 +
+  p5 + p6 + p7 + p8 +
+  p9 + p10 + p11 + p12 +
+  p13 + p14 + p15 + p16 +
+  p17 + p18 + p19 + p20 +
+  p21 + p22 + p23 + p24 +
+  plot_layout(ncol = 4, guides = "collect")
+```
+
+To get an insight, here we breakdown the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number-CL-removed)), `post_hoc_sample_gate` (Figure \@ref(fig:umap-post-hoc-sample-gate-CL-removed)), and `tissue` (Figure \@ref(fig:umap-tissue-CL-removed)).
+
+From the perspective of correcting the batch effect, the MNN correction can effectively alleviate the plate-specific grouping of cells (Figure \@ref(fig:umap-plate-number-CL-removed)).
+
+From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the "shifting" of the transcriptomic stages of cells P6 to P7, then P8 (Figure \@ref(fig:umap-post-hoc-sample-gate-CL-removed)); (ii) Blood contains cells mostly from P8 only, whilst thymus contains cells from all 3 phases, i.e. P6, P7 and P8 (Figure \@ref(fig:umap-tissue-CL-removed)).
+
+```{r umap-plate-number-CL-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
+
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -plate_number)
+
+plot_grid(
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE),
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE),
+
+ncol= 2,
+align ="h"
+)
+```
+
+```{r umap-post-hoc-sample-gate-CL-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
+
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
+
+plot_grid(
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE),
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  scale_colour_manual(
+    values = sample_gate_colours,
+    name = "post_hoc_sample_gate") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE),
+
+ncol= 2,
+align ="h"
+)
+```
+
+```{r umap-tissue-CL-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
+umap_df <- makePerCellDF(sce0)
+bg <- dplyr::select(umap_df, -tissue)
+
+plot_grid(
+
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE),
+
+ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE),
+
+ncol= 2,
+align ="h"
+)
+```
+
+## Cell type estimation
+
+Figure \@ref(fig:umap-with-fine-cluster-labels-CL-removed) overlays these cell type labels on the UMAP plot and shows that almost all cells of the big group formed by cluster `1`, `2`, `3` and `5` are corresponds to `Vd2 gd T cells`.
+Intriguingly, cluster `4` is annotated as `Intermediate monocytes`.
+
+```{r}
+library(SingleR)
+mi <- MonacoImmuneData()
+ref <- mi
+labels_fine <- ref$label.fine
+label_fine_collapsed_colours <- setNames(
+  c(
+    Polychrome::glasbey.colors(nlevels(factor(labels_fine)) + 1)[-1],
+    "orange"),
+  c(levels(factor(labels_fine)), "other"))
+```
+
+```{r}
+pred_cluster_fine <- SingleR(
+  test = sce,
+  ref = ref[!grepl("^mt|^Rps|^Rpl", rownames(ref)), ],
+  labels = labels_fine,
+  cluster = sce$cluster,
+  BPPARAM = bpparam())
+sce$label_cluster_fine <- factor(pred_cluster_fine$pruned.labels[sce$cluster])
+sce$label_cluster_fine_collapsed <- .collapseLabel(
+  sce$label_cluster_fine,
+  sce$batch)
+sce$label_fine_collapsed_colours <- label_fine_collapsed_colours[
+  as.character(sce$label_cluster_fine)]
+umap_df <- makePerCellDF(sce)
+umap_df$label_cluster_fine_collapsed <- sce$label_cluster_fine_collapsed
+tabyl(
+  data.frame(label.fine = sce$label_cluster_fine, cluster = sce$cluster), 
+  cluster, 
+  label.fine) %>%
+  knitr::kable(
+    caption = "Cluster-level assignments using the fine labels of the MI reference.")
+```
+
+```{r umap-with-fine-cluster-labels-CL-removed, fig.asp = 2/3, fig.cap = "UMAP plot highlighting clusters (left) and 'fine' cluster-level labels (right) where each panel highlights droplets from a particular label. Labels with < 1% frequency are grouped together as `other`."}
+p1 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(
+    aes(colour = cluster),
+    alpha = 1,
+    size = 0.25) +
+  scale_fill_manual(values = cluster_colours) +
+  scale_colour_manual(values = cluster_colours) +
+  theme_cowplot(font_size = 10) +
+  xlab("Dimension 1") +
+  ylab("Dimension 2") +
+  ggtitle("Clusters")
+bg <- dplyr::select(umap_df, -label_cluster_fine_collapsed)
+p2 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(
+    aes(colour = label_cluster_fine_collapsed),
+    alpha = 1,
+    size = 0.25) +
+  scale_fill_manual(values = label_fine_collapsed_colours) +
+  scale_colour_manual(values = label_fine_collapsed_colours) +
+  theme_cowplot(font_size = 10) +
+  xlab("Dimension 1") +
+  ylab("Dimension 2") +
+  facet_wrap(~ label_cluster_fine_collapsed, ncol = 2) +
+  guides(colour = FALSE) + 
+  ggtitle("'fine' cluster-level label")
+p1 + p2 + plot_layout(widths = c(1, 2))
+```
+
+**TODO: Again, based on the SingleR annotation, cluster 4 (previously known as "cluster 5") is potentially be a contaminant (intermediate monocytes and is not our interested gamma-delta T cells) that sneaked through the FACS gate and could considered to be removed**
+
+## Cluster-specific upregulated genes 
+
+We look for genes that are specifically upregulated in each cluster compared to all other clusters.
+
+```{r}
+cluster_markers <- findMarkers(
+  sce,
+  groups = sce$cluster,
   direction = "up",
   pval.type = "all",
   row.data = rowData(sce))
 ```
 
-Most rows do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+Except for cluster `1`, `4`, and `5`, all clusters do have number of genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
 
 ```{r}
-print(sapply(row_markers, function(x) sum(x$FDR < 0.05)))
+print(sapply(cluster_markers, function(x) sum(x$FDR < 0.05)))
 ```
 
-The heatmaps below highlight the top-50 genes for each row
+The heatmaps below highlight the top-50 genes for each cluster.
 
-```{r, fig.asp = 6}
+```{r heatmap-unmerged-cluster-unique-markers-CL-removed, fig.asp = 6}
 collected <- list()
-for (lab in names(row_markers)) {
-  lab_markers <- row_markers[[lab]]
+for (lab in names(cluster_markers)) {
+  lab_markers <- cluster_markers[[lab]]
   # NOTE: Select top-50 markers for plotting.
   m <- head(rownames(lab_markers), 50)
   collected[[lab]] <- plotHeatmap(
-    object = sce2,
+    object = sce,
     features = m,
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
-    order_columns_by = c("row", "cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    order_columns_by = c("cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
     cluster_rows = TRUE,
     fontsize = 5,
     column_annotation_colors = list(
-      row = row_colours,
       cluster = cluster_colours,
       sample_name = sample_name_colours,
       post_hoc_sample_gate = sample_gate_colours,
@@ -1005,36 +1552,25 @@ for (lab in names(row_markers)) {
 wrap_plots(collected, ncol = 1)
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+CSVs of the gene lists are available in [`output/unmerged/cell_line_removed/cluster_markers`](../output/unmerged/cell_line_removed/cluster_markers).
 
 ```{r}
-knitr::knit_exit()
+dir.create(here("output/unmerged/cell_line_removed/cluster_markers"), recursive = TRUE)
+for (n in names(cluster_markers)) {
+  message(n)
+  gzout <- gzfile(
+    description = file.path(
+      here("output/unmerged/cell_line_removed/cluster_markers"),
+      sprintf("cluster_%02d.csv.gz", as.integer(n))),
+    open = "wb")
+  write.csv(
+    as.data.frame(flattenDF(cluster_markers[[n]])),
+    gzout,
+    # NOTE: quote = TRUE needed because some fields contain commas.
+    quote = TRUE,
+    row.names = TRUE)
+  close(gzout)
+}
 ```
 
 
@@ -1043,169 +1579,13 @@ knitr::knit_exit()
 
 
 
-<!-- ### Summary -->
-
-<!-- The MNN algorithm returns two sets of corrected values for use in downstream analyses like clustering or visualization: -->
-
-<!-- 1. `corrected`: 'Batch-corrected principal components' -->
-<!-- 2. `reconstructed`: 'Batch-corrected expression values' -->
-
-<!-- The `corrected` data contains the low-dimensional corrected coordinates for all cells, which we will use in place of the PCs in our downstream analyses. -->
-<!-- The `reconstructed` data contains the corrected expression values for each gene in each cell, obtained by projecting the low-dimensional coordinates in corrected back into gene expression space. -->
-<!-- **We do not recommend using the `reconstructed` data for anything other than visualization**^[See [here](https://osca.bioconductor.org/integrating-datasets.html#using-corrected-values) for a detailed explanation of this recommendation.]. -->
-
-<!-- ## Re-processing -->
-
-<!-- We will use the MNN-corrected values in place of the PCs in our downstream analyses, such as UMAP and clustering^[At this point, it is also tempting to use the corrected expression values for gene-based analyses like DE-based marker gene detection. This is not generally recommended as an arbitrary correction algorithm is not obliged to preserve the magnitude (or even direction) of differences in per-gene expression when attempting to align multiple batches.]. -->
-
-<!-- ```{r} -->
-<!-- set.seed(853) -->
-<!-- sce <- runUMAP(sce, dimred = "corrected") -->
-<!-- set.seed(663) -->
-<!-- snn_gr <- buildSNNGraph(sce, use.dimred = "corrected") -->
-<!-- clusters <- igraph::cluster_louvain(snn_gr) -->
-<!-- sce$cluster <- factor(clusters$membership) -->
-<!-- cluster_colours <- setNames( -->
-<!--   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))], -->
-<!--   levels(sce$cluster)) -->
-<!-- sce$cluster_colours <- cluster_colours[sce$cluster] -->
-<!-- ``` -->
-
-<!-- There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:mnn-corrected-clusterplot-umap) and broken down by experimental factors in Figure \@ref(fig:mnn-corrected-cluster-barplot). -->
-
-<!-- ```{r mnn-corrected-clusterplot-umap, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 2} -->
-<!-- p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = cluster), size = 0.25) + -->
-<!--   scale_colour_manual(values = cluster_colours) +  -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = plate_number), size = 0.25) + -->
-<!--   scale_colour_manual(values = plate_number_colours) +  -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = stimulus), size = 0.25) + -->
-<!--   scale_colour_manual(values = stimulus_colours) +  -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = tissue), size = 0.25) + -->
-<!--   scale_colour_manual(values = tissue_colours) +  -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = tomato), size = 0.25) + -->
-<!--   scale_colour_manual(values = tomato_colours) +  -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = sequencing_run), size = 0.25) + -->
-<!--   scale_colour_manual(values = sequencing_run_colours) +  -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = group), size = 0.25) + -->
-<!--   # NOTE: Lots of levels, so need smaller font size. -->
-<!--   scale_colour_manual(values = group_colours) +  -->
-<!--   theme_cowplot(font_size = 6) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- p8 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) + -->
-<!--   geom_point(aes(colour = mouse), size = 0.25) + -->
-<!--   # NOTE: Lots of levels, so need smaller font size. -->
-<!--   scale_colour_manual(values = mouse_colours) +  -->
-<!--   theme_cowplot(font_size = 6) +  -->
-<!--   xlab("Dimension 1") +  -->
-<!--   ylab("Dimension 2") -->
-<!-- (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | p8) -->
-<!-- ``` -->
-
-<!-- ```{r mnn-corrected-cluster-barplot, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."} -->
-<!-- p1 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = plate_number), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = plate_number_colours) + -->
-<!--   # NOTE: Lots of levels, so need smaller font size. -->
-<!--   theme_cowplot(font_size = 6) -->
-<!-- p2 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = stimulus), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = stimulus_colours) + -->
-<!--   theme_cowplot(font_size = 8) -->
-<!-- p3 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = tissue), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = tissue_colours) + -->
-<!--   theme_cowplot(font_size = 8) -->
-<!-- p4 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = tomato), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = tomato_colours) + -->
-<!--   theme_cowplot(font_size = 8) -->
-<!-- p5 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = sequencing_run), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = sequencing_run_colours) + -->
-<!--   theme_cowplot(font_size = 8) -->
-<!-- p6 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = group), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = group_colours) + -->
-<!--   # NOTE: Lots of levels, so need smaller font size. -->
-<!--   theme_cowplot(font_size = 6) -->
-<!-- p7 <- ggcells(sce) +  -->
-<!--   geom_bar( -->
-<!--     aes(x = cluster, fill = mouse), -->
-<!--     position = position_fill(reverse = TRUE)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Frequency") + -->
-<!--   scale_fill_manual(values = mouse_colours) + -->
-<!--   # NOTE: Lots of levels, so need smaller font size. -->
-<!--   theme_cowplot(font_size = 6) -->
-<!-- p8 <- ggcells(sce) +  -->
-<!--   geom_bar(aes(x = cluster, fill = cluster)) + -->
-<!--   coord_flip() + -->
-<!--   ylab("Number of cells") + -->
-<!--   scale_fill_manual(values = cluster_colours) + -->
-<!--   theme_cowplot(font_size = 8) +  -->
-<!--   guides(fill = FALSE) -->
-<!-- (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | p8) -->
-<!-- ``` -->
-
-<!-- Notably: -->
-
-<!-- - **Now, none of the clusters are highly `plate_number`-specific. (except LC370 cluster)** -->
-<!-- - Now, there are clusters that are somewhat `tissue`-specific, `stimulus`-specific, and `tomato`-specific. -->
 
 
 
 
 
+
+**TODO: re-write SCE (subset all sample group and cluster removed, if any) and merge before save as RDS !**
 
 # Concluding remarks
 

@@ -382,6 +382,12 @@
       "Source": "Bioconductor",
       "Hash": "40badd4c5dcff81480c77a17b3b811bb"
     },
+    "SingleR": {
+      "Package": "SingleR",
+      "Version": "1.4.1",
+      "Source": "Bioconductor",
+      "Hash": "911b58ee9561bf35ec86656b365e2645"
+    },
     "SummarizedExperiment": {
       "Package": "SummarizedExperiment",
       "Version": "1.20.0",
