@@ -365,12 +365,13 @@ mclapply(seq_along(bc_anno), function(i) {
 
 # Create and save SingleCellExperiment -----------------------------------------
 
-list_of_sce <- lapply(plates, function(plate) {
+list_of_sce <- lapply(rpis, function(rpi) {
   create_sce_by_dir(
-    datadir = extdir[[plate]],
+    datadir = extdir[[rpi]],
     organism = organism,
     gene_id_type = gene_id_type,
-    pheno_data = sample_sheet[sample_sheet$plate_number == plate, ],
+    pheno_data = sample_sheet[
+      sample_sheet$illumina_index_index_number_separate_index_read == rpi, ],
     # NOTE: Create the report separately for more fine-grained control.
     report = FALSE)
 })
@@ -399,22 +400,22 @@ library(Rtsne)
 # NOTE: Needs a fix for https://github.com/LuyiTian/scPipe/issues/100.
 dir.create(here("output", "scPipe"), recursive = TRUE)
 # NOTE: Tends to crap itself if using mclapply().
-lapply(plates, function(plate) {
+lapply(rpis, function(rpi) {
   try(create_report(
-    sample_name = plate,
-    outdir = extdir[[plate]],
-    r1 = tx_fq[[plate]],
-    r2 = barcode_fq[[plate]],
-    outfq = combined_fq[[plate]],
+    sample_name = rpi,
+    outdir = extdir[[rpi]],
+    r1 = tx_fq[[rpi]],
+    r2 = barcode_fq[[rpi]],
+    outfq = combined_fq[[rpi]],
     read_structure = read_structure,
     filter_settings = filter_settings,
-    align_bam = subread_bam[[plate]],
+    align_bam = subread_bam[[rpi]],
     genome_index = genome_index,
-    map_bam = exon_bam[[plate]],
+    map_bam = exon_bam[[rpi]],
     exon_anno = annofn,
     stnd = stnd,
     fix_chr = fix_chr,
-    barcode_anno = bc_anno[[plate]],
+    barcode_anno = bc_anno[[rpi]],
     max_mis = max_mis,
     UMI_cor = UMI_cor,
     gene_fl = gene_fl,
@@ -423,24 +424,24 @@ lapply(plates, function(plate) {
 
   # NOTE: Workaround bug in create_report() and stop output after 'Data summary'
   #       section.
-  tmp <- readLines(file.path(extdir[[plate]], "report.Rmd"))
+  tmp <- readLines(file.path(extdir[[rpi]], "report.Rmd"))
   tmp <- c(tmp[1:161], "knitr::knit_exit()", tmp[162:length(tmp)])
-  writeLines(tmp, file.path(extdir[[plate]], "report.Rmd"))
+  writeLines(tmp, file.path(extdir[[rpi]], "report.Rmd"))
   knitr::wrap_rmd(
-    file = file.path(extdir[[plate]], "report.Rmd"),
+    file = file.path(extdir[[rpi]], "report.Rmd"),
     width = 120,
     backup = NULL)
   rmarkdown::render(
-    input = file.path(extdir[[plate]], "report.Rmd"),
-    output_file = file.path(extdir[[plate]], "report.html"),
+    input = file.path(extdir[[rpi]], "report.Rmd"),
+    output_file = file.path(extdir[[rpi]], "report.html"),
     knit_root_dir = ".")
 
   # NOTE: Copy the QC report to the repository.
   file.copy(
-    from = file.path(extdir[[plate]], "report.nb.html"),
+    from = file.path(extdir[[rpi]], "report.nb.html"),
     to = here(
       "output",
       "scPipe",
-      paste0(plate, ".scPipe_QC_report.nb.html")),
+      paste0(rpi, ".scPipe_QC_report.nb.html")),
     overwrite = TRUE)
 })
