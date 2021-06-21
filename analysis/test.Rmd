@@ -885,17 +885,175 @@ We will seek to mitigate the differences associated with technical factors (e.g.
 
 
 
-
-
-
 **TODO: For row P, start from un_QC data (in order to keep row P, ie blood 2), take thymus 2 vs blood 2 from other 5 plates (not LCE511, as they are supposed to be sorted properly), find the marker to distinguish thymus 2 and blood 2, then look into these genes for row L - P and (see if row O got marker from row P as well)**
-# i.e.
-# backup SCE
-# subset to remove plate LCE511
-# use plate remained to find marker for "groups = sample_name" ?
-# heatmap
-# then reapply the following scrip to look for row O and row P marker
-# see if row O got both marker from thymus 2 and blood 2 ???
+
+# sample_name-specific upregulated genes
+
+```{r}
+sce3 <- sce
+sce3 <- sce3[,sce3$plate_number=="LCE511"]
+```
+
+```{r}
+sce3$batch <- sce3$plate_number
+
+var_fit <- modelGeneVarWithSpikes(sce3, "ERCC", block = sce3$batch)
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
+
+set.seed(67726)
+sce3 <- denoisePCA(
+  sce3, 
+  var_fit, 
+  subset.row = hvg,
+  BSPARAM = BiocSingular::IrlbaParam(deferred = TRUE))
+
+set.seed(853)
+sce3 <- runUMAP(sce3, dimred = "PCA")
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce3, use.dimred = "PCA")
+clusters <- igraph::cluster_louvain(snn_gr)
+sce3$cluster <- factor(clusters$membership)
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce3$cluster))],
+  levels(sce3$cluster))
+sce3$colours$cluster_colours <- cluster_colours[sce3$cluster]
+```
+
+```{r}
+sample_name_markers <- findMarkers(
+  sce3,
+  groups = sce3$sample_name,
+  direction = "up",
+  pval.type = "all",
+  row.data = rowData(sce))
+```
+
+Most `sample_name` do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+
+```{r}
+print(sapply(sample_name_markers, function(x) sum(x$FDR < 0.05)))
+```
+
+The heatmaps below highlight the top-50 genes for each `sample_name`
+
+```{r, fig.asp = 6}
+collected <- list()
+for (lab in names(sample_name_markers)) {
+  lab_markers <- sample_name_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce3,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("sample_name", "cluster", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      sample_name = sample_name_colours,
+      cluster = cluster_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+# tissue-specific upregulated genes
+
+```{r}
+sce3 <- sce
+sce3 <- sce3[,sce3$plate_number=="LCE511"]
+```
+
+```{r}
+sce3$batch <- sce3$plate_number
+
+var_fit <- modelGeneVarWithSpikes(sce3, "ERCC", block = sce3$batch)
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
+
+set.seed(67726)
+sce3 <- denoisePCA(
+  sce3, 
+  var_fit, 
+  subset.row = hvg,
+  BSPARAM = BiocSingular::IrlbaParam(deferred = TRUE))
+
+set.seed(853)
+sce3 <- runUMAP(sce3, dimred = "PCA")
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce3, use.dimred = "PCA")
+clusters <- igraph::cluster_louvain(snn_gr)
+sce3$cluster <- factor(clusters$membership)
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce3$cluster))],
+  levels(sce3$cluster))
+sce3$colours$cluster_colours <- cluster_colours[sce3$cluster]
+```
+
+```{r}
+tissue_markers <- findMarkers(
+  sce3,
+  groups = sce3$tissue,
+  direction = "up",
+  pval.type = "all",
+  row.data = rowData(sce))
+```
+
+Most `tissue` do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+
+```{r}
+print(sapply(tissue_markers, function(x) sum(x$FDR < 0.05)))
+```
+
+The heatmaps below highlight the top-50 genes for each `tissue`
+
+```{r, fig.asp = 6}
+collected <- list()
+for (lab in names(tissue_markers)) {
+  lab_markers <- tissue_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce3,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("tissue", "cluster", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      tissue = tissue_colours,
+      cluster = cluster_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+```
 
 
 
@@ -916,12 +1074,7 @@ We will seek to mitigate the differences associated with technical factors (e.g.
 
 
 
-
-
-
-
-
-### Cluster-specific upregulated genes (per row)
+# Row-specific upregulated genes
 
 ```{r}
 set.seed(4759)
@@ -949,27 +1102,12 @@ row_colours <- setNames(
 sce2$row_colours <- row_colours[sce2$row]
 ```
 
-```{r}
-row_markers <- findMarkers(
-  sce2,
-  groups = sce2$row,
-  direction = "up",
-  pval.type = "all",
-  row.data = rowData(sce))
-```
-
-Most rows do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
-
-```{r}
-print(sapply(row_markers, function(x) sum(x$FDR < 0.05)))
-```
-
 The heatmaps below highlight the top-50 genes for each row
 
 ```{r, fig.asp = 6}
 collected <- list()
-for (lab in names(row_markers)) {
-  lab_markers <- row_markers[[lab]]
+for (lab in names(sample_name_markers)) {
+  lab_markers <- sample_name_markers[[lab]]
   # NOTE: Select top-50 markers for plotting.
   m <- head(rownames(lab_markers), 50)
   collected[[lab]] <- plotHeatmap(
@@ -996,8 +1134,34 @@ for (lab in names(row_markers)) {
 wrap_plots(collected, ncol = 1)
 ```
 
-```{r}
-
+```{r, fig.asp = 6}
+collected <- list()
+for (lab in names(tissue_markers)) {
+  lab_markers <- tissue_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce2,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("row", "cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      row = row_colours,
+      cluster = cluster_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
 ```
 
 
