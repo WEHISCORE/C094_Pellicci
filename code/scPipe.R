@@ -1,6 +1,6 @@
-# Process C118 (NN215) with scPipe
+# Process C118 (NN215 and NN227) with scPipe
 # Peter Hickey
-# 2021-04-15
+# 2021-06-16
 
 # Setup ------------------------------------------------------------------------
 
@@ -76,12 +76,82 @@ sample_sheet_nn215 <- sample_sheet_nn215 %>%
       levels = unlist(
         lapply(LETTERS[1:16], function(x) paste0(x, 1:24)),
         use.names = TRUE)),
-    sequencing_run = "NN215") %>%
+    sequencing_run = "NN215",
+    # NOTE: Need to fix up a typo.
+    illumina_index_index_number_separate_index_read =
+      sub(
+        "(PRI|RPI) ",
+        "RPI-",
+        illumina_index_index_number_separate_index_read)) %>%
+  arrange(well_position)
+
+# Construct NN227 sample sheet -------------------------------------------------
+
+file_nn227 <- here(
+  "data",
+  "sample_sheets",
+  "C094_DanPellici_MB NN227_Seqprimer10Jun21.xlsx")
+
+# NOTE: Header row is split across 2 lines, which I combine into 1 before
+#       reading in the rest of the spreadsheet.
+header_row <- read_excel(
+  path = file_nn227,
+  sheet = "Samples",
+  skip = 2,
+  n_max = 1)
+
+# NOTE: No FACS data
+header_row <- paste0(colnames(header_row), header_row[1, ])
+header_row <- gsub("^\\.\\.\\.[0-9]+", "", header_row)
+sample_sheet_nn227 <- read_excel(
+  path = file_nn227,
+  sheet = "Samples",
+  skip = 4,
+  col_names = header_row,
+  # NOTE: Setting the max guess_max value avoids problems with incorrectly
+  #       guessed columns
+  #       (https://github.com/tidyverse/readxl/issues/414#issuecomment-352437730)
+  guess_max = 1048576)
+# Tidy up names and empty rows/columns.
+sample_sheet_nn227 <- clean_names(sample_sheet_nn227)
+sample_sheet_nn227 <- remove_empty(
+  sample_sheet_nn227,
+  which = c("rows", "cols"))
+
+# Filter out those wells without a cell index sequence, with no cell, or that
+# were otherwise removed.
+# NOTE: The 200-cell samples were not included in the pool sequenced in NN227
+#       (the `sample_type` column says "200 cell (not included in NN226)" (sic)
+#       for these samples).
+sample_sheet_nn227 <- filter(
+  sample_sheet_nn227,
+  !is.na(plate_number),
+  illumina_index_index_number_separate_index_read != "removed",
+  sample_type != "200 cell (not included in NN226)")
+
+# Some final tidying.
+sample_sheet_nn227 <- sample_sheet_nn227 %>%
+  mutate(
+    # NOTE: There are some wonky well_positions (e.g., 'I19=A1') that need to
+    #       be fixed (these occur because it means well I19 with primer A1,
+    #       in SCORE's terminology. I've asked for this to be avoided going
+    #       forward.).
+    well_position = gsub(" ", "", well_position),
+    well_position = sapply(strsplit(well_position, "="), "[[", 1),
+    well_position = factor(
+      x = well_position,
+      levels = unlist(
+        lapply(LETTERS[1:16], function(x) paste0(x, 1:24)),
+        use.names = TRUE)),
+    sequencing_run = "NN227",
+    # NOTE: Need to fix up a typo.
+    illumina_index_index_number_separate_index_read =
+      sub("PRI ", "RPI-", illumina_index_index_number_separate_index_read)) %>%
   arrange(well_position)
 
 # Construct final sample sheet -------------------------------------------------
 
-sample_sheet <- sample_sheet_nn215 %>%
+sample_sheet <- bind_rows(sample_sheet_nn215, sample_sheet_nn227) %>%
   mutate(rowname = paste0(
     plate_number,
     "_",
@@ -94,17 +164,16 @@ stopifnot(!anyNA(sample_sheet$well_position))
 
 # Key variables ----------------------------------------------------------------
 
-plates <- unique(sample_sheet$plate_number)
-names(plates) <- plates
-# NOTE
+rpis <- unique(sample_sheet$illumina_index_index_number_separate_index_read)
+names(rpis) <- rpis
 sequencing_runs <- tapply(
   sample_sheet$sequencing_run,
-  sample_sheet$plate_number,
+  sample_sheet$illumina_index_index_number_separate_index_read,
   unique)
 outdir <- here("data", "SCEs")
 dir.create(outdir, recursive = TRUE)
-extdir <- here("extdata", sequencing_runs, "scPipe", plates)
-names(extdir) <- plates
+extdir <- here("extdata", sequencing_runs, "scPipe", rpis)
+names(extdir) <- rpis
 sapply(extdir, dir.create, recursive = TRUE)
 # NOTE: Only using first 7 nt of barcode.
 read_structure <- get_read_str("CEL-Seq2")
@@ -119,32 +188,67 @@ gene_id_type <- "ensembl_gene_id"
 # Input files ------------------------------------------------------------------
 
 # FASTQ files
-r1_fq <- grep(
-  pattern = "Undetermined",
-  x = list.files(
-    path = here("extdata", "NN215", "merged"),
+r1_fq <- c(
+  grep(
+    pattern = "Undetermined",
+    x = list.files(
+      path = here("extdata", "NN215", "merged"),
+      full.names = TRUE,
+      pattern = glob2rx("*R1*.fastq.gz")),
+    invert = TRUE,
+    value = TRUE),
+  list.files(
+    path = here("extdata", "NN227", "merged"),
     full.names = TRUE,
-    pattern = glob2rx("*R1*.fastq.gz")),
-  invert = TRUE,
-  value = TRUE)
+    pattern = glob2rx("LCE516-LCE531*R1*.fastq.gz")))
 r2_fq <- gsub("R1", "R2", r1_fq)
 stopifnot(all(file.exists(r2_fq)))
-tx_fq <- file.path(extdir, paste0(plates, ".R2.fastq.gz"))
-names(tx_fq) <- plates
+tx_fq <- file.path(extdir, paste0(rpis, ".R2.fastq.gz"))
+names(tx_fq) <- rpis
 barcode_fq <- gsub("R2", "R1", tx_fq)
 
-mclapply(plates, function(plate) {
-  message(plate)
-  cmd <- paste0(
-    "cat ",
-    grep(plate, r1_fq, value = TRUE),
-    " > ",
-    barcode_fq[[plate]],
-    "\n",
-    "cat ",
-    grep(plate, r2_fq, value = TRUE),
-    " > ",
-    tx_fq[[plate]])
+mclapply(rpis, function(rpi) {
+  message(rpi)
+  if (rpi == "RPI-15") {
+    cmd <- paste0(
+      "cat ",
+      grep("LCE516-LCE531-50", r1_fq, value = TRUE),
+      " > ",
+      barcode_fq[[rpi]],
+      "\n",
+      "cat ",
+      grep("LCE516-LCE531-50", r2_fq, value = TRUE),
+      " > ",
+      tx_fq[[rpi]])
+  } else if (rpi == "RPI-16") {
+    cmd <- paste0(
+      "cat ",
+      grep("LCE516-LCE531-100", r1_fq, value = TRUE),
+      " > ",
+      barcode_fq[[rpi]],
+      "\n",
+      "cat ",
+      grep("LCE516-LCE531-100", r2_fq, value = TRUE),
+      " > ",
+      tx_fq[[rpi]])
+  } else if (rpi %in% paste0("RPI-", c(1, 2, 3, 5, 9, 10, 12))) {
+    plate <- unique(
+      sample_sheet[
+        sample_sheet$illumina_index_index_number_separate_index_read == rpi,
+        "plate_number"])
+    cmd <- paste0(
+      "cat ",
+      grep(plate, r1_fq, value = TRUE),
+      " > ",
+      barcode_fq[[rpi]],
+      "\n",
+      "cat ",
+      grep(plate, r2_fq, value = TRUE),
+      " > ",
+      tx_fq[[rpi]])
+  } else {
+    stop("Unknown RPI")
+  }
   system(cmd)
 })
 
@@ -157,12 +261,13 @@ annofn <- c(
   system.file("extdata", "ERCC92_anno.gff3", package = "scPipe"))
 
 # Cell barcodes
-bc_anno <- file.path(extdir, paste0(plates, ".barcode_annotation.csv"))
-names(bc_anno) <- plates
+bc_anno <- file.path(extdir, paste0(rpis, ".barcode_annotation.csv"))
+names(bc_anno) <- rpis
 
-for (plate in plates) {
-  message(plate)
-  tmp <- sample_sheet[sample_sheet$plate_number == plate, ]
+for (rpi in rpis) {
+  message(rpi)
+  tmp <- sample_sheet[
+    sample_sheet$illumina_index_index_number_separate_index_read == rpi, ]
   barcode_df <- data.frame(
     cell_id = row.names(tmp),
     # NOTE: Only using first 7 nt of barcode.
@@ -172,7 +277,7 @@ for (plate in plates) {
   stopifnot(!anyDuplicated(barcode_df$barcode))
   write.csv(
     x = barcode_df,
-    file = bc_anno[[plate]],
+    file = bc_anno[[rpi]],
     quote = FALSE,
     row.names = FALSE)
 }
@@ -260,12 +365,13 @@ mclapply(seq_along(bc_anno), function(i) {
 
 # Create and save SingleCellExperiment -----------------------------------------
 
-list_of_sce <- lapply(plates, function(plate) {
+list_of_sce <- lapply(rpis, function(rpi) {
   create_sce_by_dir(
-    datadir = extdir[[plate]],
+    datadir = extdir[[rpi]],
     organism = organism,
     gene_id_type = gene_id_type,
-    pheno_data = sample_sheet[sample_sheet$plate_number == plate, ],
+    pheno_data = sample_sheet[
+      sample_sheet$illumina_index_index_number_separate_index_read == rpi, ],
     # NOTE: Create the report separately for more fine-grained control.
     report = FALSE)
 })
@@ -294,22 +400,22 @@ library(Rtsne)
 # NOTE: Needs a fix for https://github.com/LuyiTian/scPipe/issues/100.
 dir.create(here("output", "scPipe"), recursive = TRUE)
 # NOTE: Tends to crap itself if using mclapply().
-lapply(plates, function(plate) {
+lapply(rpis, function(rpi) {
   try(create_report(
-    sample_name = plate,
-    outdir = extdir[[plate]],
-    r1 = tx_fq[[plate]],
-    r2 = barcode_fq[[plate]],
-    outfq = combined_fq[[plate]],
+    sample_name = rpi,
+    outdir = extdir[[rpi]],
+    r1 = tx_fq[[rpi]],
+    r2 = barcode_fq[[rpi]],
+    outfq = combined_fq[[rpi]],
     read_structure = read_structure,
     filter_settings = filter_settings,
-    align_bam = subread_bam[[plate]],
+    align_bam = subread_bam[[rpi]],
     genome_index = genome_index,
-    map_bam = exon_bam[[plate]],
+    map_bam = exon_bam[[rpi]],
     exon_anno = annofn,
     stnd = stnd,
     fix_chr = fix_chr,
-    barcode_anno = bc_anno[[plate]],
+    barcode_anno = bc_anno[[rpi]],
     max_mis = max_mis,
     UMI_cor = UMI_cor,
     gene_fl = gene_fl,
@@ -318,24 +424,24 @@ lapply(plates, function(plate) {
 
   # NOTE: Workaround bug in create_report() and stop output after 'Data summary'
   #       section.
-  tmp <- readLines(file.path(extdir[[plate]], "report.Rmd"))
+  tmp <- readLines(file.path(extdir[[rpi]], "report.Rmd"))
   tmp <- c(tmp[1:161], "knitr::knit_exit()", tmp[162:length(tmp)])
-  writeLines(tmp, file.path(extdir[[plate]], "report.Rmd"))
+  writeLines(tmp, file.path(extdir[[rpi]], "report.Rmd"))
   knitr::wrap_rmd(
-    file = file.path(extdir[[plate]], "report.Rmd"),
+    file = file.path(extdir[[rpi]], "report.Rmd"),
     width = 120,
     backup = NULL)
   rmarkdown::render(
-    input = file.path(extdir[[plate]], "report.Rmd"),
-    output_file = file.path(extdir[[plate]], "report.html"),
+    input = file.path(extdir[[rpi]], "report.Rmd"),
+    output_file = file.path(extdir[[rpi]], "report.html"),
     knit_root_dir = ".")
 
   # NOTE: Copy the QC report to the repository.
   file.copy(
-    from = file.path(extdir[[plate]], "report.nb.html"),
+    from = file.path(extdir[[rpi]], "report.nb.html"),
     to = here(
       "output",
       "scPipe",
-      paste0(plate, ".scPipe_QC_report.nb.html")),
+      paste0(rpi, ".scPipe_QC_report.nb.html")),
     overwrite = TRUE)
 })
