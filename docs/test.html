@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-06-09"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-06-09"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-06-17"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-06-17"/>
   <meta name="article:author" content="Peter Hickey"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -117,7 +117,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Preprocessing the Pellicci gamma-delta T-cell data set"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["Peter Hickey"]},{"type":"character","attributes":{},"value":["https://peterhickey.org"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-06-09"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Preprocessing the Pellicci gamma-delta T-cell data set"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["Peter Hickey"]},{"type":"character","attributes":{},"value":["https://peterhickey.org"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-06-17"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2062,7 +2062,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Preprocessing the Pellicci gamma-delta T-cell data set","authors":[{"author":"Peter Hickey","authorURL":"https://peterhickey.org","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-06-09T00:00:00.000+10:00","citationText":"Hickey, 2021"}
+{"title":"Preprocessing the Pellicci gamma-delta T-cell data set","authors":[{"author":"Peter Hickey","authorURL":"https://peterhickey.org","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-06-17T00:00:00.000+10:00","citationText":"Hickey, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2111,7 +2111,7 @@ Supplementary files
 <div class="d-byline">
   Peter Hickey <a href="https://peterhickey.org" class="uri">https://peterhickey.org</a> (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-06-09
+<br/>2021-06-17
 </div>
 
 <div class="d-article">
@@ -2154,11 +2154,11 @@ Supplementary files
 <ul>
 <li><a href="#principal-component-analysis">Principal component analysis</a></li>
 <li><a href="#dimensionality-reduction-for-visualization">Dimensionality reduction for visualization</a></li>
-<li><a href="#summary-1">Summary</a>
-<ul>
-<li><a href="#cluster-specific-upregulated-genes-per-row">Cluster-specific upregulated genes (per row)</a></li>
+<li><a href="#summary-1">Summary</a></li>
 </ul></li>
-</ul></li>
+<li><a href="#sample_name-specific-upregulated-genes">sample_name-specific upregulated genes</a></li>
+<li><a href="#tissue-specific-upregulated-genes">tissue-specific upregulated genes</a></li>
+<li><a href="#row-specific-upregulated-genes">Row-specific upregulated genes</a></li>
 </ul>
 </nav>
 </div>
@@ -2178,13 +2178,13 @@ Show code
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://patchwork.data-imaginist.com'>patchwork</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://scales.r-lib.org'>scales</a></span><span class='op'>)</span>
 
+<span class='kw'><a href='https://rdrr.io/r/base/source.html'>source</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"code"</span>, <span class='st'>"helper_functions.R"</span><span class='op'>)</span><span class='op'>)</span>
+
 <span class='co'># NOTE: Using &gt;= 4 cores seizes up my laptop. Can use more on unix box.</span>
 <span class='fu'><a href='https://rdrr.io/r/base/options.html'>options</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.info.html'>Sys.info</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>[[</span><span class='st'>"nodename"</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>==</span> <span class='st'>"PC1331"</span>, <span class='fl'>2L</span>, <span class='fl'>3L</span><span class='op'>)</span><span class='op'>)</span>
 
 <span class='fu'>knitr</span><span class='fu'>::</span><span class='va'><a href='https://rdrr.io/pkg/knitr/man/opts_chunk.html'>opts_chunk</a></span><span class='op'>$</span><span class='fu'>set</span><span class='op'>(</span>
   fig.path <span class='op'>=</span> <span class='st'>"test/"</span><span class='op'>)</span>
-
-<span class='kw'><a href='https://rdrr.io/r/base/source.html'>source</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"code"</span>, <span class='st'>"helper_functions.R"</span><span class='op'>)</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
@@ -3473,6 +3473,7 @@ Show code
 </div>
 </details>
 </div>
+<p><strong>NOTE: skip QC in here in order to preserve row P data in the SCE object</strong></p>
 <h2 id="filtering-out-low-abundance-genes">Filtering out low-abundance genes</h2>
 <p>Low-abundance genes are problematic as zero or near-zero counts do not contain much information for reliable statistical inference <span class="citation" data-cites="bourgon2010independent">(<a href="#ref-bourgon2010independent" role="doc-biblioref">Bourgon, Gentleman, and Huber 2010</a>)</span>. These genes typically do not provide enough evidence to reject the null hypothesis during testing, yet they still increase the severity of the multiple testing correction. In addition, the discreteness of the counts may interfere with statistical procedures, e.g., by compromising the accuracy of continuous approximations. Thus, low-abundance genes are often removed in many RNA-seq analysis pipelines before the application of downstream methods.</p>
 <p>The ‘optimal’ choice of filtering strategy depends on the downstream application. A more aggressive filter is usually required to remove discreteness (e.g., for normalization) compared to that required for removing underpowered tests. For hypothesis testing, the filter statistic should also be independent of the test statistic under the null hypothesis. Thus, we (or the relevant function) will filter at each step as needed, rather than applying a single filter for the entire analysis.</p>
@@ -4009,7 +4010,236 @@ Figure 14: UMAP plot of the dataset. Each point represents a cell and each panel
 <li>There are library size-associated differences, which is itself largely driven by differences in library size between the <code>Cell line</code> and non-<code>Cell line</code> samples.</li>
 </ul>
 <p>However, it is premature to draw any strong conclusions We will seek to mitigate the differences associated with technical factors (e.g., <code>plate_number</code> and library size) in downstream analyses so that we might better investigate the biological factors (i.e. <code>tissue</code> and <code>post_hoc_sample_gate</code>).</p>
-<h3 id="cluster-specific-upregulated-genes-per-row">Cluster-specific upregulated genes (per row)</h3>
+<p><strong>TODO: For row P, start from un_QC data (in order to keep row P, ie blood 2), take thymus 2 vs blood 2 from other 5 plates (not LCE511, as they are supposed to be sorted properly), find the marker to distinguish thymus 2 and blood 2, then look into these genes for row L - P and (see if row O got marker from row P as well)</strong></p>
+<h1 id="sample_name-specific-upregulated-genes">sample_name-specific upregulated genes</h1>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='va'>sce</span>
+<span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='va'>sce3</span><span class='op'>[</span>,<span class='va'>sce3</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>==</span><span class='st'>"LCE511"</span><span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>sce3</span><span class='op'>$</span><span class='va'>batch</span> <span class='op'>&lt;-</span> <span class='va'>sce3</span><span class='op'>$</span><span class='va'>plate_number</span>
+
+<span class='va'>var_fit</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/modelGeneVarWithSpikes.html'>modelGeneVarWithSpikes</a></span><span class='op'>(</span><span class='va'>sce3</span>, <span class='st'>"ERCC"</span>, block <span class='op'>=</span> <span class='va'>sce3</span><span class='op'>$</span><span class='va'>batch</span><span class='op'>)</span>
+<span class='va'>hvg</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/getTopHVGs.html'>getTopHVGs</a></span><span class='op'>(</span><span class='va'>var_fit</span>, var.threshold <span class='op'>=</span> <span class='fl'>0</span><span class='op'>)</span>
+<span class='va'>hvg</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>setdiff</a></span><span class='op'>(</span><span class='va'>hvg</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>ribo_set</span>, <span class='va'>mito_set</span>, <span class='va'>pseudogene_set</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>67726</span><span class='op'>)</span>
+<span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/denoisePCA.html'>denoisePCA</a></span><span class='op'>(</span>
+  <span class='va'>sce3</span>, 
+  <span class='va'>var_fit</span>, 
+  subset.row <span class='op'>=</span> <span class='va'>hvg</span>,
+  BSPARAM <span class='op'>=</span> <span class='fu'>BiocSingular</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/BiocSingular/man/BiocSingularParam.html'>IrlbaParam</a></span><span class='op'>(</span>deferred <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>853</span><span class='op'>)</span>
+<span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/runUMAP.html'>runUMAP</a></span><span class='op'>(</span><span class='va'>sce3</span>, dimred <span class='op'>=</span> <span class='st'>"PCA"</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>4759</span><span class='op'>)</span>
+<span class='va'>snn_gr</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/buildSNNGraph.html'>buildSNNGraph</a></span><span class='op'>(</span><span class='va'>sce3</span>, use.dimred <span class='op'>=</span> <span class='st'>"PCA"</span><span class='op'>)</span>
+<span class='va'>clusters</span> <span class='op'>&lt;-</span> <span class='fu'>igraph</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/igraph/man/cluster_louvain.html'>cluster_louvain</a></span><span class='op'>(</span><span class='va'>snn_gr</span><span class='op'>)</span>
+<span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='va'>clusters</span><span class='op'>$</span><span class='va'>membership</span><span class='op'>)</span>
+<span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
+  <span class='fu'>scater</span><span class='fu'>:::</span><span class='fu'>.get_palette</span><span class='op'>(</span><span class='st'>"tableau10medium"</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span><span class='op'>]</span>,
+  <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>sce3</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='va'>cluster_colours</span><span class='op'>[</span><span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>sample_name_markers</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/findMarkers.html'>findMarkers</a></span><span class='op'>(</span>
+  <span class='va'>sce3</span>,
+  groups <span class='op'>=</span> <span class='va'>sce3</span><span class='op'>$</span><span class='va'>sample_name</span>,
+  direction <span class='op'>=</span> <span class='st'>"up"</span>,
+  pval.type <span class='op'>=</span> <span class='st'>"all"</span>,
+  row.data <span class='op'>=</span> <span class='fu'>rowData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+</div>
+<p>Most <code>sample_name</code> do not have many genes that are specifically upregulated in that cluster compared to all other clusters (<span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span><span class='op'>(</span><span class='va'>sample_name_markers</span>, <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span> <span class='fu'><a href='https://rdrr.io/r/base/sum.html'>sum</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>  Blood 1   Blood 2   Blood 3  Thymus 1  Thymus 2  Thymus 3 Cell line 
+        0         0         0         0         0         0         2 </code></pre>
+</div>
+<p>The heatmaps below highlight the top-50 genes for each <code>sample_name</code></p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>collected</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='op'>)</span>
+<span class='kw'>for</span> <span class='op'>(</span><span class='va'>lab</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sample_name_markers</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='va'>lab_markers</span> <span class='op'>&lt;-</span> <span class='va'>sample_name_markers</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span>
+  <span class='co'># NOTE: Select top-50 markers for plotting.</span>
+  <span class='va'>m</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>lab_markers</span><span class='op'>)</span>, <span class='fl'>50</span><span class='op'>)</span>
+  <span class='va'>collected</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+    object <span class='op'>=</span> <span class='va'>sce3</span>,
+    features <span class='op'>=</span> <span class='va'>m</span>,
+    color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+    center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+    order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"sample_name"</span>, <span class='st'>"cluster"</span>, <span class='st'>"post_hoc_sample_gate"</span>, <span class='st'>"plate_number"</span>, <span class='st'>"tissue"</span>, <span class='st'>"donor"</span><span class='op'>)</span>,
+    cluster_rows <span class='op'>=</span> <span class='cn'>TRUE</span>,
+    fontsize <span class='op'>=</span> <span class='fl'>5</span>,
+    column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+      sample_name <span class='op'>=</span> <span class='va'>sample_name_colours</span>,
+      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+      post_hoc_sample_gate <span class='op'>=</span> <span class='va'>sample_gate_colours</span>,
+      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,
+      tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+      donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+    main <span class='op'>=</span> <span class='va'>lab</span>,
+    <span class='co'># annotation_legend = FALSE,</span>
+    silent <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>[[</span><span class='fl'>4</span><span class='op'>]</span><span class='op'>]</span>
+<span class='op'>}</span>
+<span class='fu'><a href='https://patchwork.data-imaginist.com/reference/wrap_plots.html'>wrap_plots</a></span><span class='op'>(</span><span class='va'>collected</span>, ncol <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<p><img src="test/unnamed-chunk-25-1.png" width="624" /></p>
+</div>
+<h1 id="tissue-specific-upregulated-genes">tissue-specific upregulated genes</h1>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='va'>sce</span>
+<span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='va'>sce3</span><span class='op'>[</span>,<span class='va'>sce3</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>==</span><span class='st'>"LCE511"</span><span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>sce3</span><span class='op'>$</span><span class='va'>batch</span> <span class='op'>&lt;-</span> <span class='va'>sce3</span><span class='op'>$</span><span class='va'>plate_number</span>
+
+<span class='va'>var_fit</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/modelGeneVarWithSpikes.html'>modelGeneVarWithSpikes</a></span><span class='op'>(</span><span class='va'>sce3</span>, <span class='st'>"ERCC"</span>, block <span class='op'>=</span> <span class='va'>sce3</span><span class='op'>$</span><span class='va'>batch</span><span class='op'>)</span>
+<span class='va'>hvg</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/getTopHVGs.html'>getTopHVGs</a></span><span class='op'>(</span><span class='va'>var_fit</span>, var.threshold <span class='op'>=</span> <span class='fl'>0</span><span class='op'>)</span>
+<span class='va'>hvg</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>setdiff</a></span><span class='op'>(</span><span class='va'>hvg</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>ribo_set</span>, <span class='va'>mito_set</span>, <span class='va'>pseudogene_set</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>67726</span><span class='op'>)</span>
+<span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/denoisePCA.html'>denoisePCA</a></span><span class='op'>(</span>
+  <span class='va'>sce3</span>, 
+  <span class='va'>var_fit</span>, 
+  subset.row <span class='op'>=</span> <span class='va'>hvg</span>,
+  BSPARAM <span class='op'>=</span> <span class='fu'>BiocSingular</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/BiocSingular/man/BiocSingularParam.html'>IrlbaParam</a></span><span class='op'>(</span>deferred <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>853</span><span class='op'>)</span>
+<span class='va'>sce3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/runUMAP.html'>runUMAP</a></span><span class='op'>(</span><span class='va'>sce3</span>, dimred <span class='op'>=</span> <span class='st'>"PCA"</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>4759</span><span class='op'>)</span>
+<span class='va'>snn_gr</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/buildSNNGraph.html'>buildSNNGraph</a></span><span class='op'>(</span><span class='va'>sce3</span>, use.dimred <span class='op'>=</span> <span class='st'>"PCA"</span><span class='op'>)</span>
+<span class='va'>clusters</span> <span class='op'>&lt;-</span> <span class='fu'>igraph</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/igraph/man/cluster_louvain.html'>cluster_louvain</a></span><span class='op'>(</span><span class='va'>snn_gr</span><span class='op'>)</span>
+<span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='va'>clusters</span><span class='op'>$</span><span class='va'>membership</span><span class='op'>)</span>
+<span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
+  <span class='fu'>scater</span><span class='fu'>:::</span><span class='fu'>.get_palette</span><span class='op'>(</span><span class='st'>"tableau10medium"</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span><span class='op'>]</span>,
+  <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>sce3</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='va'>cluster_colours</span><span class='op'>[</span><span class='va'>sce3</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>tissue_markers</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/findMarkers.html'>findMarkers</a></span><span class='op'>(</span>
+  <span class='va'>sce3</span>,
+  groups <span class='op'>=</span> <span class='va'>sce3</span><span class='op'>$</span><span class='va'>tissue</span>,
+  direction <span class='op'>=</span> <span class='st'>"up"</span>,
+  pval.type <span class='op'>=</span> <span class='st'>"all"</span>,
+  row.data <span class='op'>=</span> <span class='fu'>rowData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+</div>
+<p>Most <code>tissue</code> do not have many genes that are specifically upregulated in that cluster compared to all other clusters (<span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span><span class='op'>(</span><span class='va'>tissue_markers</span>, <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span> <span class='fu'><a href='https://rdrr.io/r/base/sum.html'>sum</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code> Blood Thymus   SKW3 
+     0      9     37 </code></pre>
+</div>
+<p>The heatmaps below highlight the top-50 genes for each <code>tissue</code></p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>collected</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='op'>)</span>
+<span class='kw'>for</span> <span class='op'>(</span><span class='va'>lab</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>tissue_markers</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='va'>lab_markers</span> <span class='op'>&lt;-</span> <span class='va'>tissue_markers</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span>
+  <span class='co'># NOTE: Select top-50 markers for plotting.</span>
+  <span class='va'>m</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>lab_markers</span><span class='op'>)</span>, <span class='fl'>50</span><span class='op'>)</span>
+  <span class='va'>collected</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+    object <span class='op'>=</span> <span class='va'>sce3</span>,
+    features <span class='op'>=</span> <span class='va'>m</span>,
+    color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+    center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+    order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"tissue"</span>, <span class='st'>"cluster"</span>, <span class='st'>"post_hoc_sample_gate"</span>, <span class='st'>"plate_number"</span>, <span class='st'>"tissue"</span>, <span class='st'>"donor"</span><span class='op'>)</span>,
+    cluster_rows <span class='op'>=</span> <span class='cn'>TRUE</span>,
+    fontsize <span class='op'>=</span> <span class='fl'>5</span>,
+    column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+      tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+      post_hoc_sample_gate <span class='op'>=</span> <span class='va'>sample_gate_colours</span>,
+      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,
+      tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+      donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+    main <span class='op'>=</span> <span class='va'>lab</span>,
+    <span class='co'># annotation_legend = FALSE,</span>
+    silent <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>[[</span><span class='fl'>4</span><span class='op'>]</span><span class='op'>]</span>
+<span class='op'>}</span>
+<span class='fu'><a href='https://patchwork.data-imaginist.com/reference/wrap_plots.html'>wrap_plots</a></span><span class='op'>(</span><span class='va'>collected</span>, ncol <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<p><img src="test/unnamed-chunk-30-1.png" width="624" /></p>
+</div>
+<h1 id="row-specific-upregulated-genes">Row-specific upregulated genes</h1>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -4049,36 +4279,20 @@ Show code
 </div>
 </details>
 </div>
-<div class="layout-chunk" data-layout="l-body">
-<details>
-<summary>
-Show code
-</summary>
-<div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>row_markers</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/findMarkers.html'>findMarkers</a></span><span class='op'>(</span>
-  <span class='va'>sce2</span>,
-  groups <span class='op'>=</span> <span class='va'>sce2</span><span class='op'>$</span><span class='va'>row</span>,
-  direction <span class='op'>=</span> <span class='st'>"up"</span>,
-  pval.type <span class='op'>=</span> <span class='st'>"all"</span>,
-  row.data <span class='op'>=</span> <span class='fu'>rowData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>
-</code></pre>
-</div>
-</details>
-</div>
-<p>Most rows do not have many genes that are specifically upregulated in that cluster compared to all other clusters (<span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
-<div class="layout-chunk" data-layout="l-body">
-<details>
-<summary>
-Show code
-</summary>
-<div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span><span class='op'>(</span><span class='va'>row_markers</span>, <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span> <span class='fu'><a href='https://rdrr.io/r/base/sum.html'>sum</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-</code></pre>
-</div>
-</details>
-<pre><code>L M N O P 
-0 0 0 0 0 </code></pre>
-</div>
+<!-- # ```{r} -->
+<!-- # row_markers <- findMarkers( -->
+<!-- #   sce2, -->
+<!-- #   groups = sce2$row, -->
+<!-- #   direction = "up", -->
+<!-- #   pval.type = "all", -->
+<!-- #   row.data = rowData(sce)) -->
+<!-- # ``` -->
+<!-- #  -->
+<!-- # Most rows do not have many genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$). -->
+<!-- #  -->
+<!-- # ```{r} -->
+<!-- # print(sapply(row_markers, function(x) sum(x$FDR < 0.05))) -->
+<!-- # ``` -->
 <p>The heatmaps below highlight the top-50 genes for each row</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -4087,8 +4301,8 @@ Show code
 </summary>
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>collected</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='op'>)</span>
-<span class='kw'>for</span> <span class='op'>(</span><span class='va'>lab</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>row_markers</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='va'>lab_markers</span> <span class='op'>&lt;-</span> <span class='va'>row_markers</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span>
+<span class='kw'>for</span> <span class='op'>(</span><span class='va'>lab</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sample_name_markers</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='va'>lab_markers</span> <span class='op'>&lt;-</span> <span class='va'>sample_name_markers</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span>
   <span class='co'># NOTE: Select top-50 markers for plotting.</span>
   <span class='va'>m</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>lab_markers</span><span class='op'>)</span>, <span class='fl'>50</span><span class='op'>)</span>
   <span class='va'>collected</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
@@ -4116,12 +4330,47 @@ Show code
 </code></pre>
 </div>
 </details>
-<p><img src="test/unnamed-chunk-25-1.png" width="624" /></p>
+<p><img src="test/unnamed-chunk-33-1.png" width="624" /></p>
 </div>
 <div class="layout-chunk" data-layout="l-body">
-
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>collected</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='op'>)</span>
+<span class='kw'>for</span> <span class='op'>(</span><span class='va'>lab</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>tissue_markers</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='va'>lab_markers</span> <span class='op'>&lt;-</span> <span class='va'>tissue_markers</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span>
+  <span class='co'># NOTE: Select top-50 markers for plotting.</span>
+  <span class='va'>m</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>lab_markers</span><span class='op'>)</span>, <span class='fl'>50</span><span class='op'>)</span>
+  <span class='va'>collected</span><span class='op'>[[</span><span class='va'>lab</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+    object <span class='op'>=</span> <span class='va'>sce2</span>,
+    features <span class='op'>=</span> <span class='va'>m</span>,
+    color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+    center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+    order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"row"</span>, <span class='st'>"cluster"</span>, <span class='st'>"sample_name"</span>, <span class='st'>"post_hoc_sample_gate"</span>, <span class='st'>"plate_number"</span>, <span class='st'>"tissue"</span>, <span class='st'>"donor"</span><span class='op'>)</span>,
+    cluster_rows <span class='op'>=</span> <span class='cn'>TRUE</span>,
+    fontsize <span class='op'>=</span> <span class='fl'>5</span>,
+    column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+      row <span class='op'>=</span> <span class='va'>row_colours</span>,
+      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+      sample_name <span class='op'>=</span> <span class='va'>sample_name_colours</span>,
+      post_hoc_sample_gate <span class='op'>=</span> <span class='va'>sample_gate_colours</span>,
+      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,
+      tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+      donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+    main <span class='op'>=</span> <span class='va'>lab</span>,
+    <span class='co'># annotation_legend = FALSE,</span>
+    silent <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>[[</span><span class='fl'>4</span><span class='op'>]</span><span class='op'>]</span>
+<span class='op'>}</span>
+<span class='fu'><a href='https://patchwork.data-imaginist.com/reference/wrap_plots.html'>wrap_plots</a></span><span class='op'>(</span><span class='va'>collected</span>, ncol <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span>
+</code></pre>
 </div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+</details>
+<p><img src="test/unnamed-chunk-34-1.png" width="624" /></p>
+</div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
 <div id="ref-anders2010differential" class="csl-entry" role="doc-biblioentry">
 Anders, S., and W. Huber. 2010. <span>“Differential Expression Analysis for Sequence Count Data.”</span> <em>Genome Biol.</em> 11 (10): R106. <a href="https://www.ncbi.nlm.nih.gov/pubmed/20979621">https://www.ncbi.nlm.nih.gov/pubmed/20979621</a>.
