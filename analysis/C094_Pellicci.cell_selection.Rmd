@@ -266,7 +266,7 @@ p6 <- ggcells(sce) +
   
   - cluster 2, 4, and 6 represent the 3 types/status of cells within P8 and can be found in all blood and thymus samples
   - most of the cells in P5, P6 and P7 form 1 single cluster, i.e. cluster 3, and they found mostly in thymus sample only
-  - cluster 1 and 5 are the only standalone clusters separated from the major group (and they are the only two clusters needed to be decided if they should "be kept or not to be kept" during cell selection)
+  - cluster 1 and 5 are the only standalone clusters separated from the major group (and they seem to be the two obvious clusters needed to be decided if they should "be kept" or "not to be kept" during cell selection step)
   - cluster 1 is basically the control cell line, accompanied with a small amount of cells from thymus 2 and 3
   - cluster 5 are formed from cells mostly from blood 3 and thymus 3 only, implying it was originated from donor 3 only somehow
   - merging or not will be decided based on if the feature above can be preserved/ sharpened
@@ -439,7 +439,7 @@ cluster_colours_3 <- setNames(
 sce0$colours$cluster_colours_3 <- cluster_colours_3[sce0$cluster_3]
 ```
 
-Figure \@ref(fig:batch-correction-test) shows an overview of comparisons between the unmerged and merged (left to right: auto, manual 1, and manual 2) data.
+Figure \@ref(fig:batch-correction-test) shows an overview of comparisons between the unmerged and merged (left to right: unmerged, auto, manual merge 1, and manual merge 2) data.
 
 ```{r batch-correction-test, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (leftmost column) and -corrected data by auto merge (2nd column) and two different manual merge orders (3rd and rightmost columns, respectively).", layout="l-page"}
 
@@ -628,7 +628,7 @@ align ="h"
 ```
 
 Further, we also investigate the usefulness of the control cell line included for batch correction.
-Unfortunately, the cell line alone seems not be able to help with the batch correction, but either exacerbated or leave the batch impact unresolved (Figure \@ref(fig:umap-plate-number-cell-line-guided-MNN)).
+The cell line alone, unfortunately, seems not be able to help with the batch correction, but either exacerbated or leave the batch impact unresolved in this scenario (Figure \@ref(fig:umap-plate-number-cell-line-guided-MNN)).
 
 ```{r, results = "hide"}
 sce1 <- sce
@@ -769,8 +769,8 @@ align ="h"
 )
 ```
 
-Notably, the SKW3 cell line seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the thymus cell and form a standalone cluster in Figure \@ref(fig:umap-tissue)).
-To identify the identity of this cells, we perform cell annotation at cluster level with SingleR.
+Also, notably, the SKW3 cell line seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the thymus cell and form a standalone cluster in Figure \@ref(fig:umap-tissue)).
+To determine the identity of these cells, we perform cell annotation at cluster level with SingleR using the most relevant annotation reference to gamma-delta T cells- i.e. [Monaco Immune Cell Data (GSE107011)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011) [@monaco_immuneRef].
 
 ## Cell type estimation
 
@@ -842,7 +842,422 @@ p2 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
 p1 + p2 + plot_layout(widths = c(1, 2))
 ```
 
-**TODO: based on the SingleR annotation, cluster 5 is potentially be a contaminant (intermediate monocytes and is not our interested gamma-delta T cells) that sneaked through the FACS gate and could considered to be removed**
+Next, we examine the expression of the marker genes for each label in the test dataset.
+We extract the identity of the markers in the reference data sets and use them to create a heatmap of their expression in the test data set.
+If a cell in the test dataset is confidently assigned to a particular label, we would expect it to have strong expression of that label’s markers.
+
+```{r}
+all_markers <- metadata(pred_cluster_fine)$de.genes
+# Get top-10 marker genes compared to each other cell type
+example_label <- "Vd2 gd T cells"
+top_markers <- Reduce(union, sapply(all_markers[[example_label]], head, 10))
+```
+
+Figures \@ref(fig:heat-mi-fine-markers) demonstrates this for cells labelled as `r example_label`.
+
+```{r heat-mi-fine-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
+library(scater)
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$label_cluster_fine_collapsed,
+    sce$cluster,
+    sce$sample_name,
+    sce$plate_number,
+    sce$post_hoc_sample_gate,
+    sce$tissue,
+    sce$donor,
+    sce$sample_type),
+  colour_columns_by = c(
+    "label_cluster_fine_collapsed",
+    "cluster",
+    "sample_name",
+    "plate_number",
+    "post_hoc_sample_gate",
+    "tissue",
+    "donor",
+    "sample_type"),
+  cluster_cols = FALSE, 
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     label_cluster_fine_collapsed = label_fine_collapsed_colours,
+     cluster = cluster_colours,
+     sample_name = sample_name_colours,
+     plate_number = plate_number_colours,
+     post_hoc_sample_gate = sample_gate_colours,
+     tissue = tissue_colours,
+     donor = donor_colours,
+     sample_type = sample_type_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 5)
+```
+
+```{r heat-mi-fine-markers-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
+library(scater)
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$cluster,
+    sce$label_cluster_fine_collapsed,
+    sce$sample_name,
+    sce$plate_number,
+    sce$post_hoc_sample_gate,
+    sce$tissue,
+    sce$donor,
+    sce$sample_type),
+  colour_columns_by = c(
+    "cluster",
+    "label_cluster_fine_collapsed",
+    "sample_name",
+    "plate_number",
+    "post_hoc_sample_gate",
+    "tissue",
+    "donor",
+    "sample_type"),
+  cluster_cols = FALSE, 
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+     label_cluster_fine_collapsed = label_fine_collapsed_colours,
+     sample_name = sample_name_colours,
+     plate_number = plate_number_colours,
+     post_hoc_sample_gate = sample_gate_colours,
+     tissue = tissue_colours,
+     donor = donor_colours,
+     sample_type = sample_type_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 5)
+```
+
+At the very least, it should exhibit up-regulation of those markers relative to cells assigned to other labels.
+This can be visualized by row-normalizing the data, as done in Figure \@ref(fig:heat-mi-fine-markers-row-normalized).
+
+```{r heat-mi-fine-markers-row-normalized, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$label_cluster_fine_collapsed,
+    sce$cluster,
+    sce$sample_name,
+    sce$plate_number,
+    sce$post_hoc_sample_gate,
+    sce$tissue,
+    sce$donor,
+    sce$sample_type),
+  colour_columns_by = c(
+    "label_cluster_fine_collapsed",
+    "cluster",
+    "sample_name",
+    "plate_number",
+    "post_hoc_sample_gate",
+    "tissue",
+    "donor",
+    "sample_type"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     label_cluster_fine_collapsed = label_fine_collapsed_colours,
+     cluster = cluster_colours,
+     sample_name = sample_name_colours,
+     plate_number = plate_number_colours,
+     post_hoc_sample_gate = sample_gate_colours,
+     tissue = tissue_colours,
+     donor = donor_colours,
+     sample_type = sample_type_colours),
+  fontsize = 5)
+```
+
+```{r heat-mi-fine-markers-row-normalized-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$cluster,
+    sce$label_cluster_fine_collapsed,
+    sce$sample_name,
+    sce$plate_number,
+    sce$post_hoc_sample_gate,
+    sce$tissue,
+    sce$donor,
+    sce$sample_type),
+  colour_columns_by = c(
+    "cluster",
+    "label_cluster_fine_collapsed",
+    "sample_name",
+    "plate_number",
+    "post_hoc_sample_gate",
+    "tissue",
+    "donor",
+    "sample_type"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+     label_cluster_fine_collapsed = label_fine_collapsed_colours,
+     sample_name = sample_name_colours,
+     plate_number = plate_number_colours,
+     post_hoc_sample_gate = sample_gate_colours,
+     tissue = tissue_colours,
+     donor = donor_colours,
+     sample_type = sample_type_colours),
+  fontsize = 5)
+```
+
+Similar figures showing the top-10 marker genes for each label are available in [`output/marker_genes/cell_selection/SingleR/`](../output/marker_genes/cell_selection/SingleR/).
+
+```{r, results = "hide"}
+dir.create(here("output", "marker_genes", "cell_selection", "SingleR"))
+dev.off() # Needed to ensure next figures save properly.
+# NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
+sce$label_cluster_fine_collapsed <- factor(gsub("/", "_", sce$label_cluster_fine_collapsed))
+for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "cell_selection",
+      "SingleR",
+      paste0("MI.", "heatmaps.", label, ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$label_cluster_fine_collapsed,
+      sce$cluster,
+      sce$sample_name,
+      sce$plate_number,
+      sce$post_hoc_sample_gate,
+      sce$tissue,
+      sce$donor,
+      sce$sample_type),
+    colour_columns_by = c(
+      "label_cluster_fine_collapsed",
+      "cluster",
+      "sample_name",
+      "plate_number",
+      "post_hoc_sample_gate",
+      "tissue",
+      "donor",
+      "sample_type"),
+    cluster_cols = FALSE, 
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       label_cluster_fine_collapsed = label_fine_collapsed_colours,
+       cluster = cluster_colours,
+       sample_name = sample_name_colours,
+       plate_number = plate_number_colours,
+       post_hoc_sample_gate = sample_gate_colours,
+       tissue = tissue_colours,
+       donor = donor_colours,
+       sample_type = sample_type_colours),
+    main = label,
+    color = hcl.colors(101, "Blue-Red 3"),
+    fontsize = 5)
+  dev.off()
+}
+
+for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "cell_selection",
+      "SingleR",
+      paste0("MI.", "heatmaps_row-normalized.", label, ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$label_cluster_fine_collapsed,
+      sce$cluster,
+      sce$sample_name,
+      sce$plate_number,
+      sce$post_hoc_sample_gate,
+      sce$tissue,
+      sce$donor,
+      sce$sample_type),
+    colour_columns_by = c(
+      "label_cluster_fine_collapsed",
+      "cluster",
+      "sample_name",
+      "plate_number",
+      "post_hoc_sample_gate",
+      "tissue",
+      "donor",
+      "sample_type"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-3, 3),
+    show_colnames = FALSE,
+   column_annotation_colors = list(
+       label_cluster_fine_collapsed = label_fine_collapsed_colours,
+       cluster = cluster_colours,
+       sample_name = sample_name_colours,
+       plate_number = plate_number_colours,
+       post_hoc_sample_gate = sample_gate_colours,
+       tissue = tissue_colours,
+       donor = donor_colours,
+       sample_type = sample_type_colours),
+    color = hcl.colors(101, "Blue-Red 3"),
+    main = label,
+    fontsize = 5)
+  
+  dev.off()
+}
+```
+
+
+```{r, results = "hide"}
+dir.create(here("output", "marker_genes", "cell_selection", "SingleR"))
+dev.off() # Needed to ensure next figures save properly.
+# NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
+sce$label_cluster_fine_collapsed <- factor(gsub("/", "_", sce$label_cluster_fine_collapsed))
+for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "cell_selection",
+      "SingleR",
+      paste0("MI.", "heatmaps.", label, "ordered.by.cluster", ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$cluster,
+      sce$label_cluster_fine_collapsed,
+      sce$sample_name,
+      sce$plate_number,
+      sce$post_hoc_sample_gate,
+      sce$tissue,
+      sce$donor,
+      sce$sample_type),
+    colour_columns_by = c(
+      "cluster",
+      "label_cluster_fine_collapsed",
+      "sample_name",
+      "plate_number",
+      "post_hoc_sample_gate",
+      "tissue",
+      "donor",
+      "sample_type"),
+    cluster_cols = FALSE, 
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       cluster = cluster_colours,
+       label_cluster_fine_collapsed = label_fine_collapsed_colours,
+       sample_name = sample_name_colours,
+       plate_number = plate_number_colours,
+       post_hoc_sample_gate = sample_gate_colours,
+       tissue = tissue_colours,
+       donor = donor_colours,
+       sample_type = sample_type_colours),
+    main = label,
+    color = hcl.colors(101, "Blue-Red 3"),
+    fontsize = 5)
+  dev.off()
+}
+for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "cell_selection",
+      "SingleR",
+      paste0("MI.", "heatmaps_row-normalized.", label, "ordered.by.cluster", ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$cluster,
+      sce$label_cluster_fine_collapsed,
+      sce$sample_name,
+      sce$plate_number,
+      sce$post_hoc_sample_gate,
+      sce$tissue,
+      sce$donor,
+      sce$sample_type),
+    colour_columns_by = c(
+      "cluster",
+      "label_cluster_fine_collapsed",
+      "sample_name",
+      "plate_number",
+      "post_hoc_sample_gate",
+      "tissue",
+      "donor",
+      "sample_type"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-3, 3),
+    show_colnames = FALSE,
+   column_annotation_colors = list(
+       cluster = cluster_colours,
+       label_cluster_fine_collapsed = label_fine_collapsed_colours,
+       sample_name = sample_name_colours,
+       plate_number = plate_number_colours,
+       post_hoc_sample_gate = sample_gate_colours,
+       tissue = tissue_colours,
+       donor = donor_colours,
+       sample_type = sample_type_colours),
+    color = hcl.colors(101, "Blue-Red 3"),
+    main = label,
+    fontsize = 5)
+  
+  dev.off()
+}
+```
+
+**TODO**: based on the SingleR annotation, cluster 5 could potentially be a contaminant (likely be the `intermediate monocytes` from `donor 3`) that sneaked through the FACS gate and could considered to be removed.
+
+
+
+
+
+
+
 
 ## Cluster-specific upregulated genes 
 
