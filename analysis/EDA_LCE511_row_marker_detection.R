@@ -246,13 +246,6 @@ sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
 pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 
-library(scran)
-set.seed(9434887)
-clusters <- quickCluster(sce)
-round(prop.table(table(clusters, sce$batch), 1), 2)
-sce <- computeSumFactors(sce, clusters = clusters, min.mean = 0.1)
-summary(sizeFactors(sce))
-
 sce <- logNormCounts(sce)
 
 sizeFactors(altExp(sce, "ERCC")) <- librarySizeFactors(altExp(sce, "ERCC"))
@@ -260,9 +253,12 @@ sizeFactors(altExp(sce, "ERCC")) <- librarySizeFactors(altExp(sce, "ERCC"))
 
 
 
+
+### these are the `Thymus 2` and `Blood 2`  unique markers that defined based only on plates other than `LCE511` (and not the 2 new plates, i.e. LCE515 and 516)
+
 # sample_name-specific upregulated genes
-# select all plate except LCE511
-sce1 <- sce[,!(sce$plate_number=="LCE511")]
+# select all plate except LCE511, and NOT LCE515 and LCE516 (mini-bulk only)
+sce1 <- sce[,!(sce$plate_number=="LCE511" | sce$plate_number=="LCE515" | sce$plate_number=="LCE516")]
 sce1$plate_number <- droplevels(sce1$plate_number)
 
 # limit to only Blood 2 and Thymus 2
@@ -292,7 +288,7 @@ for (lab in names(sample_name_markers)) {
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
-    order_columns_by = c("sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    order_columns_by = c("sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
     cluster_rows = TRUE,
     fontsize = 5,
     column_annotation_colors = list(
@@ -308,6 +304,7 @@ for (lab in names(sample_name_markers)) {
 wrap_plots(collected, ncol = 1)
 
 
+### then if we make use of this `Thymus 2` and `Blood 2`-specific markers and look into the last 5 rows of the plate LCE511
 
 # subset to plate- and row-of-interest
 sce2 <- sce[, sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) %in% c("L", "M", "N", "O", "P")]
@@ -332,7 +329,7 @@ for (lab in names(sample_name_markers)) {
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
-    order_columns_by = c("row", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    order_columns_by = c("row", "sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
     cluster_rows = TRUE,
     fontsize = 5,
     column_annotation_colors = list(
@@ -347,5 +344,17 @@ for (lab in names(sample_name_markers)) {
     silent = TRUE)[[4]]
 }
 wrap_plots(collected, ncol = 1)
+
+# comments: so our hypothesis is, row P (is Blood 2) sample accidentally being sorted onto row O (Thymus 2),
+# it means we are supposed to see, on row O, both Blood 2 and Thymus 2  markers if this mixing really occurs;
+# if not, for row O, we should only see Thymus 2 markers only (edited)
+# It seems to be true that row O have expression of both Thymus 2 and Blood 2 markers, but same is true for row L to row N
+# Unless the contamination with Blood 2 occur far "upward" that cover all row L  to row N  samples,
+# I am afraid based on this, it still hard to tell if row O was contaminated by row P  based on these markers
+
+
+
+
+
 
 
