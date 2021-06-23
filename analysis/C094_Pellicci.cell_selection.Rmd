@@ -879,7 +879,7 @@ mnn_out_0 <- fastMNN(
   restrict = list(sce2$sample_name == "Cell line"), 
   subset.row = hvg)
 
-reducedDim(sce2, "corrected_3") <- reducedDim(mnn_out_0, "corrected")
+reducedDim(sce2, "corrected") <- reducedDim(mnn_out_0, "corrected")
 
 # generate UMAP
 set.seed(18191)
@@ -889,23 +889,14 @@ uncorrected_umap <- cbind(
     x = reducedDim(sce2, "UMAP")[, 1],
     y = reducedDim(sce2, "UMAP")[, 2]),
   as.data.frame(colData(sce2)))
-set.seed(11901)
-sce2 <- runUMAP(sce2, dimred = "corrected_3", name = "UMAP_corrected_3")
-corrected_umap_3 <- cbind(
-  data.frame(
-    x = reducedDim(sce2, "UMAP_corrected_3")[, 1],
-    y = reducedDim(sce2, "UMAP_corrected_3")[, 2]),
-  as.data.frame(colData(sce2)))
 
-# re-clustering after each MNN correction
-set.seed(4759)
-snn_gr_3 <- buildSNNGraph(sce2, use.dimred = "corrected_3")
-clusters_3 <- igraph::cluster_louvain(snn_gr_3)
-sce2$cluster_3 <- factor(clusters_3$membership)
-cluster_colours_3 <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce2$cluster_3))],
-  levels(sce2$cluster_3))
-sce2$colours$cluster_colours_3 <- cluster_colours_3[sce2$cluster_3]
+set.seed(11901)
+sce2 <- runUMAP(sce2, dimred = "corrected", name = "UMAP_corrected")
+corrected_umap <- cbind(
+  data.frame(
+    x = reducedDim(sce2, "UMAP_corrected")[, 1],
+    y = reducedDim(sce2, "UMAP_corrected")[, 2]),
+  as.data.frame(colData(sce2)))
 ```
 
 ```{r umap-plate-number-cell-line-guided-MNN, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
@@ -926,14 +917,14 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
 
-ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
   scale_fill_manual(values = plate_number_colours, name = "plate_number") +
   scale_colour_manual(values = plate_number_colours, name = "plate_number") +
   theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
+  xlab("UMAP_corrected 1") +
+  ylab("UMAP_corrected 2") +
   facet_wrap(~plate_number, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
@@ -1105,17 +1096,6 @@ p6 <- ggcells(sce) +
   - cluster `1` and `2` are mostly cells from `Thymus`
   - except for cells in cluster `1`, cells in all other clusters are mostly in `P8`
 
-
-
-
-
-
-
-
-
-
-
-  
 # Data integration
 
 ## Motivation
