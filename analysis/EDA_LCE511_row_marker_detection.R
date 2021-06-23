@@ -303,6 +303,35 @@ for (lab in names(sample_name_markers)) {
 }
 wrap_plots(collected, ncol = 1)
 
+# plot (if grouping the columns)
+collected <- list()
+for (lab in names(sample_name_markers)) {
+  lab_markers <- sample_name_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce1,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    colour_columns_by = c("sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+
+
+
 
 ### then if we make use of this `Thymus 2` and `Blood 2`-specific markers and look into the last 5 rows of the plate LCE511
 
@@ -345,12 +374,48 @@ for (lab in names(sample_name_markers)) {
 }
 wrap_plots(collected, ncol = 1)
 
-# comments: so our hypothesis is, row P (is Blood 2) sample accidentally being sorted onto row O (Thymus 2),
+# plot (if grouping the columns)
+collected <- list()
+for (lab in names(sample_name_markers)) {
+  lab_markers <- sample_name_markers[[lab]]
+  # NOTE: Select top-50 markers for plotting.
+  m <- head(rownames(lab_markers), 50)
+  collected[[lab]] <- plotHeatmap(
+    object = sce2,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    colour_columns_by = c("row", "sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      row = row_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours),
+    main = lab,
+    # annotation_legend = FALSE,
+    silent = TRUE)[[4]]
+}
+wrap_plots(collected, ncol = 1)
+
+# comments:
+# so our hypothesis is, row P (is Blood 2) sample accidentally being sorted onto row O (Thymus 2),
 # it means we are supposed to see, on row O, both Blood 2 and Thymus 2  markers if this mixing really occurs;
-# if not, for row O, we should only see Thymus 2 markers only (edited)
-# It seems to be true that row O have expression of both Thymus 2 and Blood 2 markers, but same is true for row L to row N
+# if not, for row O, we should only see Thymus 2 markers only
+#
+# if based on the heatmap without grouping of cells by colour,
+# it seems to be true that row O have expression of both Thymus 2 and Blood 2 markers, but same is true for row L to row N
 # Unless the contamination with Blood 2 occur far "upward" that cover all row L  to row N  samples,
 # I am afraid based on this, it still hard to tell if row O was contaminated by row P  based on these markers
+#
+# but if based heatmap grouped cells by colour
+# the thymus 2  markers seems not seeing consistency of marker expression between cells for each row (which may not be of useful);
+# but for blood 2  one , it seems like cells on row O (orange) are showing up-regulation of blood 2 markers,
+# indicating that blood 2 sample on row P goes up to row O  (???)
 
 
 
