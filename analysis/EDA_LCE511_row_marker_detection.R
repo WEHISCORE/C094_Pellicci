@@ -254,6 +254,17 @@ sizeFactors(altExp(sce, "ERCC")) <- librarySizeFactors(altExp(sce, "ERCC"))
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 ### these are the `Thymus 2` and `Blood 2`  unique markers that defined based only on plates other than `LCE511` (and not the 2 new plates, i.e. LCE515 and 516)
 
 # sample_name-specific upregulated genes
@@ -276,42 +287,56 @@ sample_name_markers <- findMarkers(
 # sumup table
 print(sapply(sample_name_markers, function(x) sum(x$FDR < 0.05)))
 
+# select the top 10 marker with FDR < 0.05
+blood2_top10 <- head(rownames(sample_name_markers$`Blood 2`)[sample_name_markers$`Blood 2`$FDR < 0.05], 10)
+thymus2_top10 <- head(rownames(sample_name_markers$`Thymus 2`)[sample_name_markers$`Thymus 2`$FDR < 0.05], 10)
+selected_markers <- c(blood2_top10, thymus2_top10)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # plot
-collected <- list()
-for (lab in names(sample_name_markers)) {
-  lab_markers <- sample_name_markers[[lab]]
-  # NOTE: Select top-50 markers for plotting.
-  m <- head(rownames(lab_markers), 50)
-  collected[[lab]] <- plotHeatmap(
-    object = sce1,
-    features = m,
-    color = hcl.colors(101, "Blue-Red 3"),
-    center = TRUE,
-    zlim = c(-3, 3),
-    order_columns_by = c("sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
-    cluster_rows = TRUE,
-    fontsize = 5,
-    column_annotation_colors = list(
-      sample_name = sample_name_colours,
-      post_hoc_sample_gate = sample_gate_colours,
-      plate_number = plate_number_colours,
-      tissue = tissue_colours,
-      donor = donor_colours),
-    main = lab,
-    # annotation_legend = FALSE,
-    silent = TRUE)[[4]]
-}
-wrap_plots(collected, ncol = 1)
+plotHeatmap(
+  object = sce1,
+  features = selected_markers,
+  color = hcl.colors(101, "Blue-Red 3"),
+  center = TRUE,
+  zlim = c(-3, 3),
+  order_columns_by = c("sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
+  cluster_rows = TRUE,
+  fontsize = 5,
+  column_annotation_colors = list(
+    sample_name = sample_name_colours,
+    post_hoc_sample_gate = sample_gate_colours,
+    plate_number = plate_number_colours,
+    tissue = tissue_colours,
+    donor = donor_colours),
+  main = "")
 
 # plot (if grouping the columns)
-collected <- list()
-for (lab in names(sample_name_markers)) {
-  lab_markers <- sample_name_markers[[lab]]
-  # NOTE: Select top-50 markers for plotting.
-  m <- head(rownames(lab_markers), 50)
-  collected[[lab]] <- plotHeatmap(
+plotHeatmap(
     object = sce1,
-    features = m,
+    features = selected_markers,
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
@@ -324,11 +349,19 @@ for (lab in names(sample_name_markers)) {
       plate_number = plate_number_colours,
       tissue = tissue_colours,
       donor = donor_colours),
-    main = lab,
-    # annotation_legend = FALSE,
-    silent = TRUE)[[4]]
-}
-wrap_plots(collected, ncol = 1)
+    main = "")
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -347,42 +380,28 @@ row_colours <- setNames(
 sce2$row_colours <- row_colours[sce2$row]
 
 # plot
-collected <- list()
-for (lab in names(sample_name_markers)) {
-  lab_markers <- sample_name_markers[[lab]]
-  # NOTE: Select top-50 markers for plotting.
-  m <- head(rownames(lab_markers), 50)
-  collected[[lab]] <- plotHeatmap(
-    object = sce2,
-    features = m,
-    color = hcl.colors(101, "Blue-Red 3"),
-    center = TRUE,
-    zlim = c(-3, 3),
-    order_columns_by = c("row", "sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
-    cluster_rows = TRUE,
-    fontsize = 5,
-    column_annotation_colors = list(
-      row = row_colours,
-      sample_name = sample_name_colours,
-      post_hoc_sample_gate = sample_gate_colours,
-      plate_number = plate_number_colours,
-      tissue = tissue_colours,
-      donor = donor_colours),
-    main = lab,
-    # annotation_legend = FALSE,
-    silent = TRUE)[[4]]
-}
-wrap_plots(collected, ncol = 1)
+plotHeatmap(
+  object = sce2,
+  features = selected_markers,
+  color = hcl.colors(101, "Blue-Red 3"),
+  center = TRUE,
+  zlim = c(-3, 3),
+  order_columns_by = c("row", "sample_name", "plate_number", "post_hoc_sample_gate", "tissue", "donor"),
+  cluster_rows = TRUE,
+  fontsize = 5,
+  column_annotation_colors = list(
+    row = row_colours,
+    sample_name = sample_name_colours,
+    post_hoc_sample_gate = sample_gate_colours,
+    plate_number = plate_number_colours,
+    tissue = tissue_colours,
+    donor = donor_colours),
+  main = "")
 
 # plot (if grouping the columns)
-collected <- list()
-for (lab in names(sample_name_markers)) {
-  lab_markers <- sample_name_markers[[lab]]
-  # NOTE: Select top-50 markers for plotting.
-  m <- head(rownames(lab_markers), 50)
-  collected[[lab]] <- plotHeatmap(
+plotHeatmap(
     object = sce2,
-    features = m,
+    features = selected_markers,
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
@@ -396,11 +415,19 @@ for (lab in names(sample_name_markers)) {
       plate_number = plate_number_colours,
       tissue = tissue_colours,
       donor = donor_colours),
-    main = lab,
-    # annotation_legend = FALSE,
-    silent = TRUE)[[4]]
-}
-wrap_plots(collected, ncol = 1)
+    main = "")
+
+
+
+
+
+
+
+
+
+
+
+
 
 # comments:
 # so our hypothesis is, row P (is Blood 2) sample accidentally being sorted onto row O (Thymus 2),

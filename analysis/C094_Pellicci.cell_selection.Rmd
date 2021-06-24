@@ -351,9 +351,11 @@ If a cell in the test dataset is confidently assigned to a particular label, we 
 
 ```{r}
 all_markers <- metadata(pred_cluster_fine)$de.genes
-# Get top-10 marker genes compared to each other cell type
-example_label <- "Intermediate monocytes"
-top_markers <- Reduce(union, sapply(all_markers[[example_label]], head, 10))
+
+# Get the top-50 marker genes when comparing "gamma-delta T cells" and "intermediate monocytes"
+top_markers_1 <- head(all_markers[["Intermediate monocytes"]]$`Vd2 gd T cells`, 50)
+top_markers_2 <- head(all_markers[["Vd2 gd T cells"]]$`Intermediate monocytes`, 50)
+top_markers <- c(top_markers_1, top_markers_2)
 ```
 
 ```{r heat-mi-fine-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_label`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
@@ -381,7 +383,7 @@ plotHeatmap(
     "sample_type"),
   cluster_cols = FALSE, 
   show_colnames = FALSE,
-  main = example_label,
+  main = "Intermediate monocytes vs. gamma-delta T cells",
   column_annotation_colors = list(
      label_cluster_fine_collapsed = label_fine_collapsed_colours,
      cluster = cluster_colours,
@@ -420,7 +422,7 @@ plotHeatmap(
     "sample_type"),
   cluster_cols = FALSE, 
   show_colnames = FALSE,
-  main = example_label,
+  main = "Intermediate monocytes vs. gamma-delta T cells",
   column_annotation_colors = list(
      cluster = cluster_colours,
      label_cluster_fine_collapsed = label_fine_collapsed_colours,
@@ -464,7 +466,7 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
-  main = example_label,
+  main = "Intermediate monocytes vs. gamma-delta T cells",
   column_annotation_colors = list(
      label_cluster_fine_collapsed = label_fine_collapsed_colours,
      cluster = cluster_colours,
@@ -504,7 +506,7 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
-  main = example_label,
+  main = "Intermediate monocytes vs. gamma-delta T cells",
   column_annotation_colors = list(
      cluster = cluster_colours,
      label_cluster_fine_collapsed = label_fine_collapsed_colours,
@@ -751,6 +753,7 @@ plotHeatmap(
 ```
 
 **TODO**: based on the SingleR annotation (or alternative investigation), we can decide if cluster 5 be a true contaminant (likely be the `intermediate monocytes` from `donor 3`) that sneaked through the FACS gate and could considered to be removed.
+**NOTE**: we also look into other SingleR reference (both main and fine); all other ref just label the clusters as T cells (CD4/ CD8); the only exception is `DICE`, which label cluster 5 as "NK cells", but same for 4 more clusters so it doesn't make sense ... I think we can based only on `MI` as reference, or chat with Dan to see if this cluster is interesting or needed to be removed
 
 ## Investigation of cluster `1` 
 
