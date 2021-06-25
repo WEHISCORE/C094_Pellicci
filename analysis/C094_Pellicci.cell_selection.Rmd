@@ -352,94 +352,16 @@ If a cell in the test dataset is confidently assigned to a particular label, we 
 ```{r}
 all_markers <- metadata(pred_cluster_fine)$de.genes
 
-# Get the top-50 marker genes when comparing "gamma-delta T cells" and "intermediate monocytes"
-top_markers_1 <- head(all_markers[["Intermediate monocytes"]]$`Vd2 gd T cells`, 50)
-top_markers_2 <- head(all_markers[["Vd2 gd T cells"]]$`Intermediate monocytes`, 50)
+# Get the top-10 marker genes when comparing "gamma-delta T cells" and "intermediate monocytes"
+top_markers_1 <- head(all_markers[["Intermediate monocytes"]]$`Vd2 gd T cells`, 10)
+top_markers_2 <- head(all_markers[["Vd2 gd T cells"]]$`Intermediate monocytes`, 10)
 top_markers <- c(top_markers_1, top_markers_2)
-```
-
-```{r heat-mi-fine-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_label`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
-library(scater)
-plotHeatmap(
-  sce,
-  features = top_markers,
-  columns = order(
-    sce$label_cluster_fine_collapsed,
-    sce$cluster,
-    sce$sample_name,
-    sce$plate_number,
-    sce$post_hoc_sample_gate,
-    sce$tissue,
-    sce$donor,
-    sce$sample_type),
-  colour_columns_by = c(
-    "label_cluster_fine_collapsed",
-    "cluster",
-    "sample_name",
-    "plate_number",
-    "post_hoc_sample_gate",
-    "tissue",
-    "donor",
-    "sample_type"),
-  cluster_cols = FALSE, 
-  show_colnames = FALSE,
-  main = "Intermediate monocytes vs. gamma-delta T cells",
-  column_annotation_colors = list(
-     label_cluster_fine_collapsed = label_fine_collapsed_colours,
-     cluster = cluster_colours,
-     sample_name = sample_name_colours,
-     plate_number = plate_number_colours,
-     post_hoc_sample_gate = sample_gate_colours,
-     tissue = tissue_colours,
-     donor = donor_colours,
-     sample_type = sample_type_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 5)
-```
-
-```{r heat-mi-fine-markers-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_label`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
-library(scater)
-plotHeatmap(
-  sce,
-  features = top_markers,
-  columns = order(
-    sce$cluster,
-    sce$label_cluster_fine_collapsed,
-    sce$sample_name,
-    sce$plate_number,
-    sce$post_hoc_sample_gate,
-    sce$tissue,
-    sce$donor,
-    sce$sample_type),
-  colour_columns_by = c(
-    "cluster",
-    "label_cluster_fine_collapsed",
-    "sample_name",
-    "plate_number",
-    "post_hoc_sample_gate",
-    "tissue",
-    "donor",
-    "sample_type"),
-  cluster_cols = FALSE, 
-  show_colnames = FALSE,
-  main = "Intermediate monocytes vs. gamma-delta T cells",
-  column_annotation_colors = list(
-     cluster = cluster_colours,
-     label_cluster_fine_collapsed = label_fine_collapsed_colours,
-     sample_name = sample_name_colours,
-     plate_number = plate_number_colours,
-     post_hoc_sample_gate = sample_gate_colours,
-     tissue = tissue_colours,
-     donor = donor_colours,
-     sample_type = sample_type_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 5)
 ```
 
 At the very least, it should exhibit up-regulation of those markers relative to cells assigned to other labels.
 This can be visualized by row-normalizing the data, as done in Figure \@ref(fig:heat-mi-fine-markers-row-normalized) and \@ref(fig:heat-mi-fine-markers-row-normalized-ordered-by-cluster).
 
-```{r heat-mi-fine-markers-row-normalized, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+```{r heat-mi-fine-markers-row-normalized, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 3/4, layout = "l-page"}
 plotHeatmap(
   sce,
   features = top_markers,
@@ -476,10 +398,11 @@ plotHeatmap(
      tissue = tissue_colours,
      donor = donor_colours,
      sample_type = sample_type_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 5)
 ```
 
-```{r heat-mi-fine-markers-row-normalized-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+```{r heat-mi-fine-markers-row-normalized-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 3/4, layout = "l-page"}
 plotHeatmap(
   sce,
   features = top_markers,
@@ -516,68 +439,17 @@ plotHeatmap(
      tissue = tissue_colours,
      donor = donor_colours,
      sample_type = sample_type_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 5)
 ```
 
 Similar figures showing the top-10 marker genes for each label are available in [`output/marker_genes/cell_selection/SingleR/`](../output/marker_genes/cell_selection/SingleR/).
 
 ```{r, results = "hide"}
-dir.create(here("output", "marker_genes", "cell_selection", "SingleR"))
+dir.create(here("output", "marker_genes", "cell_selection", "SingleR"), recursive = TRUE)
 dev.off() # Needed to ensure next figures save properly.
 # NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
 sce$label_cluster_fine_collapsed <- factor(gsub("/", "_", sce$label_cluster_fine_collapsed))
-for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
-  png(
-    here(
-      "output",
-      "marker_genes",
-      "cell_selection",
-      "SingleR",
-      paste0("MI.", "heatmaps.", label, ".png")),
-    width = 10,
-    height = 12,
-    units = "in",
-    res = 250)
-  
-  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
-  
-plotHeatmap(
-    sce,
-    features = top_markers,
-    columns = order(
-      sce$label_cluster_fine_collapsed,
-      sce$cluster,
-      sce$sample_name,
-      sce$plate_number,
-      sce$post_hoc_sample_gate,
-      sce$tissue,
-      sce$donor,
-      sce$sample_type),
-    colour_columns_by = c(
-      "label_cluster_fine_collapsed",
-      "cluster",
-      "sample_name",
-      "plate_number",
-      "post_hoc_sample_gate",
-      "tissue",
-      "donor",
-      "sample_type"),
-    cluster_cols = FALSE, 
-    show_colnames = FALSE,
-    column_annotation_colors = list(
-       label_cluster_fine_collapsed = label_fine_collapsed_colours,
-       cluster = cluster_colours,
-       sample_name = sample_name_colours,
-       plate_number = plate_number_colours,
-       post_hoc_sample_gate = sample_gate_colours,
-       tissue = tissue_colours,
-       donor = donor_colours,
-       sample_type = sample_type_colours),
-    main = label,
-    color = hcl.colors(101, "Blue-Red 3"),
-    fontsize = 5)
-  dev.off()
-}
 
 for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
   png(
@@ -587,7 +459,7 @@ for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
       "cell_selection",
       "SingleR",
       paste0("MI.", "heatmaps_row-normalized.", label, ".png")),
-    width = 10,
+    width = 8,
     height = 12,
     units = "in",
     res = 250)
@@ -631,69 +503,18 @@ plotHeatmap(
        sample_type = sample_type_colours),
     color = hcl.colors(101, "Blue-Red 3"),
     main = label,
-    fontsize = 5)
+    fontsize = 8)
   
   dev.off()
 }
 ```
 
 ```{r, results = "hide"}
-dir.create(here("output", "marker_genes", "cell_selection", "SingleR"))
+dir.create(here("output", "marker_genes", "cell_selection", "SingleR"), recursive = TRUE)
 dev.off() # Needed to ensure next figures save properly.
 # NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
 sce$label_cluster_fine_collapsed <- factor(gsub("/", "_", sce$label_cluster_fine_collapsed))
-for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
-  png(
-    here(
-      "output",
-      "marker_genes",
-      "cell_selection",
-      "SingleR",
-      paste0("MI.", "heatmaps.", label, ".ordered.by.cluster", ".png")),
-    width = 10,
-    height = 12,
-    units = "in",
-    res = 250)
-  
-  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
-  
-plotHeatmap(
-    sce,
-    features = top_markers,
-    columns = order(
-      sce$cluster,
-      sce$label_cluster_fine_collapsed,
-      sce$sample_name,
-      sce$plate_number,
-      sce$post_hoc_sample_gate,
-      sce$tissue,
-      sce$donor,
-      sce$sample_type),
-    colour_columns_by = c(
-      "cluster",
-      "label_cluster_fine_collapsed",
-      "sample_name",
-      "plate_number",
-      "post_hoc_sample_gate",
-      "tissue",
-      "donor",
-      "sample_type"),
-    cluster_cols = FALSE, 
-    show_colnames = FALSE,
-    column_annotation_colors = list(
-       cluster = cluster_colours,
-       label_cluster_fine_collapsed = label_fine_collapsed_colours,
-       sample_name = sample_name_colours,
-       plate_number = plate_number_colours,
-       post_hoc_sample_gate = sample_gate_colours,
-       tissue = tissue_colours,
-       donor = donor_colours,
-       sample_type = sample_type_colours),
-    main = label,
-    color = hcl.colors(101, "Blue-Red 3"),
-    fontsize = 5)
-  dev.off()
-}
+
 for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
   png(
     here(
@@ -702,7 +523,7 @@ for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
       "cell_selection",
       "SingleR",
       paste0("MI.", "heatmaps_row-normalized.", label, ".ordered.by.cluster", ".png")),
-    width = 10,
+    width = 8,
     height = 12,
     units = "in",
     res = 250)
@@ -746,7 +567,7 @@ plotHeatmap(
        sample_type = sample_type_colours),
     color = hcl.colors(101, "Blue-Red 3"),
     main = label,
-    fontsize = 5)
+    fontsize = 8)
   
   dev.off()
 }
@@ -778,7 +599,7 @@ print(sapply(cluster_markers, function(x) sum(x$FDR < 0.05)))
 
 The heatmaps below highlight the top-50 genes for cluster `1`.
 
-```{r heatmap-unique, fig.asp = 1}
+```{r heatmap-unique, fig.asp = 1.25}
 lab <- "1"
 lab_markers <- cluster_markers[[lab]]
 # NOTE: Select top-50 markers for plotting
