@@ -264,12 +264,16 @@ p6 <- ggcells(sce) +
 
 *NOTE* for the unmerged data based on these figures:
   
-  - the majority of cells in cluster `2`, `4`, and `6` represent the three types/statuses of cells within `P8` and can be found in all `Blood` and `Thymus` samples
-  - most of the cells in `P5`, `P6` and `P7` form one single cluster, i.e. cluster `3`, and they found mostly in `Thymus` sample only
+  - the majority of cells in cluster `2`, `4`, and `6` represent the three types/statuses of cells at `P8` and can be found in both `Blood` and `Thymus` samples
+  - most of the cells in `P6` and `P7` form one single cluster, i.e. cluster `3`, and they found mostly in `Thymus` sample only
   - cluster `1` and `5` are the only standalone clusters separated from the major group (and they seem to be the two obvious clusters needed to be decided if they should "be kept" or "not to be kept" during cell selection step)
   - cluster `1` is basically the control cell line `SKW3`, accompanied with a small amount of cells from `Thymus 2` and `Thymus 3`
   - cluster `5` are formed from cells mostly from `Blood 3` and `Thymus 3` only, implying it was originated from donor `3` only somehow
-  - merging or not will be decided based on if the feature above can be preserved or even explicitized
+  - merging or not will be decided based on if the feature above can be preserved or become even more explicit
+
+**TODO**: also check with Pete, if row `P` of plate LCE511 are going to be excluded in preprocessing.
+
+
 
 ## Investigation of cluster `5`
 
@@ -345,242 +349,95 @@ p2 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
 p1 + p2 + plot_layout(widths = c(1, 2))
 ```
 
-Next, we examine the expression of the marker genes for each label in the test dataset.
-We extract the identity of the markers in the reference data sets and use them to create a heatmap of their expression in the test dataset.
-If a cell in the test dataset is confidently assigned to a particular label, we would expect it to have strong expression of that label’s markers.
+##### Diagnostic plots
+
+As a sanity check, we can examine the expression of the marker genes for the relevant cell type labels by plotting a heatmap of their expression in:
+
+1. The reference dataset
+2. Our dataset
+
+The value of (1) is that we can assess if we believe the genes are indeed good markers of the relevant cell type in the reference dataset.
+The value of (2) is that we can check that these genes are useful markers in our dataset (e.g., that they are reasonably well sampled in our data).
 
 ```{r}
-all_markers <- metadata(pred_cluster_fine)$de.genes
-
-# Get the top-10 marker genes when comparing "gamma-delta T cells" and "intermediate monocytes"
-top_markers_1 <- head(all_markers[["Intermediate monocytes"]]$`Vd2 gd T cells`, 10)
-top_markers_2 <- head(all_markers[["Vd2 gd T cells"]]$`Intermediate monocytes`, 10)
-top_markers <- c(top_markers_1, top_markers_2)
+monocyte_vs_gtT_markers <- metadata(
+  pred_cluster_fine)$de.genes$`Intermediate monocytes`$`Vd2 gd T cells`
+gdT_vs_monocyte_markers <- metadata(
+  pred_cluster_fine)$de.genes$`Vd2 gd T cells`$`Intermediate monocytes`
+markers <- c(
+  head(monocyte_vs_gtT_markers, 10),
+  head(gdT_vs_monocyte_markers, 10))
 ```
 
-At the very least, it should exhibit up-regulation of those markers relative to cells assigned to other labels.
-This can be visualized by row-normalizing the data, as done in Figure \@ref(fig:heat-mi-fine-markers-row-normalized) and \@ref(fig:heat-mi-fine-markers-row-normalized-ordered-by-cluster).
+Here, we specifically select (some of) the most strongly upregulated genes when comparing the `Intermediate monocytes` to the `Vd2 gd T cells` (`mi.Mono_vs_gdT`) and vice-versa (`mi.gdT_vs_Mono`)
 
-```{r heat-mi-fine-markers-row-normalized, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 3/4, layout = "l-page"}
+Figure \@ref(fig:ref-mi-mono-and-gdT-markers) confirms that both the `mi.Mono_vs_gdT` and `mi.gdT_vs_Mono` marker genes distinguish these two cell types from one another in the `MI` reference dataset.
+However, the `mi.gdT_vs_Mono` marker genes are also expressed in `Plasmablasts` samples, highlighting that what are useful marker genes in one comparison are not necessarily in another comparison.
+
+```{r ref-mi-mono-and-gdT-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in the `MI` reference dataset for selected marker genes between the `Intermediate monocytes` and `Vd2 gd T cells` labels. Each column is a sample, each row a gene", fig.asp = 1.1}
+# NOTE: Have to remove column names from MI to avoid an error.
+tmp <- mi
+colnames(tmp) <- seq_len(ncol(tmp))
+
+# select only the annotation used in this dataset
+tmp <- tmp[,tmp$label.fine==levels(sce$label_cluster_fine)]
+
+# specify a more contrasting colour than default
+# TODO: `row_annotation_colors` seems still not able to pass the colours to the plotHeatmap function
+markers_colours <- setNames(c("red", "green"), c("mi.Mono_vs_gdT", "mi.gdT_vs_Mono"))
+
 plotHeatmap(
-  sce,
-  features = top_markers,
-  columns = order(
-    sce$label_cluster_fine_collapsed,
-    sce$cluster,
-    sce$sample_name,
-    sce$plate_number,
-    sce$post_hoc_sample_gate,
-    sce$tissue,
-    sce$donor,
-    sce$sample_type),
-  colour_columns_by = c(
-    "label_cluster_fine_collapsed",
-    "cluster",
-    "sample_name",
-    "plate_number",
-    "post_hoc_sample_gate",
-    "tissue",
-    "donor",
-    "sample_type"),
-  cluster_cols = FALSE, 
+  tmp,
+  features = markers,
+  colour_columns_by = "label.fine",
   center = TRUE,
   symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  main = "Intermediate monocytes vs. gamma-delta T cells",
-  column_annotation_colors = list(
-     label_cluster_fine_collapsed = label_fine_collapsed_colours,
-     cluster = cluster_colours,
-     sample_name = sample_name_colours,
-     plate_number = plate_number_colours,
-     post_hoc_sample_gate = sample_gate_colours,
-     tissue = tissue_colours,
-     donor = donor_colours,
-     sample_type = sample_type_colours),
+  order_columns_by = "label.fine",
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  annotation_row = data.frame(
+    markers = c(rep("mi.Mono_vs_gdT", 10), rep("mi.gdT_vs_Mono", 10)),
+    row.names = markers),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 5)
+  column_annotation_colors = list(
+    label.fine = label_fine_collapsed_colours[levels(sce$label_cluster_fine)]),
+  row_annotation_colors = list(
+    markers = markers_colours)
+  )
 ```
 
-```{r heat-mi-fine-markers-row-normalized-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 3/4, layout = "l-page"}
+Having said that cells in cluster `5` do show expression of a few `mi.gdT_vs_Mono` marker genes (Figure \@ref(fig:test-mi-mono-and-gdT-markers)), the `mi.Mono_vs_gdT` marker genes are indeed quite specific to cluster `5`, suggesting the likelihood of them to be the `Intermediate monocytes`. 
+
+```{r test-mi-mono-and-gdT-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for selected marker genes between the `Intermediate monocytes` and `Vd2 gd T cells` labels. Each column is a sample, each row a gene. For legibility, only a random 10% of non-`Intermediate monocytes` cells are shown.", fig.asp = 1.1}
+
+tmp <- logNormCounts(
+  sumCountsAcrossCells(
+    sce,
+    ids = colData(sce)[, c("cluster", "label_cluster_fine")],
+    subset_row = markers), exprs_values = 1)
+
 plotHeatmap(
-  sce,
-  features = top_markers,
-  columns = order(
-    sce$cluster,
-    sce$label_cluster_fine_collapsed,
-    sce$sample_name,
-    sce$plate_number,
-    sce$post_hoc_sample_gate,
-    sce$tissue,
-    sce$donor,
-    sce$sample_type),
-  colour_columns_by = c(
-    "cluster",
-    "label_cluster_fine_collapsed",
-    "sample_name",
-    "plate_number",
-    "post_hoc_sample_gate",
-    "tissue",
-    "donor",
-    "sample_type"),
-  cluster_cols = FALSE, 
+  tmp,
+  features = markers,
+  colour_columns_by = c("label_cluster_fine", "cluster"),
   center = TRUE,
   symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  main = "Intermediate monocytes vs. gamma-delta T cells",
-  column_annotation_colors = list(
-     cluster = cluster_colours,
-     label_cluster_fine_collapsed = label_fine_collapsed_colours,
-     sample_name = sample_name_colours,
-     plate_number = plate_number_colours,
-     post_hoc_sample_gate = sample_gate_colours,
-     tissue = tissue_colours,
-     donor = donor_colours,
-     sample_type = sample_type_colours),
+  order_columns_by = c("label_cluster_fine", "cluster"),
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  annotation_row = data.frame(
+    markers = c(rep("mi.Mono_vs_gdT", 10), rep("mi.gdT_vs_Mono", 10)),
+    row.names = markers),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 5)
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    label_cluster_fine = label_fine_collapsed_colours[
+      levels(sce$label_cluster_fine)]))
 ```
-
-Similar figures showing the top-10 marker genes for each label are available in [`output/marker_genes/cell_selection/SingleR/`](../output/marker_genes/cell_selection/SingleR/).
-
-```{r, results = "hide"}
-dir.create(here("output", "marker_genes", "cell_selection", "SingleR"), recursive = TRUE)
-dev.off() # Needed to ensure next figures save properly.
-# NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
-sce$label_cluster_fine_collapsed <- factor(gsub("/", "_", sce$label_cluster_fine_collapsed))
-
-for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
-  png(
-    here(
-      "output",
-      "marker_genes",
-      "cell_selection",
-      "SingleR",
-      paste0("MI.", "heatmaps_row-normalized.", label, ".png")),
-    width = 8,
-    height = 12,
-    units = "in",
-    res = 250)
-  
-  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
-  
-plotHeatmap(
-    sce,
-    features = top_markers,
-    columns = order(
-      sce$label_cluster_fine_collapsed,
-      sce$cluster,
-      sce$sample_name,
-      sce$plate_number,
-      sce$post_hoc_sample_gate,
-      sce$tissue,
-      sce$donor,
-      sce$sample_type),
-    colour_columns_by = c(
-      "label_cluster_fine_collapsed",
-      "cluster",
-      "sample_name",
-      "plate_number",
-      "post_hoc_sample_gate",
-      "tissue",
-      "donor",
-      "sample_type"),
-    cluster_cols = FALSE, 
-    center = TRUE,
-    symmetric = TRUE,
-    zlim = c(-3, 3),
-    show_colnames = FALSE,
-   column_annotation_colors = list(
-       label_cluster_fine_collapsed = label_fine_collapsed_colours,
-       cluster = cluster_colours,
-       sample_name = sample_name_colours,
-       plate_number = plate_number_colours,
-       post_hoc_sample_gate = sample_gate_colours,
-       tissue = tissue_colours,
-       donor = donor_colours,
-       sample_type = sample_type_colours),
-    color = hcl.colors(101, "Blue-Red 3"),
-    main = label,
-    fontsize = 8)
-  
-  dev.off()
-}
-```
-
-```{r, results = "hide"}
-dir.create(here("output", "marker_genes", "cell_selection", "SingleR"), recursive = TRUE)
-dev.off() # Needed to ensure next figures save properly.
-# NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
-sce$label_cluster_fine_collapsed <- factor(gsub("/", "_", sce$label_cluster_fine_collapsed))
-
-for (label in setdiff(levels(sce$label_cluster_fine_collapsed), "other")) {
-  png(
-    here(
-      "output",
-      "marker_genes",
-      "cell_selection",
-      "SingleR",
-      paste0("MI.", "heatmaps_row-normalized.", label, ".ordered.by.cluster", ".png")),
-    width = 8,
-    height = 12,
-    units = "in",
-    res = 250)
-  
-  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
-  
-plotHeatmap(
-    sce,
-    features = top_markers,
-    columns = order(
-      sce$cluster,
-      sce$label_cluster_fine_collapsed,
-      sce$sample_name,
-      sce$plate_number,
-      sce$post_hoc_sample_gate,
-      sce$tissue,
-      sce$donor,
-      sce$sample_type),
-    colour_columns_by = c(
-      "cluster",
-      "label_cluster_fine_collapsed",
-      "sample_name",
-      "plate_number",
-      "post_hoc_sample_gate",
-      "tissue",
-      "donor",
-      "sample_type"),
-    cluster_cols = FALSE, 
-    center = TRUE,
-    symmetric = TRUE,
-    zlim = c(-3, 3),
-    show_colnames = FALSE,
-   column_annotation_colors = list(
-       cluster = cluster_colours,
-       label_cluster_fine_collapsed = label_fine_collapsed_colours,
-       sample_name = sample_name_colours,
-       plate_number = plate_number_colours,
-       post_hoc_sample_gate = sample_gate_colours,
-       tissue = tissue_colours,
-       donor = donor_colours,
-       sample_type = sample_type_colours),
-    color = hcl.colors(101, "Blue-Red 3"),
-    main = label,
-    fontsize = 8)
-  
-  dev.off()
-}
-```
-
-**TODO**: based on the SingleR annotation (or alternative investigation), we can decide if cluster 5 be a true contaminant (likely be the `intermediate monocytes` from `donor 3`) that sneaked through the FACS gate and could considered to be removed.
-**NOTE**: we also look into other SingleR reference (both main and fine); all other ref just label the clusters as T cells (CD4/ CD8); the only exception is `DICE`, which label cluster 5 as "NK cells", but same for 4 more clusters so it doesn't make sense ... I think we can based only on `MI` as reference, or chat with Dan to see if this cluster is interesting or needed to be removed
-
-## Investigation of cluster `1` 
 
 ## Cluster-specific upregulated genes
 
-We look for genes that are specifically upregulated in each cluster compared to all other clusters.
+Further, we also look for genes that are specifically upregulated in cluster `5` compared to all other clusters, so as to help determine the exact identity of the cluster.
 
 ```{r}
 cluster_markers <- findMarkers(
@@ -591,19 +448,58 @@ cluster_markers <- findMarkers(
   row.data = rowData(sce))
 ```
 
-Cluster `1` shows to possess a number of genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
+Cluster `5` shows to possess handful of genes that are specifically upregulated in that cluster compared to all other clusters ($FDR < 0.05$).
 
 ```{r}
 print(sapply(cluster_markers, function(x) sum(x$FDR < 0.05)))
 ```
 
+The heatmaps below highlight the top-50 genes for cluster `5`.
+
+```{r heatmap-unique-cluster-5, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for cluster-specific marker with FDR <0.05. Each column is a cell, each row a gene. For legibility", fig.asp = 1.25}
+lab <- "5"
+m <- rownames(cluster_markers[[lab]])[cluster_markers[[lab]]$FDR < 0.05]
+
+plotHeatmap(
+    object = sce,
+    features = m,
+    color = hcl.colors(101, "Blue-Red 3"),
+    center = TRUE,
+    zlim = c(-3, 3),
+    order_columns_by = c("cluster", "sample_name", "post_hoc_sample_gate", "plate_number", "tissue", "donor"),
+    cluster_rows = TRUE,
+    fontsize = 5,
+    column_annotation_colors = list(
+      cluster = cluster_colours,
+      sample_name = sample_name_colours,
+      post_hoc_sample_gate = sample_gate_colours,
+      plate_number = plate_number_colours,
+      tissue = tissue_colours,
+      donor = donor_colours,
+    main = lab)
+    )
+```
+
+**TODO**: based on the SingleR annotation and unique marker gene detection (FDR < 0.05), discuss with Dan and Stuart, we can then decide if cluster 5 be a true contaminant (likely be the `intermediate monocytes` from `donor 3`) that sneaked through the FACS gate and could considered to be removed.
+
+
+
+
+
+## Investigation of cluster `1` 
+
+## Cluster-specific upregulated genes
+
+We look for genes that are specifically upregulated in cluster `1` compared to all other clusters.
+
 The heatmaps below highlight the top-50 genes for cluster `1`.
 
-```{r heatmap-unique, fig.asp = 1.25}
+```{r heatmap-unique-cluster-1, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for cluster-specific marker with FDR <0.05. Each column is a cell, each row a gene. For legibility", fig.asp = 1.25}
+
 lab <- "1"
-lab_markers <- cluster_markers[[lab]]
-# NOTE: Select top-50 markers for plotting
-m <- head(rownames(lab_markers), 50)
+lab_markers <- rownames(cluster_markers[[lab]])[cluster_markers[[lab]]$FDR < 0.05]
+# NOTE: Select top-50 markers for plotting.
+m <- head(lab_markers, 50)
 
 plotHeatmap(
     object = sce,
@@ -628,12 +524,13 @@ plotHeatmap(
 If we zoom-in to the heatmap above, we may notice that there is a number of likewise expression of cluster `1` specific markers (such as `H2AFZ`, `MIR1244-2`) between the cells from `Thymus 2` and `Thymus 3` with those of  the control cell line.
 As a result, this may drive the grouping of the cells between thymus cells and the control cell line, which lead to the formation of cluster `1`.
 
-```{r heatmap-unique-focused}
+```{r heatmap-unique-focused-cluster-1}
 sce1 <- sce[, (sce$cluster == "1") | (sce$cluster == "2" & sce$sample_name == "Thymus 2" | sce$cluster == "2" & sce$sample_name == "Thymus 3" )]
 
-lab_markers <- cluster_markers[[1]]
-  # NOTE: Select top-50 markers for plotting.
-  m <- head(rownames(lab_markers), 50)
+lab <- "1"
+lab_markers <- rownames(cluster_markers[[lab]])[cluster_markers[[lab]]$FDR < 0.05]
+# NOTE: Select top-50 markers for plotting.
+m <- head(lab_markers, 50)
   
  plotHeatmap(
     object = sce1,
@@ -654,7 +551,7 @@ lab_markers <- cluster_markers[[1]]
     )
 ```
 
-CSVs of the gene lists are available in [`output/unmerged/cluster_markers`](../output/unmerged/cluster_markers).
+CSVs of the gene lists of unique markers for each cluster are available in [`output/unmerged/cluster_markers`](../output/unmerged/cluster_markers).
 
 ```{r}
 dir.create(here("output/unmerged/cluster_markers"), recursive = TRUE)
