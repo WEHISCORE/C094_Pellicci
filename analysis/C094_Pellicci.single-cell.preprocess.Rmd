@@ -15,10 +15,7 @@ bibliography: ref.bib
 ```{r setup}
 library(here)
 library(BiocStyle)
-library(dplyr)
-library(janitor)
 library(ggplot2)
-library(scater)
 library(cowplot)
 library(patchwork)
 library(scales)
@@ -34,138 +31,139 @@ source(here("code", "helper_functions.R"))
 
 # Setting up the data
 
-The count data were processed using `r Biocpkg("scPipe")` and available in a *SingleCellExperiment* object, along with their metadata (see [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds)).
+The count data were processed using `r Biocpkg("scPipe")` and available in a *SingleCellExperiment* object, along with their metadata.
+
+<aside>
+See [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds)).
+</aside>
 
 ```{r}
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.scPipe.SCE.rds"))
 ```
 
-## Incorporating cell-based annotations
-
-Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
-
-```{r}
-# NOTE: Some `sample_name` include `sample_gate`; remove this redundancy.
-sce$sample_name <- case_when(
-  grepl("Cell line", sce$sample_name) ~ "Cell line",
-  TRUE ~ sub(" P[0-9]$", "", sce$sample_name))
-sce$sample_gate[is.na(sce$sample_gate)] <- "NA"
-# NOTE: Some `sample_gate` have a `(stage X)` suffix repeated 1-2 times; remove 
-#       this unnecessary information.
-sce$sample_gate <- strtrim(sce$sample_gate, 2)
-# NOTE: `sample_name` = <tissue>_<donor>
-sce$tissue <- factor(
-  dplyr::case_when(
-    grepl("Blood", sce$sample_name) ~ "Blood",
-    grepl("Thymus", sce$sample_name) ~ "Thymus",
-    sce$sample_name == "Cell line" ~ "SKW3"),
-  levels = c("Blood", "Thymus", "SKW3"))
-sce$donor <- factor(
-  dplyr::case_when(
-    grepl("1", sce$sample_name) ~ "1",
-    grepl("2", sce$sample_name) ~ "2",
-    grepl("3", sce$sample_name) ~ "3",
-    grepl("4", sce$sample_name) ~ "4",
-    grepl("5", sce$sample_name) ~ "5",
-    sce$sample_name == "Cell line" ~ "NA"),
-  levels = c("1", "2", "3", "4", "5", "NA"))
-# Create factor columns, which are easier to work with.
-# NOTE: Manually order some factors' levels, others we don't care about the 
-#       level order.
-sce$sample_type <- factor(
-  case_when(
-    sce$sample_type %in% c("50 cell", "50 cells") ~ "50 cells",
-    sce$sample_type %in% c("100 cell", "100 cells") ~ "100 cells",
-    sce$sample_type == "99 cell" ~ "99 cells",
-    TRUE ~ sce$sample_type),
-  c("Single cell", "50 cells", "99 cells", "100 cells"))
-sce$sample_name <- factor(
-  sce$sample_name, 
-  levels = c(paste("Blood", 1:5), paste("Thymus", 1:5), "Cell line"))
-colData(sce) <- DataFrame(
-  endoapply(colData(sce), function(x) {
-    if (is.character(x)) {
-      as.factor(x)
-    } else {
-      x
-    }
-  }),
-  row.names = colnames(sce))
-```
-
-```{r}
-# Some useful colours
-sce$colours <- S4Vectors::make_zero_col_DFrame(ncol(sce))
-sample_type_colours <- setNames(
-  palette.colors(nlevels(sce$sample_type), "R4"),
-  levels(sce$sample_type))
-sce$colours$sample_type_colours <- sample_type_colours[sce$sample_type]
-sample_name_colours <- setNames(
-  palette.colors(nlevels(sce$sample_name), "Alphabet"),
-  levels(sce$sample_name))
-sce$colours$sample_name_colours <- sample_name_colours[sce$sample_name]
-sample_gate_colours <- setNames(
-  palette.colors(nlevels(sce$sample_gate), "Tableau 10"),
-  levels(sce$sample_gate))
-sce$colours$sample_gate_colours <- sample_gate_colours[sce$sample_gate]
-plate_number_colours <- setNames(
-  palette.colors(nlevels(sce$plate_number), "Okabe-Ito"),
-  levels(sce$plate_number))
-sce$colours$plate_number_colours <- plate_number_colours[sce$plate_number]
-tissue_colours <- setNames(
-  palette.colors(nlevels(sce$tissue), "ggplot2"),
-  levels(sce$tissue))
-sce$colours$tissue_colours <- tissue_colours[sce$tissue]
-donor_colours <- setNames(
-  palette.colors(nlevels(sce$donor), "Dark 2"),
-  levels(sce$donor))
-sce$colours$donor_colours <- donor_colours[sce$donor]
-```
-
-The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the cell-based metadata.
+This data was processed to clean up the sample metadata, tidy the FACS index sorting data, and attach the gene metadata.
 
 <aside>
-The format of the `sample_name` is `<tissue>_<donor>`, e.g., `Blood_1` = `Blood` sample from donor `1`.
+See [`analysis/C094_Pellicci.preprocess.R`](../analysis/C094_Pellicci.preprocess.R)).
 </aside>
 
 ```{r}
-skimr::skim(colData(sce))
+source(here("analysis", "C094_Pellicci.preprocess.R"))
 ```
 
+**We then filter the data to only include the single-cells**.
+
+```{r}
+sce <- sce[, sce$sample_type == "Single cell"]
+colData(sce) <- droplevels(colData(sce))
+
+# Only retain genes with non-zero counts in at least 1 cell.
+sce <- sce[rowSums(counts(sce)) > 0, ]
+```
+
+## *Post-hoc* gating into developmental stages
+
+Gamma-delta T-cells are classified into 3 developmental stages based on the expression of the cell surface markers *CD4* and *CD161*:
+
+- `S1`: *CD4+*/*CD161-*
+- `S2`: *CD4-*/*CD161-*
+- `S3`: *CD4-*/*CD161+*
+
+Figure \@ref(fig:facs) shows the expression of *CD4* and *CD161*, as measured by FACS, for all single-cells.
+
+```{r facs, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample."}
+# Some useful colours
+stage_colours <- setNames(
+  unique(sce$colours$stage_colours),
+  unique(names(sce$colours$stage_colours)))
+
+x <- makePerCellDF(
+  sce, 
+  features = c("V525_50_A_CD4_BV510", "B530_30_A_CD161_FITC"),
+  assay.type = "pseudolog")
+
+ggplot(
+  aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC),
+  data = x) +
+  geom_point(data = x, colour = "black", size = 0.5) +
+  theme_cowplot(font_size = 10) +
+  xlab("CD4") + 
+  ylab("CD161") +
+  facet_grid(tissue ~ donor, labeller = label_both)
+```
+
+Casey '*post-hoc* gated' the single-cells into `S1`, `S2`, or `S3` by transplanting the gating strategy used for the mini-bulk samples to the single-cells.
+Not all single-cells can be classified using these gates (e.g., some cells are seemingly *CD4+*/*CD161+*); these cells are labelled as `Unknown`.
+
+Figure \@ref(fig:facs-stages) re-plots the same data and colours each cell according to the *post-hoc* `stage`.
+We observe that boundaries between `S1`, `S2`, and `S3` appear rather arbitrary^[It should be remembered that the gates are set using more cells than are collected for scRNA-seq and so the boundaries may appear more defined in the original FACS files. Furthermore, the data here are shown on a 'pseudolog' scale, which may be different to the scale used when viewing the data in FlowJo.] and that the `Unknown` cells are a *potpourri* that includes cells that are intermediate between `S1`, `S2`, and `S3` as well as a handful of *CD4+*/*CD161+* cells.
+
+```{r facs-stages, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample and colouring each cell by its *post-hoc* `stage`."}
+bg <- dplyr::select(x, -donor, -tissue)
+ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = stage_colours,
+    name = "stage") +
+  scale_colour_manual(
+    values = stage_colours,
+    name = "stage") +
+  theme_cowplot(font_size = 10) +
+  facet_wrap(tissue ~ donor, labeller = label_both) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  xlab("CD4") + 
+  ylab("CD161")
+```
+
+## Incorporating cell-based annotations
+
+```{r}
+# Some more useful colours
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))
+```
+
+Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
 Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
 
 <aside>
-The `Cell line` is 'SKW-3', originally thought to originate from the peripheral blood of a 61 year old male patient with T cell chronic lymphocytic leukemia. (although [this is known to be problematic](https://web.expasy.org/cellosaurus/CVCL_2197)).
+The 'SKW-3' sample is a control cell line, originally thought to originate from the peripheral blood of a 61 year old male patient with T cell chronic lymphocytic leukemia. (although [this is known to be problematic](https://web.expasy.org/cellosaurus/CVCL_2197)).
 </aside>
 
 ```{r coldata, fig.cap = "Breakdown of experiment by plate."}
 p1 <- ggcells(sce) + 
-  geom_bar(
-    aes(x = plate_number, fill = sample_type),
+  geom_bar(aes(x = plate_number, fill = tissue),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
-  scale_fill_manual(values = sample_type_colours)
+  scale_fill_manual(values = tissue_colours)
 p2 <- ggcells(sce) + 
-  geom_bar(
-    aes(x = plate_number, fill = sample_name),
+  geom_bar(aes(x = plate_number, fill = donor),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
-  scale_fill_manual(values = sample_name_colours)
-p3 <- ggcells(sce) + 
-  geom_bar(aes(x = plate_number, fill = sample_gate),
+  scale_fill_manual(values = donor_colours)
+p3 <-  ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = stage),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
-  scale_fill_manual(values = sample_gate_colours)
+  scale_fill_manual(values = stage_colours)
 p4 <- ggcells(sce) + 
   geom_bar(aes(x = plate_number, fill = plate_number)) +
   coord_flip() +
-  ylab("Number of samples") +
+  ylab("Number of single cells") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = plate_number_colours)
 p1 + p2 + p3 + p4
@@ -174,6 +172,7 @@ p1 + p2 + p3 + p4
 Figure \@ref(fig:plate-map) shows the design of each plate.
 
 ```{r plate-map, fig.cap = "Plate maps.", fig.asp = 0.8}
+# TODO: Fix legend
 p <- lapply(levels(sce$plate_number), function(p) {
   z <- sce[, sce$plate_number == p]
   plotPlatePosition(
@@ -182,23 +181,16 @@ p <- lapply(levels(sce$plate_number), function(p) {
     point_size = 2,
     point_alpha = 1,
     theme_size = 5,
-    colour_by = "sample_name",
-    shape_by = "sample_type") + 
-    scale_colour_manual(values = sample_name_colours, name = "sample_name") +
-    scale_shape_manual(
-      values = c(
-        "Single cell" = 16,
-        "50 cells" = 17, 
-        "99 cells" = 15,
-        "100 cells" = 19),
-      name = "sample_type") + 
+    colour_by = "donor",
+    shape_by = "tissue") +
+    scale_colour_manual(values = donor_colours, name = "donor") +
     ggtitle(p) +
     theme(
-      legend.text = element_text(size = 4),
-      legend.title = element_text(size = 4)) +
+      legend.text = element_text(size = 6),
+      legend.title = element_text(size = 6)) +
     guides(
-      colour = guide_legend(override.aes = list(size = 1)),
-      shape = guide_legend(override.aes = list(size = 1)))
+      colour = guide_legend(override.aes = list(size = 4)),
+      shape = guide_legend(override.aes = list(size = 4)))
 })
 
 wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
@@ -208,14 +200,6 @@ wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
 
 We store the values from the FACS measurements as an 'alternative experiment'.
 We store both the 'raw' data and the 'pseudolog-transformed' data.
-
-```{r}
-pseudoLog <- scales::pseudo_log_trans(sigma = 150 / 2)$transform
-assay(altExp(sce, "FACS"), "pseudolog") <- pseudoLog(
-  assay(altExp(sce, "FACS"), "raw"))
-```
-
-
 The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'raw' FACS measurements.
 
 ```{r}
@@ -230,209 +214,15 @@ t(assay(altExp(sce, "FACS"), "pseudolog")) %>%
   skimr::skim()
 ```
 
-### *Post hoc* gating of single cells
-
-The `sample_gate` metadata column describes which FACS gate each sample came from and were based on the expression of CD4 and CD161:
-
-- `P6`: CD4+/CD161- 
-- `P7`: CD4-/CD161-
-- `P8`: CD4-/CD161+
-- `P5`: All cells are within the `P5` gate (i.e. (`P6`, `P7`, `P8`) $\subset$ `P5`)
-
-At the time of the sort, all the single-cells were gated as `P5` whereas the mini-bulk samples were gated as either `P6`, `P7`, or `P8` (see the `sample_gate` column).
-Casey *post-hoc* gated the single-cells into P5, P6, P7, or P8 gates using the index sorting data^[`P5` was defined as any cell not falling into any of `P6`, `P7`, or `P8`.].
-
-```{r}
-library(readxl)
-file_nn215 <- here(
-  "data",
-  "sample_sheets",
-  "C094_DanPellici_SC_MB_NN215_AdjustedGates.xlsx")
-
-# NOTE: Header row is split across 2 lines, which I combine into 1 before
-#       reading in the rest of the spreadsheet.
-header_row <- read_excel(
-  path = file_nn215,
-  sheet = "Samples and indexing",
-  skip = 2,
-  n_max = 1)
-
-facs_data_idx <- seq(which(LETTERS == "K"), ncol(header_row))
-header_row <- c(
-  paste0(colnames(header_row[, -facs_data_idx]), header_row[1, -facs_data_idx]),
-  unlist(header_row[1, facs_data_idx], use.names = FALSE))
-header_row <- gsub("^\\.\\.\\.[0-9]+", "", header_row)
-sample_sheet_nn215 <- read_excel(
-  path = file_nn215,
-  sheet = "Samples and indexing",
-  skip = 4,
-  col_names = header_row,
-  # NOTE: Setting the max guess_max value avoids problems with incorrectly
-  #       guessed columns
-  #       (https://github.com/tidyverse/readxl/issues/414#issuecomment-352437730)
-  guess_max = 1048576)
-
-# Tidy up names and empty rows/columns.
-sample_sheet_nn215 <- bind_cols(
-  clean_names(sample_sheet_nn215[, -facs_data_idx]),
-  clean_names(sample_sheet_nn215[, facs_data_idx], case = "parsed"))
-sample_sheet_nn215 <- remove_empty(
-  sample_sheet_nn215,
-  which = c("rows", "cols"))
-sample_sheet_nn215 <- dplyr::filter(
-  sample_sheet_nn215,
-  !is.na(plate_number),
-  illumina_index_index_number_separate_index_read != "removed")
-# Ensure FACS columns are stored as numeric (readxl sometimes fails, presumably
-# to weird pattern of empty cells).
-sample_sheet_nn215 <- sample_sheet_nn215 %>%
-  mutate_at(facs_data_idx, as.numeric)
-facs_markers <- colnames(sample_sheet_nn215)[facs_data_idx]
-
-# Some final tidying.
-sample_sheet_nn215 <- sample_sheet_nn215 %>%
-  mutate(
-    # NOTE: There are some wonky well_positions (e.g., 'I19=A1') that need to
-    #       be fixed (these occur because it means well I19 with primer A1,
-    #       in SCORE's terminology. I've asked for this to be avoided going
-    #       forward.).
-    well_position = gsub(" ", "", well_position),
-    well_position = sapply(strsplit(well_position, "="), "[[", 1),
-    well_position = factor(
-      x = well_position,
-      levels = unlist(
-        lapply(LETTERS[1:16], function(x) paste0(x, 1:24)),
-        use.names = TRUE)),
-    sequencing_run = "NN215",
-    post_hoc_sample_gate = sample_gate) %>%
-  arrange(well_position)
-
-# NOTE: A poor-man's inner_join() to avoid the lossy coercion of colData(sce) 
-#       to a data.frame.
-j <- match(
-  colnames(sce),
-  paste0(sample_sheet_nn215$plate_number, "_", sample_sheet_nn215$well_position))
-colData(sce) <- cbind(
-  colData(sce), 
-  sample_sheet_nn215[j, "post_hoc_sample_gate", drop = FALSE])
-# Tidy up mini-bulk samples (which were supplied with the gate info).
-sce$post_hoc_sample_gate[sce$sample_type != "Single cell"] <- 
-  as.character(sce$sample_gate[sce$sample_type != "Single cell"])
-sce$post_hoc_sample_gate <- factor(sce$post_hoc_sample_gate)
-```
-
-Figure \@ref(fig:facs) shows the expression of CD4 and CD161, as measured by FACS, for all single-cells.
-We observe that boundaries between `P6`, `P7`, and `P8` appear rather arbitrary^[It should be remembered that the gates are set using more cells than are collected for scRNA-seq and so the boundaries may appear more defined in the original FACS files. Furthermore, the data here are shown on a 'pseudolog' scale, which may be different to the scale used when viewing the data in FlowJo.] and that the `P5` cells are a *potpourri* that includes cells that are intermediate between `P6`, `P7`, and `P8` as well as a handful of CD4+/CD161+ cells.
-
-```{r facs, fig.cap = "Expression of key FACS markers, used for *post hoc* gating, in single-cells (excluding the cell line samples). Shown are all cells (left hand side) and highlighting cells in each `post_hoc_sample_gate` (right hand side).", fig.asp = 1 / 2}
-z <- sce[, sce$sample_type == "Single cell" & sce$sample_name != "Cell line"]
-colData(z) <- droplevels(colData(z))
-
-x <- makePerCellDF(
-  z, 
-  features = c("V525_50_A_CD4_BV510", "B530_30_A_CD161_FITC"),
-  assay.type = "pseudolog")
-
-p1 <- ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
-  geom_point(data = x, colour = "black", size = 0.5) +
-  theme_cowplot(font_size = 10) +
-  xlab("CD4") + 
-  ylab("CD161")
-
-bg <- dplyr::select(x, -post_hoc_sample_gate)
-p2 <- ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
-  scale_fill_manual(
-    values = sample_gate_colours,
-    name = "post_hoc_sample_gate") +
-  scale_colour_manual(
-    values = sample_gate_colours,
-    name = "post_hoc_sample_gate") +
-  theme_cowplot(font_size = 10) +
-  facet_wrap(~ post_hoc_sample_gate, ncol = 2) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  xlab("CD4") + 
-  ylab("CD161")
-p1 | p2
-```
 
 ## Incorporating gene-based annotation
 
 I used the `r BiocStyle::Biocpkg("Homo.sapiens")` package and the `EnsDb.Hsapiens.v98` resource, which respectively cover the NCBI/RefSeq and Ensembl databases, to obtain gene-based annotations, such as the chromosome and gene symbol.
 
-```{r}
-# Extract rownames (Ensembl IDs) to use as key in database lookups.
-ensembl <- rownames(sce)
-
-# Pull out useful gene-based annotations from the Ensembl-based database.
-library(AnnotationHub)
-library(ensembldb)
-ah <- AnnotationHub()
-ensdb <- query(ah, c("EnsDb", "Homo Sapiens", 98))[[1]]
-# NOTE: These columns were customised for this project.
-ensdb_columns <- c(
-  "GENEBIOTYPE", "GENENAME", "GENESEQSTART", "GENESEQEND", "SEQNAME", "SYMBOL")
-names(ensdb_columns) <- paste0("ENSEMBL.", ensdb_columns)
-stopifnot(all(ensdb_columns %in% columns(ensdb)))
-ensdb_df <- DataFrame(
-  lapply(ensdb_columns, function(column) {
-    mapIds(
-      x = ensdb, 
-      # NOTE: Need to remove gene version number prior to lookup.
-      keys = gsub("\\.[0-9]+$", "", ensembl),
-      keytype = "GENEID",
-      column = column,
-      multiVals = "CharacterList")
-  }),
-  row.names = ensembl)
-# NOTE: Can't look up GENEID column with GENEID key, so have to add manually.
-ensdb_df$ENSEMBL.GENEID <- ensembl
-# NOTE: Homo.sapiens combines org.Hs.eg.db and
-#       TxDb.Hsapiens.UCSC.hg38.knownGene (as well as others) and therefore 
-#       uses entrez gene and RefSeq based data.
-library(Homo.sapiens)
-# NOTE: These columns were customised for this project.
-ncbi_columns <- c(
-  # From TxDB: None required
-  # From OrgDB
-  "ALIAS", "ENTREZID", "GENENAME", "REFSEQ", "SYMBOL")
-names(ncbi_columns) <- paste0("NCBI.", ncbi_columns)
-stopifnot(all(ncbi_columns %in% columns(Homo.sapiens)))
-ncbi_df <- DataFrame(
-  lapply(ncbi_columns, function(column) {
-    mapIds(
-      x = Homo.sapiens, 
-      # NOTE: Need to remove gene version number prior to lookup.
-      keys = gsub("\\.[0-9]+$", "", ensembl),
-      keytype = "ENSEMBL",
-      column = column,
-      multiVals = "CharacterList")
-  }),
-  row.names = ensembl)
-rowData(sce) <- cbind(ensdb_df, ncbi_df)
-```
-
 Having quantified gene expression against the GENCODE gene annotation, we have Ensembl-style identifiers for the genes. 
 These identifiers are used as they are unambiguous and highly stable. 
 However, they are difficult to interpret compared to the gene symbols which are more commonly used in the literature.
 Henceforth, we will use gene symbols (where available) to refer to genes in our analysis and otherwise use the Ensembl-style gene identifiers^[Some care is taken to account for missing and duplicate gene symbols; missing symbols are replaced with the Ensembl identifier and duplicated symbols are concatenated with the (unique) Ensembl identifiers.].
-
-```{r}
-# Replace the row names of the SCE by the gene symbols (where available).
-rownames(sce) <- uniquifyFeatureNames(
-  ID = rownames(sce), 
-  # NOTE: An Ensembl ID may map to 0, 1, 2, 3, ... gene symbols.
-  #       When there are multiple matches only the 1st match is used.
-  names = vapply(rowData(sce)$ENSEMBL.SYMBOL, function(x) {
-    if (length(x)) {
-      x[[1]]
-    } else {
-      NA_character_
-    }
-    },
-    character(1)))
-```
 
 We also construct some useful gene sets: mitochondrial genes, ribosomal protein genes, sex chromosome genes, and pseudogenes.
 
@@ -481,14 +271,17 @@ p1 <- plotColData(
   x = I(
     interaction(
       substr(z$well_position, 1, 1), 
-      z$sample_name,
+      z$tissue,
+      z$donor,
       drop = TRUE, 
       lex.order = TRUE)), 
-  colour_by = "sample_name") + 
+  colour_by = "donor",
+  shape_by = "tissue",
+  point_alpha = 1) + 
   scale_y_log10() + 
-  scale_colour_manual(values = sample_name_colours) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
   guides(colour = FALSE) +
-  xlab("Row.sample_name") +
+  xlab("Row.tissue.donor") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 p2 <- plotColData(
   z, 
@@ -496,14 +289,16 @@ p2 <- plotColData(
   x = I(
     interaction(
       substr(z$well_position, 1, 1), 
-      z$sample_name,
+      z$tissue,
+      z$donor,
       drop = TRUE, 
       lex.order = TRUE)), 
-  colour_by = "sample_name") + 
-  scale_y_log10() + 
-  scale_colour_manual(values = sample_name_colours) +
+  colour_by = "donor",
+  shape_by = "tissue",
+  point_alpha = 1) + 
+  scale_colour_manual(values = donor_colours, name = "donor") +
   guides(colour = FALSE) +
-  xlab("Row.sample_name") +
+  xlab("Row.tissue.donor") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 p1 + p2 +
   plot_layout(ncol = 2, guides = "collect") +
@@ -521,16 +316,15 @@ However, these same markers are also expressed by the `Thymus 1` samples in row 
 There is no strong expression of the `Thymus`-specific markers in row O wells, but nor is there in any of the `Thymus` samples on this plate.
 
 ```{r marker-genes-lce511, fig.cap = "Expression of the top-10 `Blood` and `Thymus` marker genes for all wells on plate `LCE511` grouped by `Tissue` then `row`. We are looking to see if the wells in row `O` co-express these marker genes."}
+# TODO: Fix figure size and legend size.
 library(scran)
 
 tmp <- logNormCounts(
   sce[, sce$plate_number != "LCE511" & 
-        sce$sample_type == "Single cell" & 
         sce$tissue %in% c("Blood", "Thymus")])
 colData(tmp) <- droplevels(colData(tmp))
 w <- logNormCounts(
-  sce[, sce$sample_type == "Single cell" &
-        sce$plate_number == "LCE511" &
+  sce[, sce$plate_number == "LCE511" &
         sce$tissue %in% c("Blood", "Thymus")])
 w$row <- substr(w$well_position, 1, 1)
 colData(w) <- droplevels(colData(w))
@@ -557,7 +351,7 @@ plotHeatmap(
     tissue = sub("[0-9]+", "", names(features)),
     row.names = features),
   column_annotation_colors = list(
-    sample_name = sample_name_colours[levels(w$sample_name)],
+    tissue = tissue_colours[levels(w$tissue)],
     donor = donor_colours[levels(w$donor)]),
   main = "LCE511")
 ```
@@ -569,7 +363,8 @@ We therefore remove these wells from further analysis.
 Since row P is the only row on plate `LCE511` containing samples from `Blood 2`, this means that there are are no longer any single-cells from this sample on this plate.
 
 ```{r}
-remove_p <- sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) == "P"
+remove_p <- sce$plate_number == "LCE511" & 
+  substr(sce$well_position, 1, 1) == "P"
 sce <- sce[, !remove_p]
 ```
 
@@ -577,12 +372,15 @@ We have not found any strong evidence that the wells in the prior row (row O) ha
 However, since we have many additional single-cells from this sample elsewhere on this plate and on the other plates, we opt to also the row O wells on plate `LCE511`.
 
 ```{r}
-remove_o <- sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) == "O"
+remove_o <- sce$plate_number == "LCE511" &
+  substr(sce$well_position, 1, 1) == "O"
 sce <- sce[, !remove_o]
 colData(sce) <- droplevels(colData(sce))
 ```
 
 # Quality control of cells
+
+**TODO** UP TO HERE.
 
 ## Defining the quality control metrics
 

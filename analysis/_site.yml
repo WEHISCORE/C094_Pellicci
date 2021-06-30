@@ -6,13 +6,21 @@ navbar:
     - text: "Introduction"
       href: index.html
     - text: "Preprocessing"
-      href: C094_Pellicci.preprocess.html
+      menu:
+        - text: "Single cell"
+          href: C094_Pellicci.single-cell.preprocess.html
+        - text: "Mini bulk"
+          href: C094_Pellicci.mini-bulk.preprocess.html
     - text: "Selecting biologically relevant cells"
       href: C094_Pellicci.cell_selection.html
     - text: "Annotating cells"
       href: C094_Pellicci.annotate.html
     - text: "Differential analyses"
-      href: C094_Pellicci.multi-sample_comparisons.html
+      menu:
+        - text: "Single cell"
+          href: C094_Pellicci.single-cell.multi-sample_comparisons.html
+        - text: "Mini bulk"
+          href: C094_Pellicci.mini-bulk.multi-sample_comparisons.html
     - text: "Supplementary files"
       menu:
         - text: "CellRanger reports"

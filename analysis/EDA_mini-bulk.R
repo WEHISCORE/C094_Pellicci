@@ -7,12 +7,9 @@
 
 library(SingleCellExperiment)
 library(here)
-sce <- readRDS(here("data/SCEs/C094_Pellicci.scPipe.SCE.rds"))
-sce <- sce[, sce$sample_type != "Single cell"]
-sce <- sce[, sce$sample_name != "Cell line"]
-sce$sample_name <- sub(" P[0-9]$", "", sce$sample_name)
-sce$tissue <- sapply(strsplit(sce$sample_name, " "), "[[", 1)
-sce$replicate <- sapply(strsplit(sce$sample_name, " "), "[[", 2)
+sce <- readRDS(here("data/SCEs/C094_Pellicci.mini-bulk.preprocessed.SCE.rds"))
+# TODO: Exclude or can these be used?
+sce <- sce[, sce$tissue != "SKW3"]
 
 #' ## Helper functions
 
@@ -105,14 +102,28 @@ x <- SE2DGEList(sce)
 #' ## Individual technical replicates
 
 #+ fig.asp = 1, fig.cap = "Coloured by tissue"
+# TODO: Use proper colours
 plotMDS(x, col = as.integer(factor(x$samples$tissue)))
-legend("bottomleft", legend = levels(factor(x$samples$tissue)), col = 1:nlevels(factor(x$samples$tissue)), pch = 16)
+legend(
+  "topleft",
+  legend = levels(factor(x$samples$tissue)),
+  col = 1:nlevels(factor(x$samples$tissue)),
+  pch = 16)
 #+ fig.asp = 1, fig.cap = "Coloured by sample_gate"
-plotMDS(x, col = as.integer(factor(x$samples$sample_gate)))
-legend("bottomleft", legend = levels(factor(x$samples$sample_gate)), col = 1:nlevels(factor(x$samples$sample_gate)), pch = 16)
+plotMDS(x, col = as.integer(factor(x$samples$pos)))
+legend(
+  "topleft",
+  legend = levels(factor(x$samples$sample_gate)),
+  col = 1:nlevels(factor(x$samples$sample_gate)),
+  pch = 16,
+  ncol = 2)
 #+ fig.asp = 1, fig.cap = "Coloured by replicate"
 plotMDS(x, col = as.integer(factor(x$samples$replicate)))
-legend("bottomleft", legend = levels(factor(x$samples$replicate)), col = 1:nlevels(factor(x$samples$replicate)), pch = 16)
+legend(
+  "bottomleft",
+  legend = levels(factor(x$samples$replicate)),
+  col = 1:nlevels(factor(x$samples$replicate)),
+  pch = 16)
 
 #' ## Aggregated technical replicates
 
@@ -121,10 +132,17 @@ y <- sumTechReps(
   paste0(x$samples$tissue, ".", x$sample$sample_gate, ".", x$sample$replicate))
 #+ fig.asp = 1, fig.cap = "Coloured by tissue"
 plotMDS(y, col = as.integer(factor(y$samples$tissue)))
-legend("topright", legend = levels(factor(x$samples$tissue)), col = 1:nlevels(factor(x$samples$tissue)), pch = 16)
+legend("topleft",
+       legend = levels(factor(x$samples$tissue)),
+       col = 1:nlevels(factor(x$samples$tissue)),
+       pch = 16)
 #+ fig.asp = 1, fig.cap = "Coloured by sample_gate"
 plotMDS(y, col = as.integer(factor(y$samples$sample_gate)))
-legend("topright", legend = levels(factor(x$samples$sample_gate)), col = 1:nlevels(factor(x$samples$sample_gate)), pch = 16)
+legend(
+  "topleft",
+  legend = levels(factor(x$samples$sample_gate)),
+  col = 1:nlevels(factor(x$samples$sample_gate)),
+  pch = 16)
 #+ fig.asp = 1, fig.cap = "Coloured by replicate"
 plotMDS(y, col = as.integer(factor(y$samples$replicate)))
 legend("topright", legend = levels(factor(x$samples$replicate)), col = 1:nlevels(factor(x$samples$replicate)), pch = 16)
