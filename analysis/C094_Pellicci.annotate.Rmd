@@ -557,7 +557,7 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
-  fine = example_label,
+  main = example_label,
   column_annotation_colors = list(
      mi_label_fine_collapsed = mi_label_fine_colours,
      cluster = cluster_colours,
@@ -595,10 +595,10 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
-  fine = example_label,
+  main = example_label,
   column_annotation_colors = list(
-     mi_label_fine_collapsed = mi_label_fine_colours,
      cluster = cluster_colours,
+     mi_label_fine_collapsed = mi_label_fine_colours,
      sample_name = sample_name_colours,
      post_hoc_sample_gate = sample_gate_colours,
      plate_number = plate_number_colours,    
@@ -668,7 +668,7 @@ plotHeatmap(
        tissue = tissue_colours,
        donor = donor_colours),
     color = hcl.colors(101, "Blue-Red 3"),
-    fine = label,
+    main = label,
     fontsize = 8)
   
   dev.off()
@@ -704,8 +704,8 @@ plotHeatmap(
       sce$tissue,
       sce$donor),
     colour_columns_by = c(
-      "mi_label_fine_collapsed",
       "cluster",
+      "mi_label_fine_collapsed",
       "sample_name",
       "post_hoc_sample_gate",
       "plate_number",
@@ -717,15 +717,15 @@ plotHeatmap(
     zlim = c(-3, 3),
     show_colnames = FALSE,
     column_annotation_colors = list(
-       mi_label_fine_collapsed = mi_label_fine_colours,
        cluster = cluster_colours,
+       mi_label_fine_collapsed = mi_label_fine_colours,
        sample_name = sample_name_colours,
        post_hoc_sample_gate = sample_gate_colours,
        plate_number = plate_number_colours,    
        tissue = tissue_colours,
        donor = donor_colours),
     color = hcl.colors(101, "Blue-Red 3"),
-    fine = label,
+    main = label,
     fontsize = 8)
   
   dev.off()
