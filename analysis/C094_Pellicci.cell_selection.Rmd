@@ -264,8 +264,8 @@ p6 <- ggcells(sce) +
 
 **NOTE** for the unmerged data based on these figures:
   
-  - the majority of cells in cluster `2`, `4`, and `6` represent the three types/statuses of cells at `P8` and can be found in both `Blood` and `Thymus` samples
-  - most of the cells in `P6` and `P7` form one single cluster, i.e. cluster `3`, and they found mostly in `Thymus` sample only
+  - the majority of cells in cluster `3` and `4` represent the three types/statuses of cells at `P8` and can be found in both `Blood` and `Thymus` samples
+  - most of the cells in `P6` and `P7` form one single cluster, i.e. cluster `2`, and they found mostly in `Thymus` sample only
   - cluster `1` and `5` are the only standalone clusters separated from the major group (and they seem to be the two obvious clusters needed to be decided if they should "be kept" or "not to be kept" during cell selection step)
   - cluster `1` is basically the control cell line `SKW3`, accompanied with a small amount of cells from `Thymus 2` and `Thymus 3`
   - cluster `5` are formed from cells mostly from `Blood 3` and `Thymus 3` only, implying it was originated from donor `3` only somehow
@@ -277,7 +277,7 @@ p6 <- ggcells(sce) +
 
 First of all, to get a general idea about the identity of cells contained in the strayed cluster `5`, we perform cell annotation at cluster level with SingleR using the most relevant annotation reference to gamma-delta T cells- i.e. [Monaco Immune Cell Data (GSE107011)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011) [@monaco_immuneRef].
 
-Figure \@ref(fig:umap-with-fine-cluster-labels) overlays these cell-type-labels on the UMAP plot and it shows that almost all cells of the bigger group formed by cluster `2`, `3`, `4` and `6` are corresponds to `Vd2 gd T cells`.
+Figure \@ref(fig:umap-with-fine-cluster-labels) overlays these cell-type-labels on the UMAP plot and it shows that almost all cells of the bigger group formed by cluster `2`, `3`, and `4`are corresponds to `Vd2 gd T cells`.
 Intriguingly, cluster `5` is annotated as `Intermediate monocytes`, whilst cluster `1` (formed mostly by the SKW3 cell line) is labelled as `Plasmablasts`.
 
 ```{r}
@@ -402,8 +402,8 @@ plotHeatmap(
   )
 ```
 
-As you can see, the cells from cluster `5` do give a very strong expression of the `intermediate monocyte` markers, whilst cells from the other four "gamma-delta T cells"-labelled clusters do not.
-Although the other four clusters labelled as `Vd2 gd T cells` do not give a very strong expression of those T cells markers (possibly due to the fact that they are mostly be the "developing" gamma-delta T cells rather than "mature" ones used by the `SingleR` reference), the cluster `5` cells do give a relatively lower expression for most of the "gamma-delta T cells" markers compared to the other four clusters.
+As you can see, the cells from cluster `5` do give a very strong expression of the `intermediate monocyte` markers, whilst cells from the other three "gamma-delta T cells"-labelled clusters do not.
+Although the other three clusters labelled as `Vd2 gd T cells` do not give a very strong expression of those T cells markers (possibly due to the fact that they are mostly be the "developing" gamma-delta T cells rather than "mature" ones used by the `SingleR` reference), the cluster `5` cells do give a relatively lower expression for most of the "gamma-delta T cells" markers compared to the other three clusters.
 Therefore, it suggests the likelihood that the cells in cluster `5` could really be the `intermediate monocyte` and less likely be the `Vd2 gd T cells`.
 
 ```{r test-mi-mono-and-gdT-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for selected marker genes between the `Intermediate monocytes` and `Vd2 gd T cells` labels. Each column is a sample, each row a gene. For legibility, only a random 10% of non-`Intermediate monocytes` cells are shown.", fig.asp = 1.1}
@@ -513,7 +513,7 @@ plotHeatmap(
     )
 ```
 
-If we zoom-in to the heatmap above, we may notice that there is a number of likewise expression of cluster `1` specific markers (such as `H2AFZ`, `MIR1244-2`) between the cells from `Thymus 2` and `Thymus 3` with those of  the control cell line.
+If we zoom-in to the heatmap above, we may notice that there is a number of likewise expression of cluster `1` specific markers (such as `PTMA`, `MIR1244-2`) between the cells from `Thymus 2` and `Thymus 3` with those of  the control cell line.
 As a result, this may drive the grouping of the cells between thymus cells and the control cell line, which lead to the formation of cluster `1`.
 
 ```{r heatmap-unique-focused-cluster-1}
@@ -650,7 +650,7 @@ align ="h"
 Notably, the `SKW3` cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the `Thymus` cells and form a standalone cluster.
 
 **NOTE**: Taken all of these evidences together, we decide to remove the `Cell line` proceed the analyses with only the sample cells.
-Also, after our online discussion with Dan and Stuart on 30 June, we confirmed that cells in cluster `5` are contaminants and should be removed from the the subsequent analyses as well.
+Also, after our online discussion with Dan and Stuart on 30 June 2021, we confirmed that cells in cluster `5` are contaminants and should be removed from the the subsequent analyses as well.
 
 ```{r}
 # remove `cell line` and cells from cluster
@@ -658,12 +658,6 @@ sce <- sce[, !(sce$sample_name=="Cell line")]
 sce <- sce[, !(sce$cluster=="5")]
 colData(sce) <- droplevels(colData(sce))
 ```
-
-
-
-
-
-
 
 We then re-process the *sample cells* remained in the dataset.
 
@@ -811,8 +805,8 @@ p6 <- ggcells(sce) +
 
 *NOTE* for the unmerged data:
   
-  - there are one big population, which is subdivided into four clusters (i.e. cluster `1`, `2`, `3`, and `4`)
-  - cells in cluster `2`, `3`, and `4` are mostly in `P8`, whilst cells in cluster `1` are mostly be mixture of `P6`, `P7`, and `P8` 
+  - there is one big population, which is subdivided into four clusters (i.e. cluster `1`, `2`, `3`, and `4`)
+  - cells in cluster `1`, `3`, and `4` are mostly in `P8`, whilst cells in cluster `2` are mostly be mixture of `P6`, `P7`, and `P8` 
   - plate-specific batch effect seems prominent without MNN correction
 
 # Data integration
@@ -968,16 +962,6 @@ sce3$colours$cluster_colours_3 <- cluster_colours_3[sce3$cluster_3]
 ```
 
 Figure \@ref(fig:batch-correction-test-cell-selected) shows an overview of comparisons between the unmerged and merged data  (from left to right column: *unmerged*, *auto merge*, *manual merge 1*, and *manual merge 2*) broken down by different experimental factors.
-
-
-
-
-
-
-
-
-
-
 
 ```{r batch-correction-test-cell-selected, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (leftmost column) and -corrected data by auto merge (2nd column) and two different manual merge orders (3rd and rightmost columns, respectively).", layout="l-page"}
 

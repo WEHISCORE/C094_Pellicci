@@ -2278,7 +2278,7 @@ Show code
 </div>
 </details>
 </div>
-<p>There are 6 clusters detected, shown on the UMAP plot Figure <a href="#fig:clusterplot-umap">1</a> and broken down by experimental factors in Figure <a href="#fig:cluster-barplot">2</a>.</p>
+<p>There are 5 clusters detected, shown on the UMAP plot Figure <a href="#fig:clusterplot-umap">1</a> and broken down by experimental factors in Figure <a href="#fig:cluster-barplot">2</a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2419,8 +2419,8 @@ Figure 2: Breakdown of clusters by experimental factors.
 </div>
 <p><strong>NOTE</strong> for the unmerged data based on these figures:</p>
 <ul>
-<li>the majority of cells in cluster <code>2</code>, <code>4</code>, and <code>6</code> represent the three types/statuses of cells at <code>P8</code> and can be found in both <code>Blood</code> and <code>Thymus</code> samples</li>
-<li>most of the cells in <code>P6</code> and <code>P7</code> form one single cluster, i.e. cluster <code>3</code>, and they found mostly in <code>Thymus</code> sample only</li>
+<li>the majority of cells in cluster <code>3</code> and <code>4</code> represent the three types/statuses of cells at <code>P8</code> and can be found in both <code>Blood</code> and <code>Thymus</code> samples</li>
+<li>most of the cells in <code>P6</code> and <code>P7</code> form one single cluster, i.e. cluster <code>2</code>, and they found mostly in <code>Thymus</code> sample only</li>
 <li>cluster <code>1</code> and <code>5</code> are the only standalone clusters separated from the major group (and they seem to be the two obvious clusters needed to be decided if they should “be kept” or “not to be kept” during cell selection step)</li>
 <li>cluster <code>1</code> is basically the control cell line <code>SKW3</code>, accompanied with a small amount of cells from <code>Thymus 2</code> and <code>Thymus 3</code></li>
 <li>cluster <code>5</code> are formed from cells mostly from <code>Blood 3</code> and <code>Thymus 3</code> only, implying it was originated from donor <code>3</code> only somehow</li>
@@ -2429,7 +2429,7 @@ Figure 2: Breakdown of clusters by experimental factors.
 <h2 id="investigation-of-cluster-5">Investigation of cluster <code>5</code></h2>
 <h2 id="cell-type-estimation">Cell type estimation</h2>
 <p>First of all, to get a general idea about the identity of cells contained in the strayed cluster <code>5</code>, we perform cell annotation at cluster level with SingleR using the most relevant annotation reference to gamma-delta T cells- i.e. <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011">Monaco Immune Cell Data (GSE107011)</a> <span class="citation" data-cites="monaco_immuneRef">(<a href="#ref-monaco_immuneRef" role="doc-biblioref">Monaco et al. 2019</a>)</span>.</p>
-<p>Figure <a href="#fig:umap-with-fine-cluster-labels">3</a> overlays these cell-type-labels on the UMAP plot and it shows that almost all cells of the bigger group formed by cluster <code>2</code>, <code>3</code>, <code>4</code> and <code>6</code> are corresponds to <code>Vd2 gd T cells</code>. Intriguingly, cluster <code>5</code> is annotated as <code>Intermediate monocytes</code>, whilst cluster <code>1</code> (formed mostly by the SKW3 cell line) is labelled as <code>Plasmablasts</code>.</p>
+<p>Figure <a href="#fig:umap-with-fine-cluster-labels">3</a> overlays these cell-type-labels on the UMAP plot and it shows that almost all cells of the bigger group formed by cluster <code>2</code>, <code>3</code>, and <code>4</code>are corresponds to <code>Vd2 gd T cells</code>. Intriguingly, cluster <code>5</code> is annotated as <code>Intermediate monocytes</code>, whilst cluster <code>1</code> (formed mostly by the SKW3 cell line) is labelled as <code>Plasmablasts</code>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2499,31 +2499,25 @@ Show code
 <td style="text-align: left;">2</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">456</td>
+<td style="text-align: right;">744</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">3</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">727</td>
+<td style="text-align: right;">684</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">4</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">569</td>
+<td style="text-align: right;">582</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">5</td>
-<td style="text-align: right;">53</td>
+<td style="text-align: right;">52</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">6</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">278</td>
 </tr>
 </tbody>
 </table>
@@ -2642,7 +2636,7 @@ Figure 4: Heatmap of log-expression values in the <code>MI</code> reference data
 </p>
 </div>
 </div>
-<p>As you can see, the cells from cluster <code>5</code> do give a very strong expression of the <code>intermediate monocyte</code> markers, whilst cells from the other four “gamma-delta T cells”-labelled clusters do not. Although the other four clusters labelled as <code>Vd2 gd T cells</code> do not give a very strong expression of those T cells markers (possibly due to the fact that they are mostly be the “developing” gamma-delta T cells rather than “mature” ones used by the <code>SingleR</code> reference), the cluster <code>5</code> cells do give a relatively lower expression for most of the “gamma-delta T cells” markers compared to the other four clusters. Therefore, it suggests the likelihood that the cells in cluster <code>5</code> could really be the <code>intermediate monocyte</code> and less likely be the <code>Vd2 gd T cells</code>.</p>
+<p>As you can see, the cells from cluster <code>5</code> do give a very strong expression of the <code>intermediate monocyte</code> markers, whilst cells from the other three “gamma-delta T cells”-labelled clusters do not. Although the other three clusters labelled as <code>Vd2 gd T cells</code> do not give a very strong expression of those T cells markers (possibly due to the fact that they are mostly be the “developing” gamma-delta T cells rather than “mature” ones used by the <code>SingleR</code> reference), the cluster <code>5</code> cells do give a relatively lower expression for most of the “gamma-delta T cells” markers compared to the other three clusters. Therefore, it suggests the likelihood that the cells in cluster <code>5</code> could really be the <code>intermediate monocyte</code> and less likely be the <code>Vd2 gd T cells</code>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2711,8 +2705,8 @@ Show code
 </code></pre>
 </div>
 </details>
-<pre><code>  1   2   3   4   5   6 
-768   0  13   6  24   0 </code></pre>
+<pre><code>  1   2   3   4   5 
+885  32  11   0  18 </code></pre>
 </div>
 <p>The heatmaps below highlight the top-50 genes for cluster <code>5</code>.</p>
 <div class="layout-chunk" data-layout="l-body">
@@ -2795,7 +2789,7 @@ Figure 7: Heatmap of log-expression values in our dataset at the cell-level for 
 </p>
 </div>
 </div>
-<p>If we zoom-in to the heatmap above, we may notice that there is a number of likewise expression of cluster <code>1</code> specific markers (such as <code>H2AFZ</code>, <code>MIR1244-2</code>) between the cells from <code>Thymus 2</code> and <code>Thymus 3</code> with those of the control cell line. As a result, this may drive the grouping of the cells between thymus cells and the control cell line, which lead to the formation of cluster <code>1</code>.</p>
+<p>If we zoom-in to the heatmap above, we may notice that there is a number of likewise expression of cluster <code>1</code> specific markers (such as <code>PTMA</code>, <code>MIR1244-2</code>) between the cells from <code>Thymus 2</code> and <code>Thymus 3</code> with those of the control cell line. As a result, this may drive the grouping of the cells between thymus cells and the control cell line, which lead to the formation of cluster <code>1</code>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2959,7 +2953,7 @@ Figure 8: UMAP plot of the dataset. Each point represents a cell and each panel 
 </div>
 </div>
 <p>Notably, the <code>SKW3</code> cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the <code>Thymus</code> cells and form a standalone cluster.</p>
-<p><strong>NOTE</strong>: Taken all of these evidences together, we decide to remove the <code>Cell line</code> proceed the analyses with only the sample cells. Also, after our online discussion with Dan and Stuart on 30 June, we confirmed that cells in cluster <code>5</code> are contaminants and should be removed from the the subsequent analyses as well.</p>
+<p><strong>NOTE</strong>: Taken all of these evidences together, we decide to remove the <code>Cell line</code> proceed the analyses with only the sample cells. Also, after our online discussion with Dan and Stuart on 30 June 2021, we confirmed that cells in cluster <code>5</code> are contaminants and should be removed from the the subsequent analyses as well.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3150,8 +3144,8 @@ Figure 10: Breakdown of clusters by experimental factors.
 </div>
 <p><em>NOTE</em> for the unmerged data:</p>
 <ul>
-<li>there are one big population, which is subdivided into four clusters (i.e. cluster <code>1</code>, <code>2</code>, <code>3</code>, and <code>4</code>)</li>
-<li>cells in cluster <code>2</code>, <code>3</code>, and <code>4</code> are mostly in <code>P8</code>, whilst cells in cluster <code>1</code> are mostly be mixture of <code>P6</code>, <code>P7</code>, and <code>P8</code></li>
+<li>there is one big population, which is subdivided into four clusters (i.e. cluster <code>1</code>, <code>2</code>, <code>3</code>, and <code>4</code>)</li>
+<li>cells in cluster <code>1</code>, <code>3</code>, and <code>4</code> are mostly in <code>P8</code>, whilst cells in cluster <code>2</code> are mostly be mixture of <code>P6</code>, <code>P7</code>, and <code>P8</code></li>
 <li>plate-specific batch effect seems prominent without MNN correction</li>
 </ul>
 <h1 id="data-integration">Data integration</h1>
@@ -3249,42 +3243,42 @@ Show code
 <tr class="odd">
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">2.8</td>
-<td style="text-align: right;">3.1</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: right;">3.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">0.0</td>
-<td style="text-align: right;">4.2</td>
-<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">4.3</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">1.1</td>
-<td style="text-align: right;">1.3</td>
+<td style="text-align: right;">1.2</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">4.6</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.4</td>
+<td style="text-align: right;">0.5</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">4.8</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">2.3</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.8</td>
+<td style="text-align: right;">2.3</td>
+<td style="text-align: right;">2.3</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">2.2</td>
-<td style="text-align: right;">2.4</td>
-<td style="text-align: right;">2.2</td>
-<td style="text-align: right;">5.9</td>
-<td style="text-align: right;">2.3</td>
-<td style="text-align: right;">2.3</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.6</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.6</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.5</td>
 </tr>
 </tbody>
 </table>
@@ -3317,44 +3311,44 @@ Show code
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">3.0</td>
 <td style="text-align: right;">0.0</td>
-<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">2.9</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">3.0</td>
 <td style="text-align: right;">0.0</td>
-<td style="text-align: right;">2.4</td>
-<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: right;">4.3</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">0.6</td>
+<td style="text-align: right;">0.7</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.6</td>
-<td style="text-align: right;">0.6</td>
-<td style="text-align: right;">5.4</td>
+<td style="text-align: right;">0.7</td>
+<td style="text-align: right;">5.3</td>
 <td style="text-align: right;">0.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.3</td>
 <td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.3</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.2</td>
 <td style="text-align: right;">5.9</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">2.1</td>
-<td style="text-align: right;">8.6</td>
+<td style="text-align: right;">2.3</td>
+<td style="text-align: right;">9.2</td>
 <td style="text-align: right;">2.0</td>
-<td style="text-align: right;">1.7</td>
-<td style="text-align: right;">2.8</td>
-<td style="text-align: right;">2.4</td>
+<td style="text-align: right;">2.0</td>
+<td style="text-align: right;">3.0</td>
+<td style="text-align: right;">2.6</td>
 </tr>
 </tbody>
 </table>
@@ -3387,43 +3381,43 @@ Show code
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">3.0</td>
 <td style="text-align: right;">0.0</td>
-<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">2.9</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
 </tr>
 <tr class="even">
+<td style="text-align: right;">3.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: right;">4.3</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">2.5</td>
 <td style="text-align: right;">2.8</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">5.6</td>
+<td style="text-align: right;">0.0</td>
 <td style="text-align: right;">0.0</td>
 <td style="text-align: right;">2.4</td>
-<td style="text-align: right;">4.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">3.0</td>
-<td style="text-align: right;">3.0</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">5.4</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">2.5</td>
 <td style="text-align: right;">2.5</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">4.0</td>
-<td style="text-align: right;">3.7</td>
-<td style="text-align: right;">3.8</td>
+<td style="text-align: right;">3.6</td>
+<td style="text-align: right;">3.9</td>
+<td style="text-align: right;">3.6</td>
+<td style="text-align: right;">3.5</td>
 <td style="text-align: right;">3.4</td>
-<td style="text-align: right;">3.1</td>
 <td style="text-align: right;">3.3</td>
 </tr>
 </tbody>
@@ -3573,7 +3567,7 @@ Figure 11: Comparison between batch-uncorrected data (leftmost column) and -corr
 </p>
 </div>
 </div>
-<p>To get an insight, here we break down the UMAP plot above further by <code>plate_number</code> (Figure <a href="#fig:umap-plate-number-cell-selected">12</a>), <code>post_hoc_sample_gate</code> (Figure <a href="#fig:umap-post-hoc-sample-gate-cell-selected">13</a>), and <code>tissue</code> (Figure <a href="#fig:umap-tissue-cell-selected">14</a>).</p>
+<p>To get an insight, here we focus on the uncorrected and the corrected data by <em>manual merge 2</em>, then break down the UMAP plot above further by <code>plate_number</code> (Figure <a href="#fig:umap-plate-number-cell-selected">12</a>), <code>post_hoc_sample_gate</code> (Figure <a href="#fig:umap-post-hoc-sample-gate-cell-selected">13</a>), and <code>tissue</code> (Figure <a href="#fig:umap-tissue-cell-selected">14</a>).</p>
 <p>From the perspective of correcting the batch effect, the MNN correction can effectively alleviate the plate-specific grouping of cells (Figure <a href="#fig:umap-plate-number-cell-selected">12</a>).</p>
 <p>From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the “shifting” of the transcriptomic stages of cells <code>P6</code> to <code>P7</code>, then <code>P8</code> (Figure <a href="#fig:umap-post-hoc-sample-gate-cell-selected">13</a>); (ii) <code>Blood</code> contains cells mostly at <code>P8</code> only, whilst <code>Thymus</code> contains cells at all three phases, i.e. <code>P6</code>, <code>P7</code> and <code>P8</code> (Figure <a href="#fig:umap-tissue-cell-selected">14</a>).</p>
 <div class="layout-chunk" data-layout="l-body">
@@ -3728,7 +3722,7 @@ Figure 14: UMAP plot of the dataset. Each point represents a cell and each panel
 </p>
 </div>
 </div>
-<p>Taken altogether, we determine <em>manual merge 2</em> as the best possible merge order for data integration of this dataset and proceed.</p>
+<p>Taken altogether, we conclude that the data corrected by the <em>manual merge 2</em> as the best possible merge order for data integration of this dataset and proceed.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3761,7 +3755,7 @@ Show code
 </div>
 </details>
 </div>
-<p>To sumup, there are 3 clusters detected, shown on the UMAP plot Figure <a href="#fig:clusterplot-umap-cell-selected-merged">15</a> and broken down by experimental factors in Figure <a href="#fig:cluster-barplot-cell-selected-merged">16</a>.</p>
+<p>To sumup, there are 4 clusters detected, shown on the UMAP plot Figure <a href="#fig:clusterplot-umap-cell-selected-merged">15</a> and broken down by experimental factors in Figure <a href="#fig:cluster-barplot-cell-selected-merged">16</a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>

@@ -117,7 +117,7 @@ tissue_colours <- setNames(
   levels(sce$tissue))
 sce$colours$tissue_colours <- tissue_colours[sce$tissue]
 donor_colours <- setNames(
-  palette.colors(nlevels(sce$donor), "Set 1"),
+  palette.colors(nlevels(sce$donor), "Dark 2"),
   levels(sce$donor))
 sce$colours$donor_colours <- donor_colours[sce$donor]
 ```
@@ -197,8 +197,8 @@ p <- lapply(levels(sce$plate_number), function(p) {
       legend.text = element_text(size = 4),
       legend.title = element_text(size = 4)) +
     guides(
-      colour = guide_legend(override.aes = list(size = 3)),
-      shape = guide_legend(override.aes = list(size = 3)))
+      colour = guide_legend(override.aes = list(size = 1)),
+      shape = guide_legend(override.aes = list(size = 1)))
 })
 
 wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
@@ -453,6 +453,134 @@ pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
+# Plate alignment issue (LCE511)
+
+## Motivation
+
+Casey and Dan reported that plate `LCE511` came out alignment during the sort, specifically while sorting the final row (row `P`), which contains the `Blood 2` cells (see Figure \@ref(fig:plate-map)).
+Depending on how exactly the plate came out of alignment, this may have resulted in the wells in the adjacent row (row O) containing 2 cells (i.e. doublets with 1 cell from those intended for row O and 1 cells from those intended for row P).
+
+We want to check:
+
+1. Do the wells in row P appear to be missing a cell?
+2. Do the wells in the previous row (row O) contain 2 cells (i.e. do they contain doublets)?
+
+## Analysis
+
+Figure \@ref(fig:qc-lce511) plots the number of UMIs (`sum`) and number of genes detected (`detected`) for wells in each row of place `LCE511`.
+We observe substantially fewer UMIs and genes detected for the wells in row P, confirming that these wells appear to be missing a cell.
+However, we do not observe any strong differences in the number of UMIs or genes detected for the wells in row O compared to wells in rows L - N.
+
+```{r qc-lce511, fig.cap = "Distributions of various QC metrics for all samples on plate `LCE511`.", fig.asp = 1 / 2}
+z <- sce[, sce$plate_number == "LCE511"]
+z <- addPerCellQC(z, use.altexps = "ERCC")
+
+p1 <- plotColData(
+  z, 
+  y = "sum",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$sample_name,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "sample_name") + 
+  scale_y_log10() + 
+  scale_colour_manual(values = sample_name_colours) +
+  guides(colour = FALSE) +
+  xlab("Row.sample_name") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p2 <- plotColData(
+  z, 
+  y = "detected",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$sample_name,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "sample_name") + 
+  scale_y_log10() + 
+  scale_colour_manual(values = sample_name_colours) +
+  guides(colour = FALSE) +
+  xlab("Row.sample_name") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p1 + p2 +
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("LCE511")
+```
+
+Thus far, we have no strong evidence that row O contains doublets.
+As another check, we look to see if the samples in these wells co-express mutually-exclusive tissue-marker genes.
+That is, since row O nominally contains `Blood` samples and row P nominally contained `Thymus` samples, we check if the samples in row `O` co-express `Blood` and `Thymus` marker genes^[These marker genes are identified by a Wilcox test comparing the `Blood` and `Thymus` single-cells on all plates except `LCE511`], which would provide evidence that row O wells contain doublets.
+
+Figure \@ref(fig:marker-genes-lce511) is a heatmap of `Blood` and `Thymus` marker genes for all wells on plate `LCE511`.
+Firstly, it shows that there aren't any great markers of `Blood` vs. `Thymus` single-cells in this data.
+Secondly, and more importantly, there is some evidence that row O wells express some `Blood`-specific markers (e.g., *NKG7*, *CCL5*, *HLA-B*, *HLA-C*).
+However, these same markers are also expressed by the `Thymus 1` samples in row J.
+There is no strong expression of the `Thymus`-specific markers in row O wells, but nor is there in any of the `Thymus` samples on this plate.
+
+```{r marker-genes-lce511, fig.cap = "Expression of the top-10 `Blood` and `Thymus` marker genes for all wells on plate `LCE511` grouped by `Tissue` then `row`. We are looking to see if the wells in row `O` co-express these marker genes."}
+library(scran)
+
+tmp <- logNormCounts(
+  sce[, sce$plate_number != "LCE511" & 
+        sce$sample_type == "Single cell" & 
+        sce$tissue %in% c("Blood", "Thymus")])
+colData(tmp) <- droplevels(colData(tmp))
+w <- logNormCounts(
+  sce[, sce$sample_type == "Single cell" &
+        sce$plate_number == "LCE511" &
+        sce$tissue %in% c("Blood", "Thymus")])
+w$row <- substr(w$well_position, 1, 1)
+colData(w) <- droplevels(colData(w))
+
+markers <- findMarkers(
+  tmp, 
+  groups = tmp$tissue,
+  direction = "up",
+  test.type = "wilcox",
+  block = tmp$donor)
+
+features <- unlist(
+  lapply(markers, function(x) head(rownames(x[x$FDR < 0.05, ]), 10)))
+plotHeatmap(
+  w, 
+  features,
+  order_columns_by = c("tissue", "row", "donor"),
+  center = TRUE,
+  cluster_rows = FALSE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  annotation_row = data.frame(
+    tissue = sub("[0-9]+", "", names(features)),
+    row.names = features),
+  column_annotation_colors = list(
+    sample_name = sample_name_colours[levels(w$sample_name)],
+    donor = donor_colours[levels(w$donor)]),
+  main = "LCE511")
+```
+
+## Summary
+
+Consistent with plate `LCE511` having come out of alignment during the sort, specifically while sorting the final row (row P), we find that wells in this row have an unusually small number of UMIs and genes detected.
+We therefore remove these wells from further analysis.
+Since row P is the only row on plate `LCE511` containing samples from `Blood 2`, this means that there are are no longer any single-cells from this sample on this plate.
+
+```{r}
+remove_p <- sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) == "P"
+sce <- sce[, !remove_p]
+```
+
+We have not found any strong evidence that the wells in the prior row (row O) have been contaminated by the sample intended for row P.
+However, since we have many additional single-cells from this sample elsewhere on this plate and on the other plates, we opt to also the row O wells on plate `LCE511`.
+
+```{r}
+remove_o <- sce$plate_number == "LCE511" & substr(sce$well_position, 1, 1) == "O"
+sce <- sce[, !remove_o]
+colData(sce) <- droplevels(colData(sce))
+```
 
 # Quality control of cells
 
@@ -600,7 +728,6 @@ p3 <- plotColData(
   other_fields = "plate_number",
   point_size = 0.5,
   colour_by = "sample_name") +
-  scale_y_log10() +
   ylim(0, NA) +
   theme(axis.text.x = element_blank())
 p4 <- plotColData(
@@ -610,7 +737,6 @@ p4 <- plotColData(
   other_fields = c("plate_number", "sample_type"),
   point_size = 0.5,
   colour_by = "sample_name") +
-  scale_y_log10() +
   ylim(0, NA) +
   theme(axis.text.x = element_blank())
 p5 <- plotColData(
@@ -620,7 +746,6 @@ p5 <- plotColData(
   other_fields = "plate_number",
   point_size = 0.5,
   colour_by = "sample_name") +
-  scale_y_log10() +
   ylim(0, NA) +
   theme(axis.text.x = element_blank())
 p1 + p2 + p3 + p4 + p5 + 
@@ -628,7 +753,7 @@ p1 + p2 + p3 + p4 + p5 +
   plot_annotation("Single-cell samples")
 ```
 
-Figure \@ref(fig:qcplot-single-cells-by-plate-number) shows that QC metrics are generally consistent across plates, although the `Blood 2` cells on plate `LCE511` have poorer QC metrics than the `Blood 2` cells on the other plates.
+Figure \@ref(fig:qcplot-single-cells-by-plate-number) shows that QC metrics are generally consistent across plates.
 
 ```{r qcplot-single-cells-by-plate-number, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
 p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
@@ -641,82 +766,6 @@ p1 + p2 + p3 + p4 + p5 +
   plot_annotation("Single-cell samples")
 ```
 
-### Plate alignment issue (LCE511)
-
-Casey and Dan reported that plate `LCE511` came out alignment during the sort, specifically while sorting the final row, which contains the `Blood 2` cells (see Figure \@ref(fig:plate-map)).
-Depending on how exactly the plate came out of alignment, this may have resulted in the wells in the adjacent row (row O) containing 2 cells (i.e. doublets with 1 cell from those intended for row O and 1 cells from those intended for row P).
-These doublets may be detectable as different QC metrics for those cells in row O compared to the other rows containing cells from the same sample (rows L - N).
-However, figure \@ref(fig:qc-lce511) does not reveal any strong differences in the QC metrics for those row O cells compared to cells in rows L - N.
-
-```{r qc-lce511, fig.cap = "Distributions of various QC metrics for all samples on plate `LCE511`.", fig.asp = 1}
-z <- sce[, sce$plate_number == "LCE511"]
-
-p1 <- plotColData(
-  z, 
-  y = "sum",
-  x = I(
-    interaction(
-      substr(z$well_position, 1, 1), 
-      z$sample_name,
-      drop = TRUE, 
-      lex.order = TRUE)), 
-  colour_by = "sample_name") + 
-  scale_y_log10() + 
-  scale_colour_manual(values = sample_name_colours) +
-  guides(colour = FALSE) +
-  xlab("Row.sample_name") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-p2 <- plotColData(
-  z, 
-  y = "detected",
-  x = I(
-    interaction(
-      substr(z$well_position, 1, 1), 
-      z$sample_name,
-      drop = TRUE, 
-      lex.order = TRUE)), 
-  colour_by = "sample_name") + 
-  scale_y_log10() + 
-  scale_colour_manual(values = sample_name_colours) +
-  guides(colour = FALSE) +
-  xlab("Row.sample_name") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-p3 <- plotColData(
-  z, 
-  y = "subsets_Mito_percent",
-  x = I(
-    interaction(
-      substr(z$well_position, 1, 1), 
-      z$sample_name,
-      drop = TRUE, 
-      lex.order = TRUE)), 
-  colour_by = "sample_name") + 
-  scale_colour_manual(values = sample_name_colours) +
-  guides(colour = FALSE) +
-  xlab("Row.sample_name") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-p4 <- plotColData(
-  z, 
-  y = "altexps_ERCC_percent",
-  x = I(
-    interaction(
-      substr(z$well_position, 1, 1), 
-      z$sample_name,
-      drop = TRUE, 
-      lex.order = TRUE)), 
-  colour_by = "sample_name") + 
-  scale_colour_manual(values = sample_name_colours) +
-  guides(colour = FALSE) +
-  xlab("Row.sample_name") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-p1 + p2 + p3 + p4 + 
-  plot_layout(ncol = 2, guides = "collect") +
-  plot_annotation("LCE511")
-```
-
-At this stage, it seems the plate alignment issue is restricted to row P of plate `LCE511`.
-Nonetheless, we will keep a close eye on those cells from rows O and P on plate `LCE511` in downstream analyses.
-
 ### Mini-bulk samples
 
 Figure \@ref(fig:qcplot-mini-bulks) compares the QC metrics of the mini-bulk samples across the different `sample_name`
@@ -728,61 +777,114 @@ This shows that the vast majority of mini-bulk samples are good-quality^[Bearing
 - The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_Ribo_percent[sce$sample_type != "Single cell"]), scale = 1)`.
 - The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent[sce$sample_type != "Single cell"]), scale = 1)`.
 
-We observe that the thymus samples have more UMIs, genes detected, and lower percentage of UMIs that are mapped to mitochondrial RNA, compared to the blood samples.
+We observe that the `Thymus` samples generally have more UMIs, genes detected, and lower percentage of UMIs that are mapped to mitochondrial RNA, compared to the `Blood` samples.
+However, this is partly because the the `Blood` samples have poorer QC metrics in `NN215` than in `NN227` whereas the `Thymus` samples have consistent QC metrics across sequencing runs `NN215` and `NN227`^[This difference in QC metrics by sequencing run by tissue is not explained by the `sample_type` (i.e. 50 cells vs. 99 or 100 cells).].
 
 ```{r qcplot-mini-bulks, fig.cap = "Distributions of various QC metrics for all **mini-bulk** samples in the dataset.", fig.asp = 1}
 p1 <- plotColData(
   sce[, sce$sample_type != "Single cell"],
   "sum",
-  x = "sample_name",
-  other_fields = "plate_number",
-  point_size = 1.5,
-  colour_by = "sample_name") +
+  x = I(
+    interaction(
+      sce[, sce$sample_type != "Single cell"]$donor, 
+      sce[, sce$sample_type != "Single cell"]$sequencing_run,
+      drop = TRUE, 
+      lex.order = TRUE)),
+  other_fields = "tissue",
+  point_size = 1,
+  shape_by = "sample_type",
+  colour_by = "donor",
+  theme_size = 5) +
   scale_y_log10() +
   annotation_logticks(
     sides = "l",
     short = unit(0.03, "cm"),
     mid = unit(0.06, "cm"),
     long = unit(0.09, "cm")) +
-  theme(axis.text.x = element_blank())
+  facet_grid(~tissue) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  scale_shape_manual(
+    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21))
 p2 <- plotColData(
   sce[, sce$sample_type != "Single cell"],
   "detected",
-  x = "sample_name",
-  other_fields = "plate_number",
-  point_size = 1.5,
-  colour_by = "sample_name") +
-  theme(axis.text.x = element_blank())
+  x = I(
+    interaction(
+      sce[, sce$sample_type != "Single cell"]$donor, 
+      sce[, sce$sample_type != "Single cell"]$sequencing_run,
+      drop = TRUE, 
+      lex.order = TRUE)),
+  other_fields = "tissue",
+  point_size = 1,
+  shape_by = "sample_type",
+  colour_by = "donor",
+  theme_size = 5) +
+  facet_grid(~tissue) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  scale_shape_manual(
+    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21))
 p3 <- plotColData(
   sce[, sce$sample_type != "Single cell"],
-  "subsets_Mito_percent",
-  x = "sample_name",
-  other_fields = "plate_number",
-  point_size = 1.5,
-  colour_by = "sample_name") +
-  scale_y_log10() +
-  ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  "subsets_Mito_detected",
+  x = I(
+    interaction(
+      sce[, sce$sample_type != "Single cell"]$donor, 
+      sce[, sce$sample_type != "Single cell"]$sequencing_run,
+      drop = TRUE, 
+      lex.order = TRUE)),
+  other_fields = "tissue",
+  point_size = 1,
+  shape_by = "sample_type",
+  colour_by = "donor",
+  theme_size = 5) +
+  facet_grid(~tissue) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  scale_shape_manual(
+    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21)) +
+  ylim(0, NA)
 p4 <- plotColData(
   sce[, sce$sample_type != "Single cell"],
   "subsets_Ribo_percent",
-  x = "sample_name",
-  other_fields = c("plate_number", "sample_type"),
-  point_size = 1.5,
-  colour_by = "sample_name") +
-  scale_y_log10() +
-  ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  x = I(
+    interaction(
+      sce[, sce$sample_type != "Single cell"]$donor, 
+      sce[, sce$sample_type != "Single cell"]$sequencing_run,
+      drop = TRUE, 
+      lex.order = TRUE)),
+  other_fields = "tissue",
+  point_size = 1,
+  shape_by = "sample_type",
+  colour_by = "donor",
+  theme_size = 5) +
+  facet_grid(~tissue) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  scale_shape_manual(
+    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21)) +
+  ylim(0, NA)
 p5 <- plotColData(
   sce[, sce$sample_type != "Single cell"],
   "altexps_ERCC_percent",
-  x = "sample_name",
-  other_fields = "plate_number",
-  point_size = 1.5,
-  colour_by = "sample_name") +
-  scale_y_log10() +
-  ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  x = I(
+    interaction(
+      sce[, sce$sample_type != "Single cell"]$donor, 
+      sce[, sce$sample_type != "Single cell"]$sequencing_run,
+      drop = TRUE, 
+      lex.order = TRUE)),
+  other_fields = "tissue",
+  point_size = 1,
+  shape_by = "sample_type",
+  colour_by = "donor",
+  theme_size = 5) +
+  facet_grid(~tissue) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  scale_shape_manual(
+    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21)) +
+  ylim(0, NA)
 p1 + p2 + p3 + p4 + p5 + 
   plot_layout(ncol = 2, guides = "collect") +
   plot_annotation("Mini-bulk samples")
@@ -887,7 +989,6 @@ sce <- sce[, keep]
 
 The table below summarises the number of cells per plate left following removal of outliers based on the QC metrics.
 The vast majority of cells are retained for all `sample_name`.
-The `sample_name` with the largest number of cells removed is the aforementioned `Blood 2`, which is due to their low quality of these cells on plate `LCE511`.
 
 More cells are removed due to high percentages of ERCC transcripts or mitochondrial RNA than due to low library size and number of expressed genes.
 In total, we remove `r number(sum(!keep))` cells based on these QC metrics, and retain `r number(sum(keep), big.mark = ",")` cells.
@@ -1000,7 +1101,7 @@ glMDPlot(
 ```
 
 Another concern is whether the cells removed during QC preferentially derive from particular experimental groups.
-Reassuringly, Figure \@ref(fig:barplot-highlighting-outliers) shows that this is not the case, beyond the aforementioned loss of `Blood 2` cells.
+Figure \@ref(fig:barplot-highlighting-outliers) shows that we exclude more `Thymus` than `Blood` samples, although this is roughly proportional to the abundance of samples from each tissue.
 
 ```{r barplot-highlighting-outliers, fig.cap = "Cells removed during QC, stratified by experimental group. "}
 ggcells(sce_pre_QC_outlier_removal, exprs_values = "counts") +
@@ -1124,7 +1225,7 @@ p1 + p2 + p3 + p4 + p5 +
 ```
 
 Figure \@ref(fig:coldata-postqc) summarises the experimental design following QC.
-We observe that all `Blood 2` samples on plate number `LCE511` have failed QC and have therefore been excluded from further analysis.
+We remind ourself that all `Blood 2` samples on plate number `LCE511` were excluded in [Plate alignment issue (LCE511)].
 
 ```{r coldata-postqc, fig.asp = 1 / 2, fig.cap = "Breakdown of experiment by plate."}
 p1 <- ggcells(sce) + 
