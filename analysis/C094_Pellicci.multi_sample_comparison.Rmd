@@ -1,0 +1,1228 @@
+---
+title: "Multi-sample comparisons with the Pellicci gamma-delta T-cell dataset"
+description: |
+author:
+  - name: William Ho
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+```{r setup}
+library(SingleCellExperiment)
+library(here)
+library(scater)
+library(cowplot)
+library(patchwork)
+library(BiocParallel)
+library(pheatmap)
+library(magrittr)
+library(scran)
+library(rmarkdown)
+source(here("code", "helper_functions.R"))
+# NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
+options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
+register(MulticoreParam(workers = getOption("mc.cores")))
+knitr::opts_chunk$set(fig.path = "C094_Pellicci_multi-sample_comparisons_files/")
+```
+
+# Motivation
+
+A powerful use of scRNA-seq technology lies in the design of replicated multi-condition experiments to detect changes in composition or expression between conditions.
+For example, a researcher could use this strategy to detect changes in cell type abundance after drug treatment [@richard2018tcell] or genetic modifications [@scialdone2016resolving].
+This provides more biological insight than conventional scRNA-seq experiments involving only one biological condition, especially if we can relate population changes to specific experimental perturbations.
+
+Differential analyses of multi-condition scRNA-seq experiments can be broadly split into two categories - differential expression (DE) and differential abundance (DA) analyses.
+The former tests for changes in expression between conditions for cells of the same type that are present in both conditions, while the latter tests for changes in the composition of cell types (or states, etc.) between conditions.
+
+For this experiment, we are interested in identifying differences between:
+1) `thymus` cells sorted from different `post_hoc_sample_gate` (`P6`, `P7`, `P8`);
+2) `thymus` cells in `P8` vs `blood` cells in `P8`
+We are not interested in the differences due to `plate_number` (or `donor`) so we will block on these variables where possible.
+
+**TODO: double check if I under the comparisons above correctly**
+**TODO: check with Pete - do I need to block on `donor` as well ? **
+
+# Setting up the data
+
+We start from the preprocessed *SingleCellExperiment* object created in ['Annotating Pellicci gamma-delta T-cell dataset'](C094_Pellicci.annotate.html).
+
+```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci_annotate.SCE.rds"))
+```
+
+```{r}
+# remove cells labelled as `P5` (as Dan suggested) to facilitate DE analysis
+sce <- sce[,sce$post_hoc_sample_gate !="P5"]
+colData(sce) <- droplevels(colData(sce))
+# Re-level to set the baseline.
+sce$post_hoc_sample_gate <- relevel(sce$post_hoc_sample_gate, "P6")
+sce$tissue <- relevel(sce$tissue, "Thymus")
+```
+
+```{r}
+# Define what constitutes a sample (i.e. replicate) in this experiment.
+sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$post_hoc_sample_gate))
+```
+
+**TODO: check if `sample` should be set like this instead ?**
+**sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$donor, ".", sce$post_hoc_sample_gate))**
+**but based on Dan's description, we should not be interested in the difference between `donor`, thus the above is sufficient !?**
+
+```{r}
+# Some useful colours
+sample_type_colours <- setNames(
+  unique(sce$colours$sample_type_colours),
+  unique(names(sce$colours$sample_type_colours)))
+sample_name_colours <- setNames(
+  unique(sce$colours$sample_name_colours),
+  unique(names(sce$colours$sample_name_colours)))
+sample_gate_colours <- setNames(
+  unique(sce$colours$sample_gate_colours),
+  unique(names(sce$colours$sample_gate_colours)))
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))
+# set sample colour
+sample_colours <- setNames(
+  Polychrome::palette36.colors(nlevels(sce$sample)),
+  levels(sce$sample))
+sce$colours$sample_colours <- sample_colours[sce$sample]
+# set cluster colour
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
+  levels(sce$cluster))
+sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+# set label colour
+sce$label <- factor(
+  paste0("cluster_", sce$cluster),
+  levels = paste0("cluster_", 1:4))
+label_colours <- setNames(
+  cluster_colours, 
+  paste0("cluster_", names(cluster_colours)))
+
+# Some useful gene sets
+mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes 
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+```{r barplot-by-plate, fig.cap = "Breakdown of experiment by plate."}
+p1 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = tissue_colours)
+
+p2 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = sample_name),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = sample_name_colours)
+
+p3 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = post_hoc_sample_gate),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = sample_gate_colours)
+
+p4 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = plate_number_colours)
+
+p5 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = donor_colours)
+
+p6 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = sample),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = sample_colours)
+
+p1 + p2 + p3 + p4 + p5 + p6 +
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+Figure \@ref(fig:collabels-umap) shows the cell labels.
+
+```{r collabels-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 0.8}
+plotReducedDim(sce, dimred = "UMAP_corrected", colour_by = "label") + 
+  scale_fill_manual(values = label_colours, name = "label")
+```
+
+Figure \@ref(fig:collabels-barplot) breaks down the cell labels by key experimental factors.
+
+```{r collabels-barplot, fig.asp = 1 / 2, fig.cap = "Breakdown of cell labels by experimental factors."}
+p1 <- ggplot(as.data.frame(colData(sce))) + 
+  geom_bar(
+    aes(x = label, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = plate_number_colours) +
+  theme_cowplot(font_size = 8)
+
+p2 <- ggplot(as.data.frame(colData(sce))) + 
+  geom_bar(
+    aes(x = label, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 8)
+
+p3 <- ggplot(as.data.frame(colData(sce))) + 
+  geom_bar(
+    aes(x = label, fill = sample_name),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_name_colours) +
+  theme_cowplot(font_size = 8)
+
+p4 <- ggplot(as.data.frame(colData(sce))) + 
+  geom_bar(
+    aes(x = label, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = donor_colours) +
+  theme_cowplot(font_size = 8)
+
+p5 <- ggplot(as.data.frame(colData(sce))) + 
+  geom_bar(
+    aes(x = label, fill = sample),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_colours) +
+  theme_cowplot(font_size = 8)
+
+p6 <- ggplot(as.data.frame(colData(sce))) +  
+  geom_bar(aes(x = label, fill = label)) +
+  coord_flip() +
+  ylab("Number of cells") +
+  scale_fill_manual(values = label_colours) +
+  theme_cowplot(font_size = 8) + 
+  guides(fill = FALSE)
+
+p1 + p2 + p3 + p4 + p5 + p6 +
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+**TODO: do I need to do DA analysis for this dataset ? (if yes, then I will need to compare between**
+**1) post_hoc_facs_gate**
+**2) tissue**
+**3) MonacoImmuneCellDate (fine) ???**
+
+# Differential abundance between conditions
+
+## Overview
+
+In a DA analysis, we test for significant changes in per-label cell abundance across conditions.
+This will reveal which cell types are depleted or enriched with differences in genotype, which is arguably just as interesting as changes in expression within each cell type.
+The DA analysis has a long history in flow cytometry [@finak2015mast; @lun2017testing] where it is routinely used to examine the effects of different conditions on the composition of complex cell populations.
+By performing it here, we effectively treat scRNA-seq as a "super-FACS" technology for defining relevant subpopulations using the entire transcriptome.
+
+We prepare for the DA analysis by quantifying the number of cells assigned to each label.
+The table below and Figure \@ref(fig:collabels-barplot-by-plate) summarise the number of cells assigned to each label per plate.
+
+In this case, we are aiming to identify labels that change in abundance among the different `post_hoc_sample_gate` or `tissue`.
+For example, visually, `cluster_???` has a strong and consistent difference in abundance between `post_hoc_sample_gate`.
+
+```{r}
+abundances <- table(sce$label, sce$sample)
+abundances <- unclass(abundances)
+abundances_df <- as.data.frame(colData(sce)) %>%
+  dplyr::count(label, sample, tissue) %>%
+  tidyr::pivot_wider(
+    names_from = label,
+    id_cols = c(tissue, sample), 
+    values_from = n) %>%
+  dplyr::arrange(tissue)
+knitr::kable(
+  abundances_df,
+  fig.cap = "Number of cells assigned to each label from each sample.")
+```
+
+```{r collabels-barplot-by-plate, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
+p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = tissue)) + 
+  geom_bar(position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 5) + 
+  facet_grid(~plate_number)
+p2 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = tissue)) + 
+  geom_bar() +
+  coord_flip() +
+  ylab("Number of cells") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 5) + 
+  facet_grid(~plate_number)
+p1 / p2
+```
+
+
+
+
+
+```{r}
+abundances <- table(sce$label, sce$sample)
+abundances <- unclass(abundances)
+abundances_df <- as.data.frame(colData(sce)) %>%
+  dplyr::count(label, sample, post_hoc_sample_gate) %>%
+  tidyr::pivot_wider(
+    names_from = label,
+    id_cols = c(post_hoc_sample_gate, sample), 
+    values_from = n) %>%
+  dplyr::arrange(post_hoc_sample_gate)
+knitr::kable(
+  abundances_df,
+  fig.cap = "Number of cells assigned to each label from each sample.")
+```
+
+```{r collabels-barplot-by-plate, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
+p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = post_hoc_sample_gate)) + 
+  geom_bar(position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_gate_colours) +
+  theme_cowplot(font_size = 5) + 
+  facet_grid(~plate_number)
+p2 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = post_hoc_sample_gate)) + 
+  geom_bar() +
+  coord_flip() +
+  ylab("Number of cells") +
+  scale_fill_manual(values = sample_gate_colours) +
+  theme_cowplot(font_size = 5) + 
+  facet_grid(~plate_number)
+p1 / p2
+```
+
+<!-- ## Performing the DA analysis (Mouse strains) -->
+
+<!-- ### Overview -->
+
+<!-- Our DA analysis will be performed with the `r BiocStyle::Biocpkg("edgeR")` package.  -->
+<!-- This allows us to take advantage of the negative binomial generalized linear model (NB GLM) methods to model overdispersed count data in the presence of limited replication - except that the counts are not of reads per gene, but of cells per label [@lun2017testing].  -->
+<!-- The aim is to share information across labels to improve our estimates of the biological variability in cell abundance between replicates. -->
+
+<!-- ```{r} -->
+<!-- library(edgeR) -->
+<!-- # Attaching some column metadata. -->
+<!-- extra_info <- colData(sce)[match(colnames(abundances), sce$sample),] -->
+<!-- y_ab <- DGEList(abundances, samples = extra_info) -->
+<!-- ``` -->
+
+<!-- ### Statistical methodology -->
+
+<!-- #### Pre-processing -->
+
+<!-- We filter out low-abundance labels to avoid cluttering the result table with very rare subpopulations that contain only a handful of cells. -->
+
+<!-- ```{r} -->
+<!-- # Constructing the design matrix. -->
+<!-- design <- model.matrix(~sequencing_run + strain + sex, y_ab$samples) -->
+<!-- colnames(design) <- sub("sequencing\\_run|strain|sex", "", colnames(design)) -->
+<!-- keep <- filterByExpr(y_ab, group = y_ab$samples$strain) -->
+<!-- y_ab <- y_ab[keep, ] -->
+<!-- ``` -->
+
+<!-- For a DA analysis of cluster abundances, filtering is generally not required as most clusters will not be of low-abundance (otherwise there would not have been enough evidence to define the cluster in the first place), but in this case we filter out `r names(which(!keep))`. -->
+
+<!-- #### Statistical methodology -->
+
+<!-- Unlike a differential expression analyses, we do not perform an additional normalization step. -->
+<!-- This means that we are only normalizing based on the "library size", i.e., the total number of cells in each sample. -->
+<!-- Any changes we detect between conditions will subsequently represent differences in the proportion of cells in each cluster. -->
+<!-- The motivation behind this decision is discussed in more detail in [Handling composition effects]. -->
+
+<!-- We set up the design matrix to block on the sample-to-sample differences across different `sequencing_run`, while retaining an additive term that represents the effect of `strain`. -->
+<!-- Here, the log-fold change in our model refers to the change in cell abundance associated with strains, rather than the change in gene expression. -->
+
+<!-- ```{r} -->
+<!-- # NOTE: Design matrix actually constructed earlier. -->
+<!-- ``` -->
+
+<!-- We estimate the NB dispersion and QL dispersion for each label^[In estimating both the NB and QL dispersion we turn off the trend estimation as we do not have enough points for its stable estimation]. -->
+
+<!-- ```{r} -->
+<!-- y_ab <- estimateDisp(y_ab, design, trend = "none") -->
+<!-- fit_ab <- glmQLFit(y_ab, design, robust = TRUE, abundance.trend = FALSE) -->
+<!-- ``` -->
+
+<!-- ## Analysis using cell labels -->
+
+<!-- ```{r} -->
+<!-- fdr <- 0.05 -->
+<!-- ``` -->
+
+<!-- We test for differences in abundance between the different strains using -->
+<!-- `glmQLFTest()` function from the `r BiocStyle::Biocpkg("edgeR")` package to obtain a list of strain-associated labels. -->
+<!-- We compare each of `ALB TPO`, `Mpl`, `Tmem68` against `C57BL/6`, and `ALB TPO` against `Mpl`.. -->
+
+<!-- ### `ALB TPO` vs. `C57BL/6` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "ALB TPO") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `ALB TPO` and `C57BL/6` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ### `Mpl` vs. `C57BL/6` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "Mpl") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `Mpl` and `C57BL/6` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ### `Tmem68` vs. `C57BL/6` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "Tmem68") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `Tmem68` and `C57BL/6` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ### `ALB TPO` vs. `Mpl` -->
+
+<!-- ```{r} -->
+<!-- # Re-level strain so that Mpl is the baseline. -->
+<!-- y_ab$samples$strain <- relevel(y_ab$samples$strain, "Mpl") -->
+<!-- # Constructing the design matrix. -->
+<!-- design <- model.matrix(~sequencing_run + strain + sex, y_ab$samples) -->
+<!-- colnames(design) <- sub("sequencing\\_run|strain|sex", "", colnames(design)) -->
+<!-- keep <- filterByExpr(y_ab, group = y_ab$samples$strain) -->
+<!-- y_ab <- y_ab[keep, ] -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- y_ab <- estimateDisp(y_ab, design, trend = "none") -->
+<!-- fit_ab <- glmQLFit(y_ab, design, robust = TRUE, abundance.trend = FALSE) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "ALB TPO") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `ALB TPO` and `Mpl` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ## Performing the DA analysis (ImmGen) -->
+
+<!-- Per discussion with Ash on 7 Oct 2020, Ash suggested us to also perform the DA analyses using cell assignment (Main and Fine labels) from the SingleR using **ImmGen** as reference. -->
+
+<!-- ## Main labels (ImmGen) -->
+
+<!-- Figure \@ref(fig:barplot-immgen-main) breaks down the cell labels for each sample. -->
+
+<!-- ```{r barplot-immgen-main, fig.cap = "Barplot showing cell label assignments for cells from each mouse. Cell labels with fewer than 1% of cells in all mouses are grouped together as 'other'. Cell labels are ordered by their overall frequency in the data set.", fig.asp = 1/2, layout="l-body-outset"} -->
+<!-- immgen_label_main_colours <- setNames( -->
+<!--   Polychrome::glasbey.colors(nlevels(sce$immgen_label_main) + 1)[-1], -->
+<!--   levels(sce$immgen_label_main)) -->
+<!-- ggplot(as.data.frame(colData(sce))) + -->
+<!--   geom_bar( -->
+<!--     aes(x = strain, fill = immgen_label_main), -->
+<!--     position = position_fill(reverse = TRUE)) + -->
+<!--   coord_flip() + -->
+<!--   ylab("Frequency") + -->
+<!--   scale_fill_manual(values = immgen_label_main_colours) + -->
+<!--   theme_cowplot(font_size = 8) +  -->
+<!--   facet_wrap(~ sex) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- # Re-level strain so that C57BL/6 is the baseline. -->
+<!-- sce$strain <- relevel(sce$strain, "C57BL/6") -->
+<!-- colData(sce) <- droplevels(colData(sce)) -->
+<!-- # Define what constitutes a sample (i.e. replicate) in this experiment. -->
+<!-- sce$sample <- paste0(sce$plate_number, ".", sce$strain) -->
+<!-- # Count for each cell assignment labels -->
+<!-- abundances <- table(sce$immgen_label_main, sce$sample) -->
+<!-- abundances <- unclass(abundances) -->
+<!-- abundances_df <- as.data.frame(colData(sce)) %>% -->
+<!--   dplyr::count(immgen_label_main, sample, strain) %>% -->
+<!--   tidyr::pivot_wider( -->
+<!--     names_from = immgen_label_main, -->
+<!--     id_cols = c(strain, sample),  -->
+<!--     values_from = n, -->
+<!--     values_fill = 0) %>% -->
+<!--   dplyr::arrange(strain) -->
+<!-- knitr::kable( -->
+<!--   abundances_df, -->
+<!--   fig.cap = "Number of cells assigned to each label from each strain") -->
+<!-- ``` -->
+
+<!-- **NOTE: To perform a valid dispersion estimation, 3 cell label categories with a minimum count of 10 per sample and a minimum total count of 15 across replicates of samples are required for DA analysis using NB GLM method; for main labels of ImmGen, as there is only one single label, i.e. `Stem cells`, can fulfill this requirement - no valid DA analysis could be performed.** -->
+
+<!-- ## Fine labels (ImmGene) -->
+
+<!-- Figure \@ref(fig:barplot-immgen-fine) breaks down the cell labels for each sample. -->
+
+<!-- ```{r barplot-immgen-fine, fig.cap = "Barplot showing cell label assignments for cells from each mouse. Cell labels with fewer than 1% of cells in all mouses are grouped together as 'other'. Cell labels are ordered by their overall frequency in the data set.", fig.asp = 1/2, layout="l-body-outset"} -->
+<!-- immgen_label_fine_colours <- setNames( -->
+<!--   Polychrome::glasbey.colors(nlevels(sce$immgen_label_fine) + 1)[-1], -->
+<!--   levels(sce$immgen_label_fine)) -->
+<!-- ggplot(as.data.frame(colData(sce))) + -->
+<!--   geom_bar( -->
+<!--     aes(x = strain, fill = immgen_label_fine), -->
+<!--     position = position_fill(reverse = TRUE)) + -->
+<!--   coord_flip() + -->
+<!--   ylab("Frequency") + -->
+<!--   scale_fill_manual(values = immgen_label_fine_colours) + -->
+<!--   theme_cowplot(font_size = 8) +  -->
+<!--   facet_wrap(~ sex) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- # Re-level strain so that C57BL/6 is the baseline. -->
+<!-- sce$strain <- relevel(sce$strain, "C57BL/6") -->
+<!-- colData(sce) <- droplevels(colData(sce)) -->
+<!-- # Define what constitutes a sample (i.e. replicate) in this experiment. -->
+<!-- sce$sample <- paste0(sce$plate_number, ".", sce$strain) -->
+<!-- # Count for each cell assignment labels -->
+<!-- abundances <- table(sce$immgen_label_fine, sce$sample) -->
+<!-- abundances <- unclass(abundances) -->
+<!-- abundances_df <- as.data.frame(colData(sce)) %>% -->
+<!--   dplyr::count(immgen_label_fine, sample, strain) %>% -->
+<!--   tidyr::pivot_wider( -->
+<!--     names_from = immgen_label_fine, -->
+<!--     id_cols = c(strain, sample),  -->
+<!--     values_from = n, -->
+<!--     values_fill = 0) %>% -->
+<!--   dplyr::arrange(strain) -->
+<!-- paged_table(abundances_df) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- library(edgeR) -->
+<!-- # Attaching some column metadata. -->
+<!-- extra_info <- colData(sce)[match(colnames(abundances), sce$sample),] -->
+<!-- y_ab <- DGEList(abundances, samples = extra_info) -->
+<!-- # Constructing the design matrix. -->
+<!-- design <- model.matrix(~sequencing_run + strain + sex, y_ab$samples) -->
+<!-- colnames(design) <- sub("sequencing\\_run|strain|sex", "", colnames(design)) -->
+<!-- # Filtering cell assignment labels with sufficiently large counts -->
+<!-- keep <- filterByExpr(y_ab, group = y_ab$samples$strain) -->
+<!-- y_ab <- y_ab[keep, ] -->
+<!-- # estimate of the common, trended and tagwise dispersions across all tags -->
+<!-- y_ab <- estimateDisp(y_ab, design, trend = "none") -->
+<!-- fit_ab <- glmQLFit(y_ab, design, robust = TRUE, abundance.trend = FALSE) -->
+<!-- # Defining cutoff  -->
+<!-- fdr <- 0.05 -->
+<!-- ``` -->
+
+<!-- ### `ALB TPO` vs. `C57BL/6` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "ALB TPO") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `ALB TPO` and `C57BL/6` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ### `Mpl` vs. `C57BL/6` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "Mpl") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `Mpl` and `C57BL/6` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ### `Tmem68` vs. `C57BL/6` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "Tmem68") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `Tmem68` and `C57BL/6` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ### `ALB TPO` vs. `Mpl` -->
+
+<!-- ```{r} -->
+<!-- # Re-level strain so that Mpl is the baseline. -->
+<!-- y_ab$samples$strain <- relevel(y_ab$samples$strain, "Mpl") -->
+<!-- # Constructing the design matrix. -->
+<!-- design <- model.matrix(~sequencing_run + strain + sex, y_ab$samples) -->
+<!-- colnames(design) <- sub("sequencing\\_run|strain|sex", "", colnames(design)) -->
+<!-- # Filtering cell assignment labels with sufficiently large counts -->
+<!-- keep <- filterByExpr(y_ab, group = y_ab$samples$strain) -->
+<!-- y_ab <- y_ab[keep, ] -->
+<!-- # estimate of the common, trended and tagwise dispersions across all tags -->
+<!-- y_ab <- estimateDisp(y_ab, design, trend = "none") -->
+<!-- fit_ab <- glmQLFit(y_ab, design, robust = TRUE, abundance.trend = FALSE) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- res <- glmQLFTest(fit_ab, coef = "ALB TPO") -->
+<!-- ``` -->
+
+<!-- We find `r sum(decideTests(res) != 0)` labels are different between `ALB TPO` and `Mpl` at a false discovery rate of `r scales::percent(fdr)`, as shown in the table below. -->
+
+<!-- ```{r} -->
+<!-- knitr::kable( -->
+<!--   as.data.frame(topTags(res, n = Inf)),  -->
+<!--   caption = "Results of DA analysis applied to each label.") -->
+<!-- ``` -->
+
+<!-- ## Performing the DA analysis (Haemopedia) -->
+
+<!-- Per discussion with Ash on 7 Oct 2020, Ash suggested to also perform the DA analyses using cell assignment (Main and Fine labels) from the SingleR using **Haemopedia** as reference. -->
+
+<!-- ## Main labels (Haemopedia) -->
+
+<!-- Figure \@ref(fig:barplot-haemopedia-main) breaks down the cell labels for each sample. -->
+
+<!-- ```{r barplot-haemopedia-main, fig.cap = "Barplot showing cell label assignments for cells from each mouse. Cell labels with fewer than 1% of cells in all mouses are grouped together as 'other'. Cell labels are ordered by their overall frequency in the data set.", fig.asp = 1/2, layout="l-body-outset"} -->
+<!-- haemopedia_label_main_colours <- setNames( -->
+<!--   Polychrome::glasbey.colors(nlevels(sce$haemopedia_label_main) + 1)[-1], -->
+<!--   levels(sce$haemopedia_label_main)) -->
+<!-- ggplot(as.data.frame(colData(sce))) + -->
+<!--   geom_bar( -->
+<!--     aes(x = strain, fill = haemopedia_label_main), -->
+<!--     position = position_fill(reverse = TRUE)) + -->
+<!--   coord_flip() + -->
+<!--   ylab("Frequency") + -->
+<!--   scale_fill_manual(values = haemopedia_label_main_colours) + -->
+<!--   theme_cowplot(font_size = 8) +  -->
+<!--   facet_wrap(~ sex) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- # Re-level strain so that C57BL/6 is the baseline. -->
+<!-- sce$strain <- relevel(sce$strain, "C57BL/6") -->
+<!-- colData(sce) <- droplevels(colData(sce)) -->
+<!-- # Define what constitutes a sample (i.e. replicate) in this experiment. -->
+<!-- sce$sample <- paste0(sce$plate_number, ".", sce$strain) -->
+<!-- # Count for each cell assignment labels -->
+<!-- abundances <- table(sce$haemopedia_label_main, sce$sample) -->
+<!-- abundances <- unclass(abundances) -->
+<!-- abundances_df <- as.data.frame(colData(sce)) %>% -->
+<!--   dplyr::count(haemopedia_label_main, sample, strain) %>% -->
+<!--   tidyr::pivot_wider( -->
+<!--     names_from = haemopedia_label_main, -->
+<!--     id_cols = c(strain, sample),  -->
+<!--     values_from = n, -->
+<!--     values_fill = 0) %>% -->
+<!--   dplyr::arrange(strain) -->
+<!-- paged_table(abundances_df) -->
+<!-- ``` -->
+
+<!-- **NOTE: Again, for main labels of Haemopedia, as there are only two labels, i.e. `Multi Potential Progenitor` and `Restricted Potential Progenitor`, can fulfill the requirement of dispersion estimation - no valid DA analysis could be performed.** -->
+
+<!-- ## Fine labels (Haemopedia) -->
+
+<!-- Figure \@ref(fig:barplot-haemopedia-fine) breaks down the cell labels for each sample. -->
+
+<!-- ```{r barplot-haemopedia-fine, fig.cap = "Barplot showing cell label assignments for cells from each mouse. Cell labels with fewer than 1% of cells in all mouses are grouped together as 'other'. Cell labels are ordered by their overall frequency in the data set.", fig.asp = 1/2, layout="l-body-outset"} -->
+<!-- haemopedia_label_fine_colours <- setNames( -->
+<!--   Polychrome::glasbey.colors(nlevels(sce$haemopedia_label_fine) + 1)[-1], -->
+<!--   levels(sce$haemopedia_label_fine)) -->
+<!-- ggplot(as.data.frame(colData(sce))) + -->
+<!--   geom_bar( -->
+<!--     aes(x = strain, fill = haemopedia_label_fine), -->
+<!--     position = position_fill(reverse = TRUE)) + -->
+<!--   coord_flip() + -->
+<!--   ylab("Frequency") + -->
+<!--   scale_fill_manual(values = haemopedia_label_fine_colours) + -->
+<!--   theme_cowplot(font_size = 8) +  -->
+<!--   facet_wrap(~ sex) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- # Re-level strain so that C57BL/6 is the baseline. -->
+<!-- sce$strain <- relevel(sce$strain, "C57BL/6") -->
+<!-- colData(sce) <- droplevels(colData(sce)) -->
+<!-- # Define what constitutes a sample (i.e. replicate) in this experiment. -->
+<!-- sce$sample <- paste0(sce$plate_number, ".", sce$strain) -->
+<!-- # Count for each cell assignment labels -->
+<!-- abundances <- table(sce$haemopedia_label_fine, sce$sample) -->
+<!-- abundances <- unclass(abundances) -->
+<!-- abundances_df <- as.data.frame(colData(sce)) %>% -->
+<!--   dplyr::count(haemopedia_label_fine, sample, strain) %>% -->
+<!--   tidyr::pivot_wider( -->
+<!--     names_from = haemopedia_label_fine, -->
+<!--     id_cols = c(strain, sample),  -->
+<!--     values_from = n, -->
+<!--     values_fill = 0) %>% -->
+<!--   dplyr::arrange(strain) -->
+<!-- paged_table(abundances_df) -->
+<!-- ``` -->
+
+<!-- **NOTE: Again, for main labels of Haemopedia, as there are only two labels, i.e. `Flt3- Pre Granulocyte Macrophage Progenitor` and `Flt3+ Pre Granulocyte Macrophage Progenitor`, can fulfill the requirement of dispersion estimation - no valid DA analysis could be performed.** -->
+
+<!-- ## Handling composition effects -->
+
+<!-- Our default approach for normalization in a differential abundance analysis is to only normalize based on the total number of cells in each sample, which means that we are effectively testing for differential proportions between conditions. -->
+
+<!-- Unfortunately, the use of the total number of cells leaves us susceptible to composition effects. -->
+<!-- For example, a large increase in abundance for one cell subpopulation will introduce decreases in proportion for all other subpopulations - which is technically correct, but may be misleading if one concludes that those other subpopulations are decreasing in abundance of their own volition. -->
+<!-- If composition biases are proving problematic for interpretation of DA results, we have [several avenues for removing them or mitigating their impact](https://osca.bioconductor.org/multi-sample-comparisons.html#composition-effects). -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Differential expression between conditions
+
+```{r}
+deg_dir <- here("output", "DEGs")
+dir.create(deg_dir)
+```
+
+## Creating pseudo-bulk samples
+
+The most obvious differential analysis is to look for changes in expression between conditions.
+We perform the DE analysis separately for each label to identify cell type-specific transcriptional effects of genotype.
+The actual DE testing is performed on "pseudo-bulk" expression profiles [@tung2016batch], generated by summing counts together for all cells with the same combination of label and sample.
+This leverages the resolution offered by single-cell technologies to define the labels, and combines it with the statistical rigor of existing methods for DE analyses involving a small number of samples.
+
+```{r}
+# Define colData columns to be kept for pseudo-bulked data.
+columns_to_keep <- c("plate_number", "sequencing_run", "sex", "strain")
+summed <- aggregateAcrossCells(
+  sce,
+  id = colData(sce)[, c("label", "sample", columns_to_keep)],
+  coldata_merge = FALSE)
+colnames(summed) <- paste0(summed$label, ".", summed$sample)
+# Construct values for plotting in heatmaps
+assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
+assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
+  assay(summed, "logCPM"), 
+  batch = summed$sequencing_run,
+  design = model.matrix(~strain, colData(summed)))
+```
+
+At this point, it is worth reflecting on the motivations behind the use of pseudo-bulking:
+
+- Larger counts are more amenable to standard DE analysis pipelines designed for bulk RNA-seq data. Normalization is more straightforward and certain statistical approximations are more accurate^[E.g., the saddlepoint approximation for quasi-likelihood methods or normality for linear models.].
+- Collapsing cells into samples reflects the fact that our biological replication occurs at the sample level [@lun2017overcoming]. Each sample is represented no more than once for each condition, avoiding problems from unmodelled correlations between samples. Supplying the per-cell counts directly to a DE analysis pipeline would imply that each cell is an independent biological replicate, which is not true from an experimental perspective^[A mixed effects model can handle this variance structure but involves extra statistical and computational complexity for little benefit, see Crowell *et al*.].
+- Variance between cells within each sample is masked, provided it does not affect variance across (replicate) samples. This avoids penalizing DEGs that are not uniformly up- or down-regulated for all cells in all samples of one condition. Masking is generally desirable as DEGs - unlike marker genes - do not need to have low within-sample variance to be interesting, e.g., if the treatment effect is consistent across replicate populations but heterogeneous on a per-cell basis^[Of course, high per-cell variability will still result in weaker DE if it affects the variability across populations, while homogeneous per-cell responses will result in stronger DE due to a larger population-level log-fold change. These effects are also largely desirable.].
+
+## Performing the DE analysis
+
+### Overview
+
+The DE analysis will be performed using quasi-likelihood (QL) methods from the `r BiocStyle::Biocpkg("edgeR")` package [@robinson2010edgeR;@chen2014differential].
+This uses a negative binomial generalized linear model (NB GLM) to handle overdispersed count data in experiments with limited replication.
+In our case, we have biological variation with four replicates per condition, with each plate containing samples from all four strains, so `r BiocStyle::Biocpkg("edgeR")` (or its contemporaries) is a natural choice for the analysis.
+
+We do not use all labels for GLM fitting as the strong DE between labels makes it difficult to compute a sensible average abundance to model the mean-dispersion trend.
+Moreover, label-specific batch effects would not be easily handled with a single additive term in the design matrix for the batch.
+
+### Statistical methodology and considerations
+
+#### Pre-processing
+
+```{r}
+min_ncells <- 10
+```
+
+A typical step in bulk RNA-seq data analyses is to remove samples with very low library sizes due to failed library preparation or sequencing.
+The very low counts in these samples can be troublesome in downstream steps such as normalization or for some statistical approximations used in the DE analysis.
+In our situation, this is equivalent to removing label-sample combinations that have very few or lowly-sequenced cells.
+The exact definition of "very low" will vary, but in this case we remove combinations containing fewer than `r min_ncells` cells.
+This is lower than generally recommended^[E.g., Crowell *et al*. note that "$\approx100$ cells is sufficient to reach decent performance" with pseudobulk DE methods and that "there is a sizable gain in performance in going from 50 to 100 cells" per label per sample.] but here we are limited by the small numbers of cells/sample that were processed.
+
+Another typical step in bulk RNA-seq analyses is to remove genes that are lowly expressed.
+This reduces computational work, improves the accuracy of mean-variance trend modelling and decreases the severity of the multiple testing correction.
+Genes are discarded if they are not expressed above a log-CPM threshold in a minimum number of samples (determined from the size of the smallest treatment group in the experimental design).
+
+Finally, we correct for composition biases by computing normalization factors with the trimmed mean of M-values method [@robinson2010scaling].
+We do not need the bespoke single-cell methods used earlier in this analysis, as the counts for our pseudo-bulk samples are large enough to apply bulk normalization methods.
+
+#### Statistical modelling
+
+We set up the design matrix to block on the sample-to-sample differences across different mice and plates, while retaining an additive term that represents the effect of genotype.
+The latter is represented in our model as the log-fold change in gene expression in `Mutant` cells over their `Control` counterparts within the same label.
+Our aim is to test whether this log-fold change is significantly different from zero.
+
+We estimate the negative binomial (NB) dispersions to model the mean-variance trend, which is not easily accommodated by QL dispersions alone due to the quadratic nature of the NB mean-variance trend.
+We also estimate the quasi-likelihood dispersions to model the uncertainty and variability of the per-gene variance, which is not well handled by the NB dispersions.
+So the two dispersion types complement each other in the final analysis.
+
+```{r}
+fdr <- 0.05
+```
+
+We test for differences in expression due to genotype.
+DEGs are defined as those with non-zero log-fold changes at a false discovery rate of `r scales::percent(fdr)`.
+
+## Analysis using cell labels
+
+As noted in [Setting up the data], we start by using the aggregated cluster labels as the cell labels.
+
+```{r}
+# Pulling out a sample-level 'targets' data.frame.
+targets <- colData(summed)[!duplicated(summed$sample),]
+# Constructing the design matrix.
+design <- model.matrix(~sequencing_run + strain + sex, targets)
+colnames(design) <- sub("sequencing\\_run|strain|sex", "", colnames(design))
+rownames(design) <- targets$sample
+```
+
+Now that we have laid out the theory underlying the DE analysis, we repeat this process for each of the labels to identify genotype-associated DE in each cell type.
+To prepare for this, we filter out all sample-label combinations with insufficient cells.
+
+```{r}
+summed_filt <- summed[, summed$ncells >= min_ncells]
+```
+
+We then apply the `pseudoBulkDGE()` function from the `r BiocStyle::Biocpkg("scran")` package to obtain a list of genotype-associated DE genes for each label.
+This function puts some additional effort into automatically dealing with labels that are not represented in the strains being compared, for which a DE analysis between conditions is meaningless or are not represented in a sufficient number of replicate samples to enable modelling of biological variability.
+
+Note that genes listed as `NA` in the DEG lists were either filtered out as low-abundance genes for a given label's analysis, or the comparison of interest was not possible for a particular label, e.g., due to lack of residual degrees of freedom or an absence of samples from both conditions.
+If it is necessary to extract statistics in the absence of replicates, several strategies can be applied such as reducing the complexity of the model or using a predefined value for the NB dispersion.
+
+Please see [`output/DEGs/`](../output/DEGs/) for spreadsheets of these DEG lists, including results of GO and KEGG analyses using the `goana()` and `kegga()` functions from the `r BiocStyle::Biocpkg("limma")` package^[Please note that these results do not take into account the directionality of the log-fold change.], and [`output/glimma-plots`](../output/glimma-plots/) for interactive `r BiocStyle::Biocpkg("Glimma")` plots of the differential expression results.
+The `r BiocStyle::Biocpkg("Glimma")` plots show the pseudobulk data for that label on the left-hand side and the single-cell data for that label on the right-hand side.
+The single-cell data are plotted per sample using abbreviated sample labels, e.g., `C.P043` means "C57BL/6 mouse on plate P043", `M.P043` means "Mpl mouse on plate P043", etc.
+
+<aside>
+Note that the DEG list spreadsheets contain all labels and genes whereas the Glimma plots only contain labels and genes actually tested for DE. The column names in the Glimma tables may be abbreviated.
+</aside>
+
+### `ALB TPO` vs. `C57BL/6`
+
+```{r}
+strains <- c("ALB TPO", "C57BL/6")
+```
+
+```{r}
+de_results <- pseudoBulkDGE(
+  summed_filt, 
+  sample = summed_filt$sample,
+  label = summed_filt$label,
+  design = design,
+  coef = strains[1],
+  condition = summed_filt$strain)
+```
+
+```{r}
+all_features <- lapply(
+  de_results, 
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+# Need at least 2 features to make a heatmap.
+stopifnot(length(features) < 2)
+```
+
+The following table gives the number of DEGs at a FDR of `r scales::percent(fdr)` for each label.
+
+```{r}
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+```
+
+```{r, message = FALSE}
+# Create outputs
+createDEGOutputs(
+  outdir = deg_dir,
+  de_results = de_results,
+  strains = strains,
+  fdr = 0.05)
+```
+
+### `Mpl` vs. `C57BL/6`
+
+```{r}
+strains <- c("Mpl", "C57BL/6")
+```
+
+```{r}
+de_results <- pseudoBulkDGE(
+  summed_filt, 
+  sample = summed_filt$sample,
+  label = summed_filt$label,
+  design = design,
+  coef = strains[1],
+  condition = summed_filt$strain)
+```
+
+Figure \@ref(fig:degs-heatmap-mpl) summarises the DEGs using a heatmap of pseudobulk-level log-expression values.
+In general, there seems to be little differential expression that is associated with genotype.
+
+```{r degs-heatmap-mpl, fig.cap = "Heatmap of pseudobulk-level batch-corrected log-expression values normalized to the mean of all samples in the filtered data; rows correspond to genes, columns to label-sample combinations. Included is the union of DEGs detected (FDR < `r fdr`) across all labels. Data is split vertically by label and rows are annotated to show in which label(s) each gene is DE. Colour scale is winsorized at [-3, 3] to preserve the dynamic range of colours in the presence of outliers.", fig.asp = 1.7}
+j <- summed_filt$strain %in% strains
+o <- order(
+  summed_filt$label[j],
+  summed_filt$strain[j],
+  summed_filt$sequencing_run[j],
+  summed_filt$plate_number[j],
+  summed_filt$sex[j],
+  summed_filt$sample[j])
+all_features <- lapply(
+  de_results, 
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+mat <- assay(summed_filt, "correctedLogCPM")[features, j]
+mat <- mat - rowMeans(mat)
+zlim <- c(-3, 3)
+mat[mat < zlim[1]] <- zlim[1]
+mat[mat > zlim[2]] <- zlim[2]
+pheatmap(
+  mat = mat[, o],
+  color = hcl.colors(101, "Blue-Red 3"),
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    cluster_3 = ifelse(features %in% all_features$cluster_3, "DE", "not DE"),
+    cluster_2 = ifelse(features %in% all_features$cluster_2, "DE", "not DE"),
+    cluster_1 = ifelse(features %in% all_features$cluster_1, "DE", "not DE"),
+    row.names = features),
+  annotation_col = data.frame(
+    label = summed_filt$label[j][o],
+    strain = summed_filt$strain[j][o],
+    sequencing_run = summed_filt$sequencing_run[j][o],
+    plate_number = summed_filt$plate_number[j][o],
+    sex = summed_filt$sex[j][o],
+    row.names = colnames(summed_filt)[j][o]),
+  annotation_colors = list(
+    label = label_colours[levels(summed_filt$label[j])],
+    sequencing_run = sequencing_run_colours,
+    plate_number = plate_number_colours,
+    strain = strain_colours[levels(factor(summed_filt$strain[j]))],
+    sex = sex_colours,
+    cluster_1 = c("not DE" = "white", "DE" = label_colours[["cluster_1"]]),
+    cluster_2 = c("not DE" = "white", "DE" = label_colours[["cluster_2"]]),
+    cluster_3 = c("not DE" = "white", "DE" = label_colours[["cluster_3"]])),
+  breaks = seq(-max(abs(mat)), max(abs(mat)), length.out = 101),
+  fontsize = 8,
+  gaps_col = cumsum(runLength(Rle(summed_filt$label[j][o]))))
+```
+
+The following table gives the number of DEGs at a FDR of `r scales::percent(fdr)` for each label.
+
+```{r}
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+```
+
+```{r, message = FALSE}
+# Create outputs
+createDEGOutputs(
+  outdir = deg_dir,
+  de_results = de_results,
+  strains = strains,
+  fdr = 0.05)
+```
+
+### `Tmem68` vs. `C57BL/6`
+
+```{r}
+strains <- c("Tmem68", "C57BL/6")
+```
+
+```{r}
+de_results <- pseudoBulkDGE(
+  summed_filt, 
+  sample = summed_filt$sample,
+  label = summed_filt$label,
+  design = design,
+  coef = strains[1],
+  condition = summed_filt$strain)
+```
+
+Figure \@ref(fig:degs-heatmap-tmem68) summarises the DEGs using a heatmap of pseudobulk-level log-expression values.
+In general, there seems to be little differential expression that is associated with genotype.
+
+```{r degs-heatmap-tmem68, fig.cap = "Heatmap of pseudobulk-level batch-corrected log-expression values normalized to the mean of all samples in the filtered data; rows correspond to genes, columns to label-sample combinations. Included is the union of DEGs detected (FDR < `r fdr`) across all labels. Data is split vertically by label and rows are annotated to show in which label(s) each gene is DE. Colour scale is winsorized at [-3, 3] to preserve the dynamic range of colours in the presence of outliers.", fig.asp = 1}
+j <- summed_filt$strain %in% strains
+o <- order(
+  summed_filt$label[j],
+  summed_filt$strain[j],
+  summed_filt$sequencing_run[j],
+  summed_filt$plate_number[j],
+  summed_filt$sex[j],
+  summed_filt$sample[j])
+all_features <- lapply(
+  de_results, 
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+mat <- assay(summed_filt, "correctedLogCPM")[features, j]
+mat <- mat - rowMeans(mat)
+zlim <- c(-3, 3)
+mat[mat < zlim[1]] <- zlim[1]
+mat[mat > zlim[2]] <- zlim[2]
+pheatmap(
+  mat = mat[, o],
+  color = hcl.colors(101, "Blue-Red 3"),
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    cluster_3 = ifelse(features %in% all_features$cluster_3, "DE", "not DE"),
+    cluster_2 = ifelse(features %in% all_features$cluster_2, "DE", "not DE"),
+    cluster_1 = ifelse(features %in% all_features$cluster_1, "DE", "not DE"),
+    row.names = features),
+  annotation_col = data.frame(
+    label = summed_filt$label[j][o],
+    strain = summed_filt$strain[j][o],
+    sequencing_run = summed_filt$sequencing_run[j][o],
+    plate_number = summed_filt$plate_number[j][o],
+    sex = summed_filt$sex[j][o],
+    row.names = colnames(summed_filt)[j][o]),
+  annotation_colors = list(
+    label = label_colours[levels(summed_filt$label[j])],
+    sequencing_run = sequencing_run_colours,
+    plate_number = plate_number_colours,
+    strain = strain_colours[levels(factor(summed_filt$strain[j]))],
+    sex = sex_colours,
+    cluster_1 = c("not DE" = "white", "DE" = label_colours[["cluster_1"]]),
+    cluster_2 = c("not DE" = "white", "DE" = label_colours[["cluster_2"]]),
+    cluster_3 = c("not DE" = "white", "DE" = label_colours[["cluster_3"]])),
+  breaks = seq(-max(abs(mat)), max(abs(mat)), length.out = 101),
+  fontsize = 8,
+  gaps_col = cumsum(runLength(Rle(summed_filt$label[j][o]))))
+```
+
+The following table gives the number of DEGs at a FDR of `r scales::percent(fdr)` for each label.
+
+```{r}
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+```
+
+```{r, message = FALSE}
+# Create outputs
+createDEGOutputs(
+  outdir = deg_dir,
+  de_results = de_results,
+  strains = strains,
+  fdr = 0.05)
+```
+
+### `ALB TPO` vs. `Mpl`
+
+```{r}
+# Pulling out a sample-level 'targets' data.frame.
+targets <- colData(summed)[!duplicated(summed$sample),]
+# Re-level strain so that Mpl is the baseline.
+targets$strain <- relevel(targets$strain, "Mpl")
+# Constructing the design matrix.
+design <- model.matrix(~sequencing_run + strain + sex, targets)
+colnames(design) <- sub("sequencing\\_run|strain|sex", "", colnames(design))
+rownames(design) <- targets$sample
+```
+
+```{r}
+strains <- c("ALB TPO", "Mpl")
+```
+
+```{r}
+de_results <- pseudoBulkDGE(
+  summed_filt, 
+  sample = summed_filt$sample,
+  label = summed_filt$label,
+  design = design,
+  coef = strains[1],
+  condition = summed_filt$strain)
+```
+
+Figure \@ref(fig:degs-heatmap-albtpo) summarises the DEGs using a heatmap of pseudobulk-level log-expression values.
+In general, there seems to be little differential expression that is associated with genotype.
+
+```{r degs-heatmap-albtpo, fig.cap = "Heatmap of pseudobulk-level batch-corrected log-expression values normalized to the mean of all samples in the filtered data; rows correspond to genes, columns to label-sample combinations. Included is the union of DEGs detected (FDR < `r fdr`) across all labels. Data is split vertically by label and rows are annotated to show in which label(s) each gene is DE. Colour scale is winsorized at [-3, 3] to preserve the dynamic range of colours in the presence of outliers.", fig.asp = 1.7}
+j <- summed_filt$strain %in% strains
+o <- order(
+  summed_filt$label[j],
+  summed_filt$strain[j],
+  summed_filt$sequencing_run[j],
+  summed_filt$plate_number[j],
+  summed_filt$sex[j],
+  summed_filt$sample[j])
+all_features <- lapply(
+  de_results, 
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+mat <- assay(summed_filt, "correctedLogCPM")[features, j]
+mat <- mat - rowMeans(mat)
+zlim <- c(-3, 3)
+mat[mat < zlim[1]] <- zlim[1]
+mat[mat > zlim[2]] <- zlim[2]
+pheatmap(
+  mat = mat[, o],
+  color = hcl.colors(101, "Blue-Red 3"),
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    cluster_3 = ifelse(features %in% all_features$cluster_3, "DE", "not DE"),
+    cluster_2 = ifelse(features %in% all_features$cluster_2, "DE", "not DE"),
+    cluster_1 = ifelse(features %in% all_features$cluster_1, "DE", "not DE"),
+    row.names = features),
+  annotation_col = data.frame(
+    label = summed_filt$label[j][o],
+    strain = summed_filt$strain[j][o],
+    sequencing_run = summed_filt$sequencing_run[j][o],
+    plate_number = summed_filt$plate_number[j][o],
+    sex = summed_filt$sex[j][o],
+    row.names = colnames(summed_filt)[j][o]),
+  annotation_colors = list(
+    label = label_colours[levels(summed_filt$label[j])],
+    sequencing_run = sequencing_run_colours,
+    plate_number = plate_number_colours,
+    strain = strain_colours[levels(factor(summed_filt$strain[j]))],
+    sex = sex_colours,
+    cluster_1 = c("not DE" = "white", "DE" = label_colours[["cluster_1"]]),
+    cluster_2 = c("not DE" = "white", "DE" = label_colours[["cluster_2"]]),
+    cluster_3 = c("not DE" = "white", "DE" = label_colours[["cluster_3"]])),
+  breaks = seq(-max(abs(mat)), max(abs(mat)), length.out = 101),
+  fontsize = 8,
+  gaps_col = cumsum(runLength(Rle(summed_filt$label[j][o]))))
+```
+
+The following table gives the number of DEGs at a FDR of `r scales::percent(fdr)` for each label.
+
+```{r}
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+```
+
+```{r, message = FALSE}
+# Create outputs
+createDEGOutputs(
+  outdir = deg_dir,
+  de_results = de_results,
+  strains = strains,
+  fdr = 0.05)
+```
+
+# Comments on interpretation
+
+## DA or DE? Two sides of the same coin
+
+While useful, the distinction between DA and DE analyses is inherently artificial for scRNA-seq data.
+This is because the labels used in the former are defined based on the genes to be tested in the latter.
+To illustrate, consider a scRNA-seq experiment involving two biological conditions with several shared cell types.
+We focus on a cell type $X$ that is present in both conditions but contains some DEGs between conditions.
+This leads to two possible outcomes:
+
+1. The DE between conditions causes $X$ to form two separate clusters (say, $X_1$ and $X_2$ in expression space. This manifests as DA where $X_1$ is enriched in one condition and $X_2$ is enriched in the other condition.
+2. The DE between conditions is not sufficient to split $X$ into two separate clusters, e.g., because the data integration procedure identifies them as corresponding cell types and merges them together. This means that the differences between conditions manifest as DE within the single cluster corresponding to $X$.
+
+We have described the example above in terms of clustering, but the same arguments apply for any labelling strategy based on the expression profiles, e.g., automated cell type assignment.
+Moreover, the choice between outcomes 1 and 2 is made implicitly by the combined effect of the data merging, clustering and label assignment procedures.
+For example, differences between conditions are more likely to manifest as DE for coarser clusters and as DA for finer clusters, but this is difficult to predict reliably.
+
+The moral of the story is that DA and DE analyses are simply two different perspectives on the same phenomena.
+For any comprehensive characterization of differences between populations, it is usually necessary to consider both analyses.
+Indeed, they complement each other almost by definition, e.g., clustering parameters that reduce DE will increase DA and vice versa.
+
+# Additional information {.appendix}
+
+The following are available on request:
+
+- Full CSV tables of any data presented.
+- PDF/PNG files of any static plots.
+
+# Session info {.appendix}
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
+
+```{r}
+sessioninfo::session_info()
+```

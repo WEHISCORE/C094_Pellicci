@@ -57,13 +57,9 @@ sample_type_colours <- setNames(
 sample_name_colours <- setNames(
   unique(sce$colours$sample_name_colours),
   unique(names(sce$colours$sample_name_colours)))
-
-# NOTE: need to update samplecolours stored in SCE after introducing "post_hoc_sample_gate"
 sample_gate_colours <- setNames(
-  palette.colors(nlevels(sce$post_hoc_sample_gate), "Tableau 10"),
-  levels(sce$post_hoc_sample_gate))
-sce$colours$sample_gate_colours <- sample_gate_colours[sce$post_hoc_sample_gate]
-
+  unique(sce$colours$sample_gate_colours),
+  unique(names(sce$colours$sample_gate_colours)))
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
   unique(names(sce$colours$plate_number_colours)))
