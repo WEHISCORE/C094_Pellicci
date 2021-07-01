@@ -1157,7 +1157,7 @@ reducedDim(sce, "corrected") <- reducedDim(mnn_out_3, "corrected")
 
 ```{r}
 set.seed(1248)
-sce <- runUMAP(sce, dimred = "corrected")
+sce <- runUMAP(sce, dimred = "corrected", name = "UMAP_corrected")
 
 set.seed(4759)
 snn_gr <- buildSNNGraph(sce, use.dimred = "corrected")
@@ -1171,7 +1171,7 @@ sce$cluster_colours <- cluster_colours[sce$cluster]
 
 To sumup, there are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-cell-selected-merged) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-cell-selected-merged).
 
-```{r clusterplot-umap-cell-selected-merged, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
+```{r clusterplot-umap-cell-selected-merged, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
 p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = cluster), size = 0.25) +
   scale_colour_manual(values = cluster_colours) + 

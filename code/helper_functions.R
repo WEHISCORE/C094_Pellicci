@@ -128,3 +128,32 @@ flattenDF <- function(x, sep = "; ") {
     row.names = rownames(x))
 }
 
+# Plot SingleR scores on a reduced dimension plot from a SCE.
+plotScoreReducedDim <- function(results, sce, dimred = "TSNE",
+                                max.labels = 20, normalize = TRUE, ncol = 5,
+                                ...) {
+  scores <- results$scores
+  rownames(scores) <- rownames(results)
+  m <- rowMaxs(scale(t(scores)))
+  to.keep <- head(order(m, decreasing = TRUE), max.labels)
+  if (normalize) {
+    mmax <- rowMaxs(scores)
+    mmin <- rowMins(scores)
+    scores <- (scores - mmin) / (mmax - mmin)
+    scores <- scores ^ 3
+  }
+  scores <- scores[, to.keep, drop = FALSE]
+  cns <- colnames(scores)
+  p <- lapply(cns, function(cn) {
+    scater::plotReducedDim(
+      sce,
+      dimred = dimred,
+      colour_by = data.frame(Score = scores[, cn]),
+      ...) +
+      ggtitle(cn) +
+      scale_fill_viridis_c(limits = force(if(normalize) c(0, 1) else NULL)) +
+      guides(fill = guide_colourbar(title = "Score"))
+  })
+  cowplot::plot_grid(plotlist = p, ncol = ncol)
+}
+
