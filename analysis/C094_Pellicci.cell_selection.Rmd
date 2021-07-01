@@ -262,18 +262,14 @@ p6 <- ggcells(sce) +
 (p1 | p2) / (p3 | p4) / (p5 | p6) 
 ```
 
-*NOTE* for the unmerged data based on these figures:
+**NOTE** for the unmerged data based on these figures:
   
   - the majority of cells in cluster `2`, `4`, and `6` represent the three types/statuses of cells at `P8` and can be found in both `Blood` and `Thymus` samples
   - most of the cells in `P6` and `P7` form one single cluster, i.e. cluster `3`, and they found mostly in `Thymus` sample only
   - cluster `1` and `5` are the only standalone clusters separated from the major group (and they seem to be the two obvious clusters needed to be decided if they should "be kept" or "not to be kept" during cell selection step)
   - cluster `1` is basically the control cell line `SKW3`, accompanied with a small amount of cells from `Thymus 2` and `Thymus 3`
   - cluster `5` are formed from cells mostly from `Blood 3` and `Thymus 3` only, implying it was originated from donor `3` only somehow
-  - merging or not will be decided based on if the feature above can be preserved or become even more explicit
-
-**TODO**: also check with Pete, if row `P` of plate LCE511 are going to be excluded in preprocessing.
-
-
+  - merging or not will be decided based on if the feature above can be preserved or not
 
 ## Investigation of cluster `5`
 
@@ -406,7 +402,9 @@ plotHeatmap(
   )
 ```
 
-Having said that cells in cluster `5` do show expression of a few `mi.gdT_vs_Mono` marker genes (Figure \@ref(fig:test-mi-mono-and-gdT-markers)), the `mi.Mono_vs_gdT` marker genes are indeed quite specific to cluster `5`, suggesting the likelihood of them to be the `Intermediate monocytes`. 
+As you can see, the cells from cluster `5` do give a very strong expression of the `intermediate monocyte` markers, whilst cells from the other four "gamma-delta T cells"-labelled clusters do not.
+Although the other four clusters labelled as `Vd2 gd T cells` do not give a very strong expression of those T cells markers (possibly due to the fact that they are mostly be the "developing" gamma-delta T cells rather than "mature" ones used by the `SingleR` reference), the cluster `5` cells do give a relatively lower expression for most of the "gamma-delta T cells" markers compared to the other four clusters.
+Therefore, it suggests the likelihood that the cells in cluster `5` could really be the `intermediate monocyte` and less likely be the `Vd2 gd T cells`.
 
 ```{r test-mi-mono-and-gdT-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for selected marker genes between the `Intermediate monocytes` and `Vd2 gd T cells` labels. Each column is a sample, each row a gene. For legibility, only a random 10% of non-`Intermediate monocytes` cells are shown.", fig.asp = 1.1}
 
@@ -479,12 +477,6 @@ plotHeatmap(
     main = lab)
     )
 ```
-
-**TODO**: based on the SingleR annotation and unique marker gene detection (FDR < 0.05), discuss with Dan and Stuart, we can then decide if cluster 5 be a true contaminant (likely be the `intermediate monocytes` from `donor 3`) that sneaked through the FACS gate and could considered to be removed.
-
-
-
-
 
 ## Investigation of cluster `1` 
 
@@ -657,12 +649,21 @@ align ="h"
 
 Notably, the `SKW3` cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the `Thymus` cells and form a standalone cluster.
 
-Taken all of these evidences together, we decide to remove the `Cell line` proceed the analyses with only the sample cells.
+**NOTE**: Taken all of these evidences together, we decide to remove the `Cell line` proceed the analyses with only the sample cells.
+Also, after our online discussion with Dan and Stuart on 30 June, we confirmed that cells in cluster `5` are contaminants and should be removed from the the subsequent analyses as well.
 
 ```{r}
+# remove `cell line` and cells from cluster
 sce <- sce[, !(sce$sample_name=="Cell line")]
+sce <- sce[, !(sce$cluster=="5")]
 colData(sce) <- droplevels(colData(sce))
 ```
+
+
+
+
+
+
 
 We then re-process the *sample cells* remained in the dataset.
 
@@ -694,9 +695,9 @@ cluster_colours <- setNames(
 sce$colours$cluster_colours <- cluster_colours[sce$cluster]
 ```
 
-There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-CL-removed) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-CL-removed).
+There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-cell-selected) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-cell-selected).
 
-```{r clusterplot-umap-CL-removed, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
+```{r clusterplot-umap-cell-selected, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
 p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = cluster), size = 0.25) +
   scale_colour_manual(values = cluster_colours) + 
@@ -749,7 +750,7 @@ p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
 (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
 ```
 
-```{r cluster-barplot-CL-removed, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+```{r cluster-barplot-cell-selected, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
 p1 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = sample_type),
@@ -810,12 +811,9 @@ p6 <- ggcells(sce) +
 
 *NOTE* for the unmerged data:
   
-  - there are one big and two tiny population
-  - the big population is subdivided into four cluster (i.e. cluster `1`, `2`, `3`, and `5`)
-  - the two tiny populations is categorized under the same cluster, cluster `4`, which is dominant by cells from `Thymus 3` and `Blood 3`, indicating its `donor_3` origin
+  - there are one big population, which is subdivided into four clusters (i.e. cluster `1`, `2`, `3`, and `4`)
+  - cells in cluster `2`, `3`, and `4` are mostly in `P8`, whilst cells in cluster `1` are mostly be mixture of `P6`, `P7`, and `P8` 
   - plate-specific batch effect seems prominent without MNN correction
-  - cluster `1` and `2` are mostly cells from `Thymus`
-  - except for cells in cluster `1`, cells in all other clusters are mostly in `P8`
 
 # Data integration
 
@@ -883,10 +881,10 @@ mnn_out_3 <- fastMNN(
 One useful diagnostic of the MNN algorithm is the proportion of variance within each batch that is lost during MNN correction^[Specifically, this refers to the within-batch variance that is removed during orthogonalization with respect to the average correction vector at each merge step.].
 Large proportions of lost variance ($>10 \%$) suggest that correction is removing genuine biological heterogeneity.
 This would occur due to violations of the assumption of orthogonality between the batch effect and the biological subspace [@haghverdi2018batch].
-*
-Among the three merge orders, i.e. *auto merge* (Table \@ref(tab:tab1-CL-removed)), *manual merge 1* (Table \@ref(tab:tab2-CL-removed)), and *manual merge 2* (Table \@ref(tab:tab3-CL-removed)), the *manual merge 2* lead to the least loss of biological variance from the dataset.
 
-```{r tab1-CL-removed}
+Among the three merge orders, i.e. *auto merge* (Table \@ref(tab:tab1-cell-selected)), *manual merge 1* (Table \@ref(tab:tab2-cell-selected)), and *manual merge 2* (Table \@ref(tab:tab3-cell-selected)), the *manual merge 2* lead to the least loss of biological variance from the dataset.
+
+```{r tab1-cell-selected}
 tab1 <- metadata(mnn_out_1)$merge.info$lost.var
 knitr::kable(
   100 * tab1,
@@ -894,7 +892,7 @@ knitr::kable(
   caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (auto). Ideally, all these values should be small (e.g., < 5%).")
 ```
 
-```{r tab2-CL-removed}
+```{r tab2-cell-selected}
 tab2 <- metadata(mnn_out_2)$merge.info$lost.var
 knitr::kable(
   100 * tab2,
@@ -902,7 +900,7 @@ knitr::kable(
   caption = "Percentage of estimated biological variation lost within each plate at each step of the merge (manual 1). Ideally, all these values should be small (e.g., < 5%).")
 ```
 
-```{r tab3-CL-removed}
+```{r tab3-cell-selected}
 tab3 <- metadata(mnn_out_3)$merge.info$lost.var
 knitr::kable(
   100 * tab3,
@@ -969,9 +967,19 @@ cluster_colours_3 <- setNames(
 sce3$colours$cluster_colours_3 <- cluster_colours_3[sce3$cluster_3]
 ```
 
-Figure \@ref(fig:batch-correction-test-CL-removed) shows an overview of comparisons between the unmerged and merged data  (from left to right column: *unmerged*, *auto merge*, *manual merge 1*, and *manual merge 2*) broken down by different experimental factors.
+Figure \@ref(fig:batch-correction-test-cell-selected) shows an overview of comparisons between the unmerged and merged data  (from left to right column: *unmerged*, *auto merge*, *manual merge 1*, and *manual merge 2*) broken down by different experimental factors.
 
-```{r batch-correction-test-CL-removed, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (leftmost column) and -corrected data by auto merge (2nd column) and two different manual merge orders (3rd and rightmost columns, respectively).", layout="l-page"}
+
+
+
+
+
+
+
+
+
+
+```{r batch-correction-test-cell-selected, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (leftmost column) and -corrected data by auto merge (2nd column) and two different manual merge orders (3rd and rightmost columns, respectively).", layout="l-page"}
 
 p1 <- plotReducedDim(sce3, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
@@ -1036,13 +1044,13 @@ p1 + p2 + p3 + p4 +
   plot_layout(ncol = 4, guides = "collect")
 ```
 
-To get an insight, here we break down the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number-CL-removed)), `post_hoc_sample_gate` (Figure \@ref(fig:umap-post-hoc-sample-gate-CL-removed)), and `tissue` (Figure \@ref(fig:umap-tissue-CL-removed)).
+To get an insight, here we focus on the uncorrected and the corrected data by *manual merge 2*, then break down the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number-cell-selected)), `post_hoc_sample_gate` (Figure \@ref(fig:umap-post-hoc-sample-gate-cell-selected)), and `tissue` (Figure \@ref(fig:umap-tissue-cell-selected)).
 
-From the perspective of correcting the batch effect, the MNN correction can effectively alleviate the plate-specific grouping of cells (Figure \@ref(fig:umap-plate-number-CL-removed)).
+From the perspective of correcting the batch effect, the MNN correction can effectively alleviate the plate-specific grouping of cells (Figure \@ref(fig:umap-plate-number-cell-selected)).
 
-From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the "shifting" of the transcriptomic stages of cells `P6` to `P7`, then `P8` (Figure \@ref(fig:umap-post-hoc-sample-gate-CL-removed)); (ii) `Blood` contains cells mostly at `P8` only, whilst `Thymus` contains cells at all three phases, i.e. `P6`, `P7` and `P8` (Figure \@ref(fig:umap-tissue-CL-removed)).
+From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the "shifting" of the transcriptomic stages of cells `P6` to `P7`, then `P8` (Figure \@ref(fig:umap-post-hoc-sample-gate-cell-selected)); (ii) `Blood` contains cells mostly at `P8` only, whilst `Thymus` contains cells at all three phases, i.e. `P6`, `P7` and `P8` (Figure \@ref(fig:umap-tissue-cell-selected)).
 
-```{r umap-plate-number-CL-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
+```{r umap-plate-number-cell-selected, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
 
 umap_df <- makePerCellDF(sce3)
 bg <- dplyr::select(umap_df, -plate_number)
@@ -1078,7 +1086,7 @@ align ="h"
 )
 ```
 
-```{r umap-post-hoc-sample-gate-CL-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
+```{r umap-post-hoc-sample-gate-cell-selected, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
 
 umap_df <- makePerCellDF(sce3)
 bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
@@ -1122,7 +1130,7 @@ align ="h"
 )
 ```
 
-```{r umap-tissue-CL-removed, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 2/3, layout="l-body"}
+```{r umap-tissue-cell-selected, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 2/3, layout="l-body"}
 umap_df <- makePerCellDF(sce3)
 bg <- dplyr::select(umap_df, -tissue)
 
@@ -1157,7 +1165,7 @@ align ="h"
 )
 ```
 
-Taken altogether, we determine *manual merge 2* as the best possible merge order for data integration of this dataset and proceed.
+Taken altogether, we conclude that the data corrected by the *manual merge 2* as the best possible merge order for data integration of this dataset and proceed.
 
 ```{r}
 reducedDim(sce, "corrected") <- reducedDim(mnn_out_3, "corrected")
@@ -1177,9 +1185,9 @@ cluster_colours <- setNames(
 sce$cluster_colours <- cluster_colours[sce$cluster]
 ```
 
-To sumup, there are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-CL-removed-merged) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-CL-removed-merged).
+To sumup, there are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-cell-selected-merged) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-cell-selected-merged).
 
-```{r clusterplot-umap-CL-removed-merged, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
+```{r clusterplot-umap-cell-selected-merged, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
 p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = cluster), size = 0.25) +
   scale_colour_manual(values = cluster_colours) + 
@@ -1232,7 +1240,7 @@ p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
 (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
 ```
 
-```{r cluster-barplot-CL-removed-merged, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+```{r cluster-barplot-cell-selected-merged, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
 p1 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = sample_type),
