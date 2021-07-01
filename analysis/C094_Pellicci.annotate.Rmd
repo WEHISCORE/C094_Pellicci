@@ -1,0 +1,2159 @@
+---
+title: "Annotating Pellicci gamma-delta T-cell dataset"
+description: |
+author:
+  - name: William Ho
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+```{r setup}
+library(SingleCellExperiment)
+library(here)
+library(scater)
+library(scran)
+library(ggplot2)
+library(cowplot)
+library(edgeR)
+library(Glimma)
+library(BiocParallel)
+library(patchwork)
+library(janitor)
+library(pheatmap)
+library(batchelor)
+library(rmarkdown)
+library(BiocStyle)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+library(tidyr)
+source(here("code", "helper_functions.R"))
+# NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
+options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
+register(MulticoreParam(workers = getOption("mc.cores")))
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.annotate_files/")
+```
+
+# Preparing the data
+
+We start from the cell selected *SingleCellExperiment* object created in ['Selection of biologically relevant cells for Pellicci gamma-delta T-cell dataset'](C094_Pellicci.cell_selection.html).
+
+```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.cells_selected.SCE.rds"))
+# data frames containing co-ordinates and factors for creating reduced 
+# dimensionality plots.
+corrected_umap <- cbind(
+  data.frame(
+    x = reducedDim(sce, "UMAP_corrected")[, 1],
+    y = reducedDim(sce, "UMAP_corrected")[, 2]),
+  as.data.frame(colData(sce)))
+dir.create(here("data", "marker_genes"), recursive = TRUE)
+dir.create(here("output", "marker_genes"), recursive = TRUE)
+```
+
+```{r}
+# Some useful colours
+sample_type_colours <- setNames(
+  unique(sce$colours$sample_type_colours),
+  unique(names(sce$colours$sample_type_colours)))
+sample_name_colours <- setNames(
+  unique(sce$colours$sample_name_colours),
+  unique(names(sce$colours$sample_name_colours)))
+
+# NOTE: need to update samplecolours stored in SCE after introducing "post_hoc_sample_gate"
+sample_gate_colours <- setNames(
+  palette.colors(nlevels(sce$post_hoc_sample_gate), "Tableau 10"),
+  levels(sce$post_hoc_sample_gate))
+sce$colours$sample_gate_colours <- sample_gate_colours[sce$post_hoc_sample_gate]
+
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))
+
+# Some useful gene sets
+mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes 
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# Some useful colours
+plate_number_colours <- setNames(
+  unique(sce$plate_number_colours),
+  unique(names(sce$plate_number_colours)))
+donor_colours <- setNames(
+  unique(sce$donor_colours),
+  unique(names(sce$donor_colours)))
+sample_type_colours <- setNames(
+  unique(sce$sample_type_colours),
+  unique(names(sce$sample_type_colours)))
+facs_gating_redef_colours <- setNames(
+  unique(sce$facs_gating_redef_colours),
+  unique(names(sce$facs_gating_redef_colours)))
+sequencing_run_colours <- setNames(
+  unique(sce$sequencing_run_colours),
+  unique(names(sce$sequencing_run_colours)))
+```
+
+```{r}
+# Some useful gene sets
+mito_set <- rownames(sce)[which(rowData(sce)$CHR == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes 
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$human_gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+# Clustering cells
+
+Clustering is an unsupervised learning procedure that is used in scRNA-seq data analysis to empirically define groups of cells with similar expression profiles.
+Its primary purpose is to summarize the data in a digestible format for human interpretation. 
+This allows us to describe population heterogeneity in terms of discrete labels that are easily understood, rather than attempting to comprehend the high-dimensional manifold on which the cells truly reside.
+After annotation based on marker genes, the clusters can be treated as proxies for more abstract biological concepts such as cell types or states.
+Clustering is thus a critical step for extracting biological insights from scRNA-seq data.
+
+## Clusters vs. cell types
+
+It is worth stressing the distinction between clusters and cell types.
+The former is an empirical construct while the latter is a biological truth (albeit a vaguely defined one).
+For this reason, questions like "what is the true number of clusters?" are usually meaningless.
+We can define as many clusters as we like, with whatever algorithm we like - each clustering will represent its own partitioning of the high-dimensional expression space, and is as "real" as any other clustering.
+
+A more relevant question is "how well do the clusters approximate the cell types?"
+Unfortunately, this is difficult to answer given the context-dependent interpretation of biological truth.
+Some analysts will be satisfied with resolution of the major cell types; other analysts may want resolution of subtypes; and others still may require resolution of different states (e.g., metabolic activity, stress) within those subtypes.
+Two clusterings can also be highly inconsistent yet both valid, simply partitioning the cells based on different aspects of biology.
+Indeed, asking for an unqualified "best" clustering is akin to asking for the best magnification on a microscope without any context.
+
+It is helpful to realize that clustering, like a microscope, is simply a tool to explore the data.
+We can zoom in and out by changing the resolution of the clustering parameters, and we can experiment with different clustering algorithms to obtain alternative perspectives of the data.
+This iterative approach is entirely permissible for data exploration, which constitutes the majority of all scRNA-seq data analysis.
+
+## Graph-based clustering
+
+We build a shared nearest neighbour graph [@xu2015identification] and use the Louvain algorithm to identify clusters.
+Typically, we would build the graph using the principal components, but here we use the MNN-corrected values so as to incorporate the batch effect correction.
+
+```{r}
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce, use.dimred = "corrected", k=5)
+clusters <- igraph::cluster_louvain(snn_gr)
+sce$cluster <- factor(clusters$membership)
+corrected_umap$cluster <- sce$cluster
+cluster_colours <- setNames(
+  Polychrome::glasbey.colors(nlevels(sce$cluster) + 1)[-1],
+  levels(sce$cluster))
+sce$cluster_colours <- cluster_colours[sce$cluster]
+```
+
+There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot).
+
+```{r cluster-barplot, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+p1 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = plate_number_colours) +
+  # NOTE: Lots of levels, so need smaller font size.
+  theme_cowplot(font_size = 6)
+p2 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = donor_colours) +
+  # NOTE: Lots of levels, so need smaller font size.
+  theme_cowplot(font_size = 6)
+p3 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = sample_type),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sample_type_colours) +
+  # NOTE: Lots of levels, so need smaller font size.
+  theme_cowplot(font_size = 6)
+p4 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = facs_gating_redef),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = facs_gating_redef_colours) +
+  # NOTE: Lots of levels, so need smaller font size.
+  theme_cowplot(font_size = 6)
+p5 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = sequencing_run),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = sequencing_run_colours) +
+  # NOTE: Lots of levels, so need smaller font size.
+  theme_cowplot(font_size = 6)
+p6 <- ggcells(sce) + 
+  geom_bar(aes(x = cluster, fill = cluster)) +
+  coord_flip() +
+  ylab("Number of cells") +
+  scale_fill_manual(values = cluster_colours) +
+  theme_cowplot(font_size = 8) + 
+  guides(fill = FALSE)
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+```
+
+### Assessing cluster separation
+
+We look at the ratio of the observed and expected edge weights to confirm that the clusters are modular. 
+Figure \@ref(fig:clustermod) indicates that most of the clusters are reasonably separated, with few strong off-diagonal entries.
+
+```{r clustermod, fig.cap = "Heatmap of the log~10~-ratio of the total weight between nodes in the same cluster or in different clusters, relative to the total weight expected under a null model of random links.", fig.asp = 0.8}
+cluster_mod <- clusterModularity(
+  graph = snn_gr, 
+  clusters = sce$cluster, 
+  get.weights = TRUE)
+log_ratio <- log2(cluster_mod$observed / cluster_mod$expected + 1)
+library(pheatmap)
+pheatmap(
+  mat = log_ratio,
+  cluster_rows = FALSE, 
+  cluster_cols = FALSE, 
+  color = colorRampPalette(c("white", "blue"))(100))
+```
+
+## Visual inspection of clustering results
+
+Figure \@ref(fig:clusterplot-umap) shows the cluster labels on a U-MAP plot to confirm that a sensible partitioning was generated.
+
+```{r clusterplot-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 3 / 2}
+plot_grid(
+  
+  ggplot(aes(x = x, y = y), data = corrected_umap) +
+    geom_point(aes(colour = cluster), size = 0.5) +
+    scale_colour_manual(values = cluster_colours) + 
+    theme_cowplot(font_size = 7) + 
+    ggtitle("MNN-corrected") +
+    xlab("Dimension 1") + 
+    ylab("Dimension 2"),
+  
+  ggplot(aes(x = x, y = y), data = corrected_umap) +
+    geom_point(aes(colour = plate_number), size = 0.5) +
+    theme_cowplot(font_size = 7) + 
+    ggtitle("MNN-corrected") +
+    xlab("Dimension 1") + 
+    ylab("Dimension 2") +
+    scale_colour_manual(values = plate_number_colours),
+  
+  ggplot(aes(x = x, y = y), data = corrected_umap) +
+    geom_point(aes(colour = donor), size = 0.5) +
+    scale_colour_manual(values = donor_colours) + 
+    theme_cowplot(font_size = 7) + 
+    ggtitle("MNN-corrected") +
+    xlab("Dimension 1") + 
+    ylab("Dimension 2"),
+  ggplot(aes(x = x, y = y), data = corrected_umap) +
+    geom_point(aes(colour = sample_type), size = 0.5) +
+    scale_colour_manual(values = sample_type_colours) + 
+    theme_cowplot(font_size = 7) + 
+    ggtitle("MNN-corrected") +
+    xlab("Dimension 1") + 
+    ylab("Dimension 2"),
+  
+  ggplot(aes(x = x, y = y), data = corrected_umap) +
+    geom_point(aes(colour = facs_gating_redef), size = 0.5) +
+    scale_colour_manual(values = facs_gating_redef_colours) + 
+    theme_cowplot(font_size = 7) + 
+    ggtitle("MNN-corrected") +
+    xlab("Dimension 1") + 
+    ylab("Dimension 2"),
+  
+  ggplot(aes(x = x, y = y), data = corrected_umap) +
+    geom_point(aes(colour = sequencing_run), size = 0.5) +
+    scale_colour_manual(values = sequencing_run_colours) + 
+    theme_cowplot(font_size = 7) + 
+    ggtitle("MNN-corrected") +
+    xlab("Dimension 1") + 
+    ylab("Dimension 2"),
+  
+  ncol = 2, 
+  align = "h")
+```
+
+# Assigning cell labels from reference data
+
+## Overview
+
+A conceptually straightforward annotation approach is to compare the single-cell expression profiles with previously annotated reference data sets.
+Labels can then be assigned to each cell in our uncharacterized test data set based on the most similar reference sample(s), for some definition of "similar".
+Any published and labelled RNA-seq data set (bulk or single-cell) can be used as a reference, though its reliability depends greatly on the expertise of the original authors who assigned the labels in the first place.
+
+`r Biocpkg("SingleR")` is one such automatic annotation method for scRNA-seq data [@aran2019reference].
+Given a reference data set(s) of samples^[This can be individual cells or bulk samples.] with known labels, it labels new cells from a test data set based on similarity to the reference set(s).
+Specifically, for each test cell:
+
+1. We compute the Spearman correlation between its expression profile and that of each reference sample. 
+2. We define the per-label score as a fixed quantile (by default, 0.8) of the distribution of correlations.
+3. We repeat this for all labels and we take the label with the highest score as the annotation for this cell.
+4. Finally, we perform a fine-tuning step:
+- The reference data set is subsetted to only include labels with scores close to the maximum.
+- Scores are recomputed using only marker genes for the subset of labels.
+- This is iterated until one label remains.
+
+For visualization purposes we use the normalized scores, which are the scores linearly adjusted for each cell so that the smallest score is 0 and the largest score is 1.
+This is followed by cubing of the adjusted scores to improve dynamic range near 1. 
+
+Automatic annotation provides a convenient way of transferring biological knowledge across data sets.
+In this manner, the burden of interpreting clusters and defining marker genes only has to be done once (i.e. for the reference set).
+
+## Available references
+
+`r Biocpkg("SingleR")` includes several in-built reference data sets, some of which are relevant for this study:
+
+* `HumanPrimaryCellAtlasData` (`HPCA`): The Human Primary Cell Atlas [@hpcaRef]
+* `BlueprintEncodeData` (`BE`): Blueprint [@blueprintRef] and Encode [@encodeRef]
+* `DatabaseImmuneCellExpressionData` (`DICE`): The [Database of Immune Cell Expression (DICE)](https://dice-database.org/) [@diceRef]
+* `NovershternHematopoieticData` (`NH`): The [Novershtern Hematopoietic Cell Data (GSE24759)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE24759) [@nhRef]
+* `HumanPrimaryCellAtlasData` (`MI`): The [Monaco Immune Cell Data (GSE107011)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011) [@monaco_immuneRef].
+
+These bulk RNA-seq and microarray data sets were obtained from pre-sorted cell populations, i.e., the cell labels of these samples were mostly derived based on the respective sorting/purification strategy, not via *in silico* prediction methods.
+
+The characteristics of each data set are summarized below^[Table adapted from [https://bioconductor.org/packages/release/bioc/vignettes/SingleR/inst/doc/SingleR.html#5_available_references](https://bioconductor.org/packages/release/bioc/vignettes/SingleR/inst/doc/SingleR.html#5_available_references)]:
+
+| Reference | Samples | Sample types |  No. of main labels  | No. of fine labels | Cell type focus |
+|------------------|----------|-------------|----------------------|------------|----------|
+|`HPCA`| 713 | microarrays of sorted cell populations  | 37 |  157 | Non-specific |
+|`BE` | 259 | RNA-seq | 24 | 43 | Non-specific |
+|`DICE` | 1561 | RNA-seq | 5 | 15 | Immune |
+|`NH` | 211 | microarrays of sorted cell populations | 17 | 38 | Hematopoietic & Immune |
+|`MI` | 114 | RNA-seq | 11 | 29 | Immune |
+
+The available sample types in each set can be viewed in the collapsible sections below.
+
+```{r}
+library(SingleR)
+```
+
+<details>
+<summary>`HumanPrimaryCellAtlasData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+hpca <- HumanPrimaryCellAtlasData()
+.adf(colData(hpca)) %>% 
+  dplyr::count(label.main, label.fine) %>%
+  dplyr::arrange(label.main) %>%
+  knitr::kable()
+```
+</details>
+
+<details>
+<summary>`BlueprintEncodeData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+be <- BlueprintEncodeData()
+.adf(colData(be)) %>% 
+  dplyr::count(label.main, label.fine) %>%
+  dplyr::arrange(label.main) %>%
+  knitr::kable()
+```
+</details>
+
+<details>
+<summary>`DatabaseImmuneCellExpressionData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+dice <- DatabaseImmuneCellExpressionData()
+.adf(colData(dice)) %>% 
+  dplyr::count(label.main, label.fine) %>%
+  dplyr::arrange(label.main) %>%
+  knitr::kable()
+```
+</details>
+
+<details>
+<summary>`HumanPrimaryCellAtlasData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+mi <- HumanPrimaryCellAtlasData()
+.adf(colData(mi)) %>% 
+  dplyr::count(label.main, label.fine) %>%
+  dplyr::arrange(label.main) %>%
+  knitr::kable()
+```
+</details>
+
+<details>
+<summary>`NovershternHematopoieticData` Labels</summary>
+
+```{r, echo=FALSE, message=FALSE}
+nh <- NovershternHematopoieticData()
+.adf(colData(nh)) %>% 
+  dplyr::count(label.main, label.fine) %>%
+  dplyr::arrange(label.main) %>%
+  knitr::kable()
+```
+</details>
+
+## Results
+
+`r Biocpkg("SingleR")` can be used to annotate at the cell-level or the cluster-level.
+The latter is generally used to speed-up calculations, which is not necessary for this sized data set.
+Therefore, I have annotated at the cell-level to obtain a higher resolution analysis and choose `HumanPrimaryCellAtlasData` (`HPCA`) as our annotation reference due to its higher relevance to this samples.
+
+## `HumanPrimaryCellAtlasData`
+
+```{r}
+hpca <- HumanPrimaryCellAtlasData()
+```
+
+Each sample has a 'main' and a 'fine' cell type label, summarised below.
+
+```{r}
+.adf(colData(hpca)) %>%
+  tabyl(label.main) %>%
+  adorn_pct_formatting(1) %>%
+  knitr::kable(
+    caption = "Summary of main cell types in the `HumanPrimaryCellAtlasData` reference set.")
+```
+
+```{r}
+paged_table(
+  .adf(colData(hpca)) %>% 
+    dplyr::count(label.main, label.fine) %>%
+    dplyr::arrange(label.main))
+```
+
+### Main label
+
+```{r}
+pred_hpca_cell_main <- SingleR(
+  test = sce,
+  ref = hpca[!grepl("^mt|^Rps|^Rpl", rownames(hpca)), ], 
+  labels = hpca$label.main,
+  BPPARAM = SerialParam())
+```
+
+Annotating against the main labels, we obtain the following cell type labels.
+
+```{r}
+tabyl(data.frame(label.main = pred_hpca_cell_main$labels), label.main) %>%
+  adorn_pct_formatting(digits = 1) %>%  
+  dplyr::arrange(desc(n)) %>%
+  knitr::kable(
+    caption = "Cell label assignments using the main labels of the `HumanPrimaryCellAtlasData` reference data.")
+```
+
+Heatmaps of the annotation scores are shown, with and without clustering by these normalized scores, in Figures \@ref(fig:heat-hpca-main-clustered) and \@ref(fig:heat-hpca-main), and clustering by FACS gates in in Figures \@ref(fig:heat-hpca-main-facs-gating).
+
+```{r heat-hpca-main-clustered, fig.cap = "Heatmap of normalized scores using the main labels from the `HumanPrimaryCellAtlasData` reference set. Cells are columns, rows are labels. Columns are ordered by clustering the normalized scores.", fig.asp = 0.9, layout = "l-body-outset"}
+stopifnot(identical(rownames(pred_hpca_cell_main), colnames(sce)))
+plotScoreHeatmap(
+  pred_hpca_cell_main,
+  annotation_col = data.frame(
+    cluster = sce$cluster,
+    plate_number = sce$plate_number,
+    donor = sce$donor, 
+    facs_gating_redef = sce$facs_gating_redef, 
+    sequencing_run = sce$sequencing_run,
+    row.names = rownames(pred_hpca_cell_main)),
+  annotation_colors = list(
+    cluster = cluster_colours,
+    plate_number = plate_number_colours,
+    donor = donor_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    sequencing_run = sequencing_run_colours),
+  labels.use = unique(pred_hpca_cell_main$labels),
+  max.labels = Inf,
+  normalize = TRUE,
+  show.labels = FALSE,
+  fontsize = 6)
+```
+
+```{r heat-hpca-main, fig.cap = "Heatmap of normalized scores using the main labels from the `HumanPrimaryCellAtlasData` reference set. Cells are columns, rows are labels. Columns are ordered by and annotated by the column labels.", fig.asp = 0.9, layout = "l-body-outset"}
+stopifnot(identical(rownames(pred_hpca_cell_main), colnames(sce)))
+plotScoreHeatmap(
+  pred_hpca_cell_main,
+  annotation_col = data.frame(
+    cluster = sce$cluster,
+    plate_number = sce$plate_number,
+    donor = sce$donor, 
+    facs_gating_redef = sce$facs_gating_redef, 
+    sequencing_run = sce$sequencing_run,
+    row.names = rownames(pred_hpca_cell_main)),
+  annotation_colors = list(
+    cluster = cluster_colours,
+    plate_number = plate_number_colours,
+    donor = donor_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    sequencing_run = sequencing_run_colours),
+  cells.order = sce$cluster,
+  labels.use = unique(pred_hpca_cell_main$labels),
+  max.labels = Inf,
+  normalize = TRUE,
+  show.labels = FALSE,
+  fontsize = 6)
+```
+
+```{r heat-hpca-main-facs-gating, fig.cap = "Heatmap of normalized scores using the main labels from the `HumanPrimaryCellAtlasData` reference set. Cells are columns, rows are labels. Columns are ordered by and annotated by the column labels.", fig.asp = 0.9, layout = "l-body-outset"}
+stopifnot(identical(rownames(pred_hpca_cell_main), colnames(sce)))
+plotScoreHeatmap(
+  pred_hpca_cell_main,
+  annotation_col = data.frame(
+    cluster = sce$cluster,
+    plate_number = sce$plate_number,
+    donor = sce$donor, 
+    facs_gating_redef = sce$facs_gating_redef, 
+    sequencing_run = sce$sequencing_run,
+    row.names = rownames(pred_hpca_cell_main)),
+  annotation_colors = list(
+    cluster = cluster_colours,
+    plate_number = plate_number_colours,
+    donor = donor_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    sequencing_run = sequencing_run_colours),
+  cells.order = sce$facs_gating_redef,
+  labels.use = unique(pred_hpca_cell_main$labels),
+  max.labels = Inf,
+  normalize = TRUE,
+  show.labels = FALSE,
+  fontsize = 6)
+```
+
+Figure \@ref(fig:umap-hpca-main) overlays the normalized scores for the 10 labels with the largest maximum scores on the UMAP plot.
+
+```{r umap-hpca-main, fig.cap = "UMAP overlaid with normalized scores using the main labels from the `HumanPrimaryCellAtlasData` reference set. Only the 10 labels with the largest maximum scores are shown.", fig.asp = 2}
+plotScoreReducedDim(
+  pred_hpca_cell_main, sce,
+  max.labels = 10,
+  ncol = 2,
+  dimred = "UMAP_corrected")
+```
+
+Figure \@ref(fig:barplot-hpca-main) breaks down the cell labels for each sample.
+
+```{r barplot-hpca-main, fig.cap = "Barplot showing cell label assignments for cells from each mouse. Cell labels with fewer than 1% of cells in all mouses are grouped together as 'other'. Cell labels are ordered by their overall frequency in the data set.", fig.asp = 1/2, layout="l-body-outset"}
+sce$hpca_label_main <- factor(pred_hpca_cell_main$pruned.labels)
+sce$hpca_label_main_collapsed <- .collapseLabel(
+  pred_hpca_cell_main$pruned.labels,
+  sce$plate_number)
+hpca_label_main_colours <- setNames(
+  Polychrome::glasbey.colors(nlevels(sce$hpca_label_main_collapsed) + 1)[-1],
+  levels(sce$hpca_label_main_collapsed))
+ggplot(as.data.frame(colData(sce))) +
+  geom_bar(
+    aes(x = plate_number, fill = hpca_label_main_collapsed),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = hpca_label_main_colours) +
+  theme_cowplot(font_size = 8) 
+```
+
+Finally, we examine the expression of the marker genes for each label in the test dataset.
+We extract the identity of the markers in the reference data sets and use them to create a heatmap of their expression in the test data set.
+If a cell in the test dataset is confidently assigned to a particular label, we would expect it to have strong expression of that label’s markers.
+
+```{r}
+all_markers <- metadata(pred_hpca_cell_main)$de.genes
+# Get top-10 marker genes compared to each other cell type
+example_label <- "MSC"
+top_markers <- Reduce(union, sapply(all_markers[[example_label]], head, 10))
+```
+
+Figures \@ref(fig:heat-hpca-main-markers) demonstrates this for cells labelled as `r example_label`.
+
+```{r heat-hpca-main-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
+library(scater)
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$hpca_label_main_collapsed,
+    sce$cluster,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "hpca_label_main_collapsed",
+    "cluster",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     hpca_label_main_collapsed = hpca_label_main_colours,
+     cluster = cluster_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 8)
+```
+
+```{r heat-hpca-main-markers-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
+library(scater)
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$cluster,
+    sce$hpca_label_main_collapsed,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "cluster",
+    "hpca_label_main_collapsed",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+     hpca_label_main_collapsed = hpca_label_main_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 8)
+```
+
+At the very least, it should exhibit up-regulation of those markers relative to cells assigned to other labels.
+This can be visualized by row-normalizing the data, as done in Figure \@ref(fig:heat-hpca-main-markers-row-normalized).
+
+```{r heat-hpca-main-markers-row-normalized, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$hpca_label_main_collapsed,
+    sce$cluster,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "hpca_label_main_collapsed",
+    "cluster",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     hpca_label_main_collapsed = hpca_label_main_colours,
+     cluster = cluster_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  fontsize = 8)
+```
+
+```{r heat-hpca-main-markers-row-normalized-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$cluster,
+    sce$hpca_label_main_collapsed,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "cluster",
+    "hpca_label_main_collapsed",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+     hpca_label_main_collapsed = hpca_label_main_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  fontsize = 8)
+```
+
+Similar figures showing the top-10 marker genes for each label are available in [`output/marker_genes/SingleR/`](../output/marker_genes/SingleR/).
+
+```{r, results = "hide"}
+dir.create(here("output", "marker_genes", "SingleR"))
+dev.off() # Needed to ensure next figures save properly.
+for (label in setdiff(levels(sce$hpca_label_main_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps.", label, ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$hpca_label_main_collapsed,
+      sce$cluster,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+     colour_columns_by = c(
+      "hpca_label_main_collapsed",
+      "cluster",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       hpca_label_main_collapsed = hpca_label_main_colours,
+       cluster = cluster_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    main = label,
+    color = hcl.colors(101, "Blue-Red 3"),
+    fontsize = 8)
+  dev.off()
+}
+for (label in setdiff(levels(sce$hpca_label_main_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps_row-normalized.", label, ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$hpca_label_main_collapsed,
+      sce$cluster,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "hpca_label_main_collapsed",
+      "cluster",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-3, 3),
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       hpca_label_main_collapsed = hpca_label_main_colours,
+       cluster = cluster_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    color = hcl.colors(101, "Blue-Red 3"),
+    main = label,
+    fontsize = 8)
+  
+  dev.off()
+}
+```
+
+```{r, results = "hide"}
+dir.create(here("output", "marker_genes", "SingleR"))
+dev.off() # Needed to ensure next figures save properly.
+for (label in setdiff(levels(sce$hpca_label_main_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps.", label, "ordered.by.cluster", ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$cluster,
+      sce$hpca_label_main_collapsed,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+     colour_columns_by = c(
+      "cluster",
+      "hpca_label_main_collapsed",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       cluster = cluster_colours,
+       hpca_label_main_collapsed = hpca_label_main_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    main = label,
+    color = hcl.colors(101, "Blue-Red 3"),
+    fontsize = 8)
+  dev.off()
+}
+for (label in setdiff(levels(sce$hpca_label_main_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps_row-normalized.", label, "ordered.by.cluster", ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$cluster,
+      sce$hpca_label_main_collapsed,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "cluster",
+      "hpca_label_main_collapsed",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-3, 3),
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       cluster = cluster_colours,
+       hpca_label_main_collapsed = hpca_label_main_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    color = hcl.colors(101, "Blue-Red 3"),
+    main = label,
+    fontsize = 8)
+  
+  dev.off()
+}
+```
+
+### Fine label
+
+```{r}
+pred_hpca_cell_fine <- SingleR(
+  test = sce,
+  ref = hpca[!grepl("^mt|^Rps|^Rpl", rownames(hpca)), ], 
+  labels = hpca$label.fine,
+  BPPARAM = SerialParam())
+```
+
+Annotating against the fine labels, we obtain the following cell type labels.
+
+```{r}
+tabyl(data.frame(label.fine = pred_hpca_cell_fine$labels), label.fine) %>%
+  adorn_pct_formatting(digits = 1) %>%  
+  dplyr::arrange(desc(n)) %>%
+  knitr::kable(
+    caption = "Cell label assignments using the fine labels of the `HumanPrimaryCellAtlasData` reference data.")
+```
+
+Heatmaps of the normalized scores are shown, with and without clustering by these normalized scores, in Figures \@ref(fig:heat-hpca-fine-clustered) and \@ref(fig:heat-hpca-fine), and clustering by FACS gates in in Figures \@ref(fig:heat-hpca-fine-facs-gating).
+
+```{r heat-hpca-fine-clustered, fig.cap = "Heatmap of normalized scores using the fine labels from the `HumanPrimaryCellAtlasData` reference set. Cells are columns, rows are labels. Columns are ordered by clustering the normalized scores.", fig.asp = 0.9, layout = "l-body-outset"}
+stopifnot(identical(rownames(pred_hpca_cell_fine), colnames(sce)))
+plotScoreHeatmap(
+  pred_hpca_cell_fine,
+  annotation_col = data.frame(
+    cluster = sce$cluster,
+    plate_number = sce$plate_number,
+    donor = sce$donor, 
+    facs_gating_redef = sce$facs_gating_redef, 
+    sequencing_run = sce$sequencing_run,
+    row.names = rownames(pred_hpca_cell_fine)),
+  annotation_colors = list(
+    cluster = cluster_colours,
+    plate_number = plate_number_colours,
+    donor = donor_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    sequencing_run = sequencing_run_colours),
+  labels.use = unique(pred_hpca_cell_fine$labels),
+  max.labels = Inf,
+  normalize = TRUE,
+  show.labels = FALSE,
+  fontsize = 6)
+```
+
+```{r heat-hpca-fine, fig.cap = "Heatmap of normalized scores using the fine labels from the `HumanPrimaryCellAtlasData` reference set. Cells are columns, rows are labels. Columns are ordered by and annotated by the column labels.", fig.asp = 0.9, layout = "l-body-outset"}
+stopifnot(identical(rownames(pred_hpca_cell_fine), colnames(sce)))
+plotScoreHeatmap(
+  pred_hpca_cell_fine,
+  annotation_col = data.frame(
+    cluster = sce$cluster,
+    plate_number = sce$plate_number,
+    donor = sce$donor, 
+    facs_gating_redef = sce$facs_gating_redef, 
+    sequencing_run = sce$sequencing_run,
+    row.names = rownames(pred_hpca_cell_fine)),
+  annotation_colors = list(
+    cluster = cluster_colours,
+    plate_number = plate_number_colours,
+    donor = donor_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    sequencing_run = sequencing_run_colours),
+  cells.order = sce$cluster,
+  labels.use = unique(pred_hpca_cell_fine$labels),
+  max.labels = Inf,
+  normalize = TRUE,
+  show.labels = FALSE,
+  fontsize = 6)
+```
+
+```{r heat-hpca-fine-facs-gating, fig.cap = "Heatmap of normalized scores using the fine labels from the `HumanPrimaryCellAtlasData` reference set. Cells are columns, rows are labels. Columns are ordered by and annotated by the column labels.", fig.asp = 0.9, layout = "l-body-outset"}
+stopifnot(identical(rownames(pred_hpca_cell_fine), colnames(sce)))
+plotScoreHeatmap(
+  pred_hpca_cell_fine,
+  annotation_col = data.frame(
+    cluster = sce$cluster,
+    plate_number = sce$plate_number,
+    donor = sce$donor, 
+    facs_gating_redef = sce$facs_gating_redef, 
+    sequencing_run = sce$sequencing_run,
+    row.names = rownames(pred_hpca_cell_fine)),
+  annotation_colors = list(
+    cluster = cluster_colours,
+    plate_number = plate_number_colours,
+    donor = donor_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    sequencing_run = sequencing_run_colours),
+  cells.order = sce$facs_gating_redef,
+  labels.use = unique(pred_hpca_cell_fine$labels),
+  max.labels = Inf,
+  normalize = TRUE,
+  show.labels = FALSE,
+  fontsize = 6)
+```
+
+Figure \@ref(fig:umap-hpca-fine) overlays the normalized scores for the 10 labels with the largest maximum scores on the UMAP plot.
+
+```{r umap-hpca-fine, fig.cap = "UMAP overlaid with normalized scores using the fine labels from the `HumanPrimaryCellAtlasData` reference set. Only the 10 labels with the largest maximum scores are shown.", fig.asp = 2}
+plotScoreReducedDim(
+  pred_hpca_cell_fine, sce,
+  max.labels = 10,
+  ncol = 2,
+  dimred = "UMAP_corrected")
+```
+
+Figure \@ref(fig:barplot-hpca-fine) breaks down the cell labels for each sample.
+
+```{r barplot-hpca-fine, fig.cap = "Barplot showing cell label assignments for cells from each mouse. Cell labels with fewer than 1% of cells in all mouses are grouped together as 'other'. Cell labels are ordered by their overall frequency in the data set.", fig.asp = 1/2, layout="l-body-outset"}
+sce$hpca_label_fine <- factor(pred_hpca_cell_fine$pruned.labels)
+sce$hpca_label_fine_collapsed <- .collapseLabel(
+  pred_hpca_cell_fine$pruned.labels,
+  sce$plate_number)
+hpca_label_fine_colours <- setNames(
+  Polychrome::glasbey.colors(nlevels(sce$hpca_label_fine_collapsed) + 1)[-1],
+  levels(sce$hpca_label_fine_collapsed))
+ggplot(as.data.frame(colData(sce))) +
+  geom_bar(
+    aes(x = plate_number, fill = hpca_label_fine_collapsed),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = hpca_label_fine_colours) +
+  theme_cowplot(font_size = 8)
+```
+
+Finally, we examine the expression of the marker genes for each label in the test dataset.
+We extract the identity of the markers in the reference data sets and use them to create a heatmap of their expression in the test data set.
+If a cell in the test dataset is confidently assigned to a particular label, we would expect it to have strong expression of that label’s markers.
+
+```{r}
+all_markers <- metadata(pred_hpca_cell_fine)$de.genes
+# Get top-10 marker genes compared to each other cell type
+example_label <- "MSC"
+top_markers <- Reduce(union, sapply(all_markers[[example_label]], head, 10))
+```
+
+Figures \@ref(fig:heat-hpca-fine-markers) demonstrates this for cells labelled as `r example_label`.
+
+```{r heat-hpca-fine-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
+library(scater)
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$hpca_label_fine_collapsed,
+    sce$cluster,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "hpca_label_fine_collapsed",
+    "cluster",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     hpca_label_main_collapsed = hpca_label_fine_colours,
+     cluster = cluster_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 5)
+```
+
+```{r heat-hpca-fine-markers-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene", fig.asp = 1.5, layout = "l-page"}
+library(scater)
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$cluster,
+    sce$hpca_label_fine_collapsed,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "cluster",
+    "hpca_label_fine_collapsed",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+     hpca_label_main_collapsed = hpca_label_fine_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 5)
+```
+
+At the very least, it should exhibit up-regulation of those markers relative to cells assigned to other labels.
+This can be visualized by row-normalizing the data, as done in Figure \@ref(fig:heat-hpca-fine-markers-row-normalized).
+
+```{r heat-hpca-fine-markers-row-normalized, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$hpca_label_fine_collapsed,
+    sce$cluster,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "hpca_label_fine_collapsed",
+    "cluster",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     hpca_label_main_collapsed = hpca_label_fine_colours,
+     cluster = cluster_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  fontsize = 5)
+```
+
+```{r heat-hpca-fine-markers-row-normalized-ordered-by-cluster, fig.wide = TRUE, fig.cap = "Heatmap of row-normalized log-expression values for the top-10 marker genes of `r example_cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = top_markers,
+  columns = order(
+    sce$cluster,
+    sce$hpca_label_fine_collapsed,
+    sce$facs_gating_redef,
+    sce$donor,
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "cluster",
+    "hpca_label_fine_collapsed",
+    "facs_gating_redef",
+    "donor",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  main = example_label,
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+     hpca_label_main_collapsed = hpca_label_fine_colours,
+     facs_gating_redef = facs_gating_redef_colours,
+     donor = donor_colours,
+     plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours),
+  fontsize = 5)
+```
+
+Similar figures showing the top-10 marker genes for each label are available in [`output/marker_genes/SingleR/`](../output/marker_genes/SingleR/).
+
+```{r, results = "hide"}
+dir.create(here("output", "marker_genes", "SingleR"))
+dev.off() # Needed to ensure next figures save properly.
+# NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
+sce$hpca_label_fine_collapsed <- gsub("/", "_", sce$hpca_label_fine_collapsed)
+for (label in setdiff(levels(sce$hpca_label_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps.", label, ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$hpca_label_fine_collapsed,
+      sce$cluster,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "hpca_label_fine_collapsed",
+      "cluster",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       hpca_label_main_collapsed = hpca_label_fine_colours,
+       cluster = cluster_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    main = label,
+    color = hcl.colors(101, "Blue-Red 3"),
+    fontsize = 5)
+  dev.off()
+}
+for (label in setdiff(levels(sce$hpca_label_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps_row-normalized.", label, ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$hpca_label_fine_collapsed,
+      sce$cluster,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "hpca_label_fine_collapsed",
+      "cluster",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-3, 3),
+    show_colnames = FALSE,
+   column_annotation_colors = list(
+       hpca_label_main_collapsed = hpca_label_fine_colours,
+       cluster = cluster_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    color = hcl.colors(101, "Blue-Red 3"),
+    main = label,
+    fontsize = 5)
+  
+  dev.off()
+}
+```
+
+```{r, results = "hide"}
+dir.create(here("output", "marker_genes", "SingleR"))
+dev.off() # Needed to ensure next figures save properly.
+# NOTE: need to sub the "/" in some of the label or R would misread it as subdirectory !
+sce$hpca_label_fine_collapsed <- gsub("/", "_", sce$hpca_label_fine_collapsed)
+for (label in setdiff(levels(sce$hpca_label_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps.", label, "ordered.by.cluster", ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$cluster,
+      sce$hpca_label_fine_collapsed,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "cluster",
+      "hpca_label_fine_collapsed",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    show_colnames = FALSE,
+    column_annotation_colors = list(
+       cluster = cluster_colours,
+       hpca_label_main_collapsed = hpca_label_fine_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    main = label,
+    color = hcl.colors(101, "Blue-Red 3"),
+    fontsize = 5)
+  dev.off()
+}
+for (label in setdiff(levels(sce$hpca_label_fine_collapsed), "other")) {
+  png(
+    here(
+      "output",
+      "marker_genes",
+      "SingleR",
+      paste0("HPCA.", "heatmaps_row-normalized.", label, "ordered.by.cluster", ".png")),
+    width = 10,
+    height = 12,
+    units = "in",
+    res = 250)
+  
+  top_markers <- Reduce(union, sapply(all_markers[[label]], head, 10))
+  
+plotHeatmap(
+    sce,
+    features = top_markers,
+    columns = order(
+      sce$cluster,
+      sce$hpca_label_fine_collapsed,
+      sce$facs_gating_redef,
+      sce$donor,
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "cluster",
+      "hpca_label_fine_collapsed",
+      "facs_gating_redef",
+      "donor",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-3, 3),
+    show_colnames = FALSE,
+   column_annotation_colors = list(
+       cluster = cluster_colours,
+       hpca_label_main_collapsed = hpca_label_fine_colours,
+       facs_gating_redef = facs_gating_redef_colours,
+       donor = donor_colours,
+       plate_number = plate_number_colours,
+       sequencing_run = sequencing_run_colours),
+    color = hcl.colors(101, "Blue-Red 3"),
+    main = label,
+    fontsize = 5)
+  
+  dev.off()
+}
+```
+
+
+
+# Marker gene detection
+
+To interpret our clustering results, we identify the genes that drive separation between clusters.
+These marker genes allow us to assign biological meaning to each cluster based on their functional annotation.
+In the most obvious case, the marker genes for each cluster are *a priori* associated with particular cell types, allowing us to treat the clustering as a proxy for cell type identity.
+The same principle can be applied to more subtle differences in activation status or differentiation state.
+
+Identification of marker genes is usually based around the retrospective detection of differential expression between clusters^[Differential expression analyses is performed on the original log-expression values.
+We do not use the MNN-corrected values here except to obtain the clusters to be characterized.].
+Genes that are more strongly DE are more likely to have driven cluster separation in the first place.
+The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters.
+
+## Using pairwise *t*-tests
+
+### Standard application
+
+The Welch *t*-test is an obvious choice of statistical method to test for differences in expression between clusters.
+It is quickly computed and has good statistical properties for large numbers of cells [@soneson2018bias].
+We perform intra-mouse comparisons by blocking on the mouse (i.e. the combinations of `plate_number` and `strain`) of origin^[Equivalent to blocking on the plate of origin in this data set.] to avoid confounding effects from library-to-library variability or differential expression between mice^[Intra-mice comparisons are robust to differences between libraries but assume that each pair of clusters is present in at least one library. When this is not the case, we cannot commute a logFC for that pair of clusters.].
+
+```{r}
+sce$block <- paste0(sce$plate_number)
+```
+
+For each cluster, the DE results of the relevant comparisons are consolidated into a single output table.
+This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters.
+Other statistics are also reported for each gene, including the adjusted p-values^[It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance because the clusters have been empirically identified from the data.
+Nonetheless, they can still be used as way to rank 'interesting' genes.] and the log-fold changes relative to every other cluster.
+
+```{r}
+markers_union_any <- findMarkers(
+  sce, 
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "any",
+  direction = "any")
+saveRDS(
+  markers_union_any, 
+  here("data", "marker_genes", "JinNg_xenograft.markers_union_any.rds"),
+  compress = "xz")
+dir.create(here("output", "marker_genes", "union_any"))
+message("Writing 'union_any' marker genes to file.")
+for (n in names(markers_union_any)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output", 
+      "marker_genes", 
+      "union_any",
+      paste0("cluster_", n, ".union_any.csv.gz")),
+    open = "wb")
+  
+  write.table(
+    x = markers_union_any[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"), 
+    file = gzout, 
+    sep = ",", 
+    quote = FALSE, 
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+chosen <- "3"
+interesting <- markers_union_any[[chosen]]
+```
+
+To demonstrate, we use cluster `r chosen` as our cluster of interest for this section.
+The relevant table contains log~2~-fold changes of expression in cluster `r chosen` over each other cluster, along with several statistics obtained by combining $p$-values [@simes1986improved] across the pairwise comparisons involving `r chosen`.
+
+```{r}
+.adf(head(interesting, 10)) %>%
+  tibble::rownames_to_column("Gene") %>%
+  knitr::kable(
+    caption = paste0(
+      "First 10 marker genes for cluster ",
+      chosen,
+      " across comparisons."))
+```
+
+Of particular interest is the `Top` field, which contains the highest rank for each gene across all pairwise comparisons involving cluster `r chosen`.
+The set of genes with `Top` values of 1 contains the gene with the lowest $p$-value from each comparison.
+Similarly, the set of genes with `Top` values less than or equal to 10 contains the top 10 genes from each comparison.
+
+We use the `Top` value to identify a set of genes that is guaranteed to distinguish cluster `r chosen` from any other cluster.
+Figure \@ref(fig:heat-logFC) plots the log-fold changes for the top 10 genes from each pairwise comparison.
+
+```{r heat-logFC, fig.asp = 2, fig.cap = sprintf("Heatmap of log-fold changes for the top 10 marker genes for cluster %s over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen)}
+best_set <- interesting[interesting$Top <= 10, ]
+logFCs <- as.matrix(best_set[, -(1:4)])
+colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
+pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+```
+
+Complementing Figure \@ref(fig:heat-logFC), Figure \@ref(fig:heat-logExp) plots the log-expression values of each cells in each cluster for the top 5 genes
+
+```{r heat-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.9, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster, 
+    sce$facs_gating_redef, 
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "cluster", 
+    "facs_gating_redef",
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-5, 5),
+  show_colnames = FALSE,
+  main = paste0("Cluster: ", chosen),
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    plate_number = plate_number_colours,
+    sequencing_run = sequencing_run_colours),
+  fontsize = 8)
+```
+
+Similar figures showing the top 10 marker genes for each cluster are available in [`output/marker_genes/union_any/heatmaps.union_any.pdf`](../output/marker_genes/union_any/heatmaps.union_any.pdf).
+
+```{r, results = "hide"}
+dev.off() # Needed to ensure next figure saves properly.
+pdf(
+  here(
+    "output",
+    "marker_genes",
+    "union_any",
+    "heatmaps.union_any.pdf"),
+  width = 10,
+  height = 12)
+for (cluster in levels(sce$cluster)) {
+  marker_set <- markers_union_any[[cluster]]
+  best_set <- marker_set[marker_set$Top <= 10, ]
+  
+  plotHeatmap(
+    sce,
+    features = rownames(best_set),
+    columns = order(
+    sce$cluster, 
+    sce$facs_gating_redef, 
+    sce$plate_number,
+    sce$sequencing_run),
+    colour_columns_by = c(
+      "cluster", 
+      "facs_gating_redef", 
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-5, 5),
+    show_colnames = FALSE,
+    main = paste0("Cluster: ", cluster),
+    column_annotation_colors = list(
+        cluster = cluster_colours,
+        facs_gating_redef = facs_gating_redef_colours,
+        plate_number = plate_number_colours,
+        sequencing_run = sequencing_run_colours),
+    fontsize = 8)
+}
+dev.off()
+```
+
+We intentionally use pairwise comparisons between clusters rather than comparing each cluster to the average of all other cells.
+The latter approach is sensitive to the population composition, potentially resulting in wildly different sets of markers when cell type abundances change in different contexts.
+In the worst case, the presence of a single dominant subpopulation will drive the selection of top markers for every other cluster, pushing out useful genes that can resolve the various minor subpopulations.
+Moreover, pairwise comparisons naturally provide more information to interpret of the utility of a marker, e.g., by providing log-fold changes to indicate which clusters are distinguished by this gene.
+
+### Using the log-fold change
+
+The differential expression analysis in [Standard application] considers both up- and down-regulated genes to be potential markers.
+However, down-regulated genes are less appealing as markers as it is more difficult to interpret and experimentally validate an absence of expression.
+To focus on upregulated markers, we can instead perform a one-sided $t$-test to identify genes that are upregulated in each cluster compared to the others.
+
+```{r}
+markers_union_up <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "any",
+  direction = "up")
+saveRDS(
+  markers_union_up, 
+  here("data", "marker_genes", "JinNg_xenograft.markers_union_up.rds"),
+  compress = "xz")
+dir.create(here("output", "marker_genes", "union_up"))
+message("Writing 'union_up' marker genes to file.")
+for (n in names(markers_union_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output", 
+      "marker_genes", 
+      "union_up",
+      paste0("cluster_", n, ".union_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = markers_union_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"), 
+    file = gzout, 
+    sep = ",", 
+    quote = FALSE, 
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+interesting_up <- markers_union_up[[chosen]]
+```
+
+The $t$-test also allows us to specify a non-zero log-fold change as the null hypothesis.
+This allows us to consider the magnitude of the log-fold change in our $p$-value calculations, in a manner that is more rigorous than simply filtering directly on the log-fold changes^[Specifically, a simple threshold does not consider the variance and can enrich for genes that have both large log-fold changes and large variances [@mccarthy2009treat]]. 
+For example, we can test for genes with log-fold changes that are significantly greater than 1.
+
+```{r}
+markers_union_up_lfc1 <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "any",
+  direction = "up",
+  lfc = 1)
+saveRDS(
+  markers_union_up_lfc1, 
+  here("data", "marker_genes", "JinNg_xenograft.markers_union_up_lfc1.rds"),
+  compress = "xz")
+dir.create(here("output", "marker_genes", "union_up_lfc1"))
+message("Writing 'union_up_lfc1' marker genes to file.")
+for (n in names(markers_union_up_lfc1)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output", 
+      "marker_genes", 
+      "union_up_lfc1",
+      paste0("cluster_", n, ".union_up_lfc1.csv.gz")),
+    open = "wb")
+  write.table(
+    x = markers_union_up_lfc1[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"), 
+    file = gzout, 
+    sep = ",", 
+    quote = FALSE, 
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+interesting_up_lfc1 <- markers_union_up_lfc1[[chosen]]
+```
+
+Combining these two settings yield a more focused set of candidate marker genes that are 'upregulated with a log-fold change > 1' in cluster `r chosen` (Figures \@ref(fig:heat-focused-logFC) and \@ref(fig:heat-focused-logExp)).
+
+```{r heat-focused-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.9, layout = "l-body-outset"}
+best_set <- interesting_up_lfc1[interesting_up_lfc1$Top <= 10,]
+logFCs <- as.matrix(best_set[,-(1:4)])
+colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
+pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+```
+
+```{r heat-focused-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change > 1' marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.9, layout = "l-page"}
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster, 
+    sce$facs_gating_redef, 
+    sce$plate_number,
+    sce$sequencing_run),
+  colour_columns_by = c(
+    "cluster", 
+    "facs_gating_redef", 
+    "plate_number",
+    "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-5, 5),
+  show_colnames = FALSE,
+  main = paste0("Cluster: ", chosen),
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    facs_gating_redef = facs_gating_redef_colours,
+    plate_number = plate_number_colours,
+    sequencing_run = sequencing_run_colours),
+  fontsize = 8)
+```
+
+Similar figures showing the top 10 upregulated and 'upregulated with a log-fold change > 1' marker genes for each cluster are available in [`output/marker_genes/union_up/heatmaps.union_up.pdf`](../output/marker_genes/union_up/heatmaps.union_up.pdf). and [`output/marker_genes/union_up_lfc1/heatmaps.union_up_lfc1.pdf`](../output/marker_genes/union_up_lfc1/heatmaps.union_up_lfc1.pdf).
+
+```{r, results = "hide"}
+dev.off() # Needed to ensure next figure saves properly.
+pdf(
+  here(
+    "output",
+    "marker_genes",
+    "union_up",
+    "heatmaps.union_up.pdf"),
+  width = 10,
+  height = 12)
+for (cluster in levels(sce$cluster)) {
+  marker_set <- markers_union_up[[cluster]]
+  best_set <- marker_set[marker_set$Top <= 10, ]
+  
+  plotHeatmap(
+    sce,
+    features = rownames(best_set),
+    columns = order(
+      sce$cluster, 
+      sce$facs_gating_redef, 
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "cluster", 
+      "facs_gating_redef", 
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-5, 5),
+    show_colnames = FALSE,
+    main = paste0("Cluster: ", cluster),
+    column_annotation_colors = list(
+      cluster = cluster_colours,
+      facs_gating_redef = facs_gating_redef_colours,
+      plate_number = plate_number_colours,
+      sequencing_run = sequencing_run_colours),
+    fontsize = 8)
+}
+dev.off()
+pdf(
+  here(
+    "output",
+    "marker_genes",
+    "union_up_lfc1",
+    "heatmaps.union_up_lfc1.pdf"),
+  width = 10,
+  height = 12)
+for (cluster in levels(sce$cluster)) {
+  marker_set <- markers_union_up_lfc1[[cluster]]
+  best_set <- marker_set[marker_set$Top <= 10, ]
+  
+  plotHeatmap(
+    sce,
+    features = rownames(best_set),
+    columns = order(
+      sce$cluster, 
+      sce$facs_gating_redef, 
+      sce$plate_number,
+      sce$sequencing_run),
+    colour_columns_by = c(
+      "cluster",
+      "facs_gating_redef",
+      "plate_number",
+      "sequencing_run"),
+    cluster_cols = FALSE, 
+    center = TRUE,
+    symmetric = TRUE,
+    zlim = c(-5, 5),
+    show_colnames = FALSE,
+    main = paste0("Cluster: ", cluster),
+    column_annotation_colors = list(
+      cluster = cluster_colours,
+      facs_gating_redef = facs_gating_redef_colours,
+      plate_number = plate_number_colours,
+      sequencing_run = sequencing_run_colours),
+    fontsize = 8)
+}
+dev.off()
+```
+
+Of course, this increased stringency is not without cost.
+If only upregulated genes are requested, any cluster defined by down-regulation of a marker gene will not contain that gene among the top set of features in its table.
+This is occasionally relevant for subtypes or other states that are distinguished by high versus low expression of particular genes.
+Similarly, setting an excessively high log-fold change threshold may discard otherwise useful genes.
+For example, a gene upregulated in a small proportion of cells of a cluster will have a small log-fold change but can still be an effective marker if the focus is on specificity rather than sensitivity.
+
+### Finding cluster-specific markers
+
+The genes detected in [Standard application] and [Using the log-fold change] will give a high ranking to genes that are differentially expressed in any pairwise comparison.
+This is because a gene only needs a very low $p$-value in a single pairwise comparison to achieve a low `Top` value.
+A more stringent approach would only consider genes that are differentially expressed in all pairwise comparisons involving the cluster of interest.
+To achieve this, we use an intersection-union test [@berger1996bioequivalence] where the combined $p$-value for each gene is the maximum of the $p$-values from all pairwise comparisons.
+A gene will only achieve a low combined $p$-value if it is strongly DE in all comparisons to other clusters.
+
+```{r}
+markers_uniquely_up <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "all",
+  direction = "up")
+saveRDS(
+  markers_uniquely_up, 
+  here("data", "marker_genes", "JinNg_xenograft.markers_uniquely_up.rds"),
+  compress = "xz")
+dir.create(here("output", "marker_genes", "uniquely_up"))
+message("Writing 'uniquely_up' marker genes to file.")
+for (n in names(markers_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output", 
+      "marker_genes", 
+      "uniquely_up",
+      paste0("cluster_", n, ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = markers_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"), 
+    file = gzout, 
+    sep = ",", 
+    quote = FALSE, 
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+interesting_uniquely_up <- markers_uniquely_up[[chosen]]
+```
+
+This strategy will only report genes that are highly specific to the cluster of interest.
+When it works, it can be highly effective as it generates a small focused set of candidate markers. 
+However, any gene that is expressed at the same level in two or more clusters will simply not be detected. 
+This is likely to discard many interesting genes, especially if the clusters are finely resolved with weak separation.
+To give a concrete example, consider a mixed population of CD4^+^-only, CD8^+^-only, double-positive and double-negative T cells.
+Using this strategy, neither _Cd4_ or _Cd8_ would be detected as subpopulation-specific markers because each gene is expressed in two subpopulations.
+In comparison, the strategy in [Standard application] will detect both of these genes as they will be DE between at least one pair of subpopulations.
+
+Figures \@ref(fig:heat-uniquely-up-logFC) and \@ref(fig:heat-uniquely-up-logExp) show examples of this strategy for cluster `r chosen`.
+
+**NOTE: Due to a bug exists in our function (i.e. `plotHeatmap` from the `scater` package) used for generating the following plots, we currently cannot designate a specific colour to annotate the DE and non-DE genes on the plots. Stemmed from this reason, please proceed with caution and rely only on text in the plot-legend (rather than on colours of the gene annotation bar) to tell whether a gene is DE or not. We already have the bug reported and will have the script updated when this issue is resolved by the developer of the function. Sorry for our inconvenience caused.**
+
+```{r heat-uniquely-up-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), layout="l-body-outset"}
+best_set <- interesting_uniquely_up[1:20, ]
+logFCs <- as.matrix(best_set[, -(1:3)])
+colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
+pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+```
+
+```{r heat-uniquely-up-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.9, layout="l-body-outset"}
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+      sce$cluster, 
+      sce$facs_gating_redef,
+      sce$plate_number,
+      sce$sequencing_run),
+  colour_columns_by = c(
+      "cluster", 
+      "facs_gating_redef", 
+      "plate_number",
+      "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-5, 5),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("No", "Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen),
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+      facs_gating_redef = facs_gating_redef_colours,
+      plate_number = plate_number_colours,
+      sequencing_run = sequencing_run_colours,
+    Sig = c("Yes" = "red", "No" = "lightgrey")),
+  fontsize = 8)
+```
+
+Similar figures showing the top 100 uniquely upregulated marker genes for each cluster are available in [`output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf`](../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf).
+Recall that the stringency of the 'cluster-specific marker' criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all.
+Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. $FDR < 0.05$).
+
+```{r, results = "hide"}
+dev.off() # Needed to ensure next figure saves properly.
+pdf(
+  here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    "heatmaps.uniquely_up.pdf"),
+  width = 10,
+  height = 12)
+for (cluster in levels(sce$cluster)) {
+  marker_set <- markers_uniquely_up[[cluster]]
+  best_set <- marker_set[1:100, ]
+  
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+      sce$cluster,
+      sce$facs_gating_redef, 
+      sce$plate_number,
+      sce$sequencing_run),
+  colour_columns_by = c(
+      "cluster", 
+      "facs_gating_redef", 
+      "plate_number",
+      "sequencing_run"),
+  cluster_cols = FALSE, 
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-5, 5),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("No", "Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", cluster),
+  column_annotation_colors = list(
+     cluster = cluster_colours,
+      facs_gating_redef = facs_gating_redef_colours,
+      plate_number = plate_number_colours,
+     sequencing_run = sequencing_run_colours,
+    Sig = c("Yes" = "red", "No" = "lightgrey")),
+  fontsize = 8)
+}
+```
+
+Finally, a common visualisation of cluster-specific marker genes is in a so-called 'dot plot' or 'bubble plot'.
+In these plots, the size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level.
+
+Figure \@ref(fig:dot-plot) is a dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster.
+
+```{r dot-plot, fig.cap = "Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level", fig.asp = 0.9, layout="l-body-outset"}
+markers <- unlist(lapply(markers_uniquely_up, function(x) head(rownames(x), 3)))
+x <- logcounts(sce)[markers, ]
+y <- do.call(
+  rbind,
+  lapply(levels(sce$cluster), function(cluster) {
+    data.frame(
+      exp = Matrix::rowMeans(x[, sce$cluster == cluster]),
+      frac_exp = 100 * Matrix::rowMeans(x[, sce$cluster == cluster] > 0),
+      cluster = factor(cluster, levels = levels(sce$cluster)),
+      gene = rownames(x),
+      stringsAsFactors = FALSE)
+  })) %>%
+  dplyr::group_by(gene) %>%
+  dplyr::mutate(
+    centered_exp = scale(exp, scale = FALSE),
+    z_scaled_exp = scale(exp)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(gene = factor(gene, levels = markers))
+ggplot(data = y, aes(x = gene, y = cluster)) +
+  geom_point(aes(size = frac_exp, colour = exp)) +
+  scale_colour_viridis_c(
+    option = "plasma", 
+    guide_legend(title = "Average Expression")) +
+  scale_size(guide_legend(title = "Percent Expressed")) +
+  theme_cowplot(font_size = 10) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+As can be seen in Figure \@ref(fig:dot-plot), several of the marker genes are relatively highly expressed across all clusters.
+To compensate for this, Figure \@ref(fig:dot-plot-centered) first centres the average expression level of each gene before visualization.
+
+```{r dot-plot-centered, fig.cap = "Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average (centered) expression level. Each gene (column) is centred by the average expression over all clusters.", fig.asp = 0.9, layout="l-body-outset"}
+# ylim <- c(-max(abs(y$z_scaled_exp)), max(abs(y$z_scaled_exp)))
+# ggplot(data = y, aes(x = gene, y = cluster)) +
+#   geom_point(aes(size = frac_exp, colour = z_scaled_exp)) +
+#   scale_size(guide_legend(title = "Percent Expressed")) +
+#   scale_colour_gradient2(
+#     guide_legend(title = "Centered Average Expression"),
+#     low = "blue3",
+#     mid = "white",
+#     high = "red3",
+#     limits = ylim) + 
+#   cowplot::theme_cowplot(font_size = 8) + 
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+## Summary
+
+The tables of marker genes are available as CSV files in [`output/marker_genes/`](../output/marker_genes/) and are named as follows:
+
+- `union_any`: Marker genes from [Standard application] whereby marker genes are formed from the **union** of genes differentially expressed in **any** direction.
+- `union_up`: Marker genes from [Using the log-fold change] whereby marker genes are formed from the **union** of genes differentially expressed that are **up**regulated.
+- `union_up_lfc1`: Marker genes from [Using the log-fold change] whereby marker genes are formed from the **union** of genes differentially expressed that are **up**regulated with a log-fold change of at least 1 (**lfc1**).
+- `uniquely_up`: Marker genes from [Finding cluster-specific markers] whereby marker genes are cluster-specific (**uniquely**) differentially expressed genes that are **up**regulated.
+
+### Using marker genes to perform cell type annotation
+
+Regardless of the strategy employed, [Standard application], [Using the log-fold change] or [Finding cluster-specific markers], the result is a gene list that needs to be examined to try to identify the cell type.
+As such, they can be analysed like any other gene list, just as you might a list of differentially expressed genes from a bulk RNA-seq experiment.
+
+This includes:
+
+- Staring at heatmaps and spreadsheets, such as those included with this report, and googling some of the more informative genes, such as the cluster-specific marker genes.
+- Gene set enrichment analysis, e.g., using GO or KEGG terms.
+This can require a fair amount of manual work and knowledge of the biological system but is an essential complement to the automated approach to cell type labelling.
+
+
+
+
+
+
+
+
+# Cell cycle assignment
+
+On occasion, it can be desirable to determine cell cycle activity from scRNA-seq data.
+In and of itself, the distribution of cells across phases of the cell cycle is not usually informative, but we can use this to determine if there are differences in cell cycle progression between subpopulations or across treatment conditions.
+Many of the key events in the cell cycle (e.g., passage through checkpoints) are post-translational and thus not directly visible in transcriptomic data; nonetheless, there are enough changes in expression that can be exploited to determine cell cycle phase.
+
+## Using the cyclins
+
+```{r, results = "hide"}
+# cyclin_genes <- grep("^CCN[ABDE][0-9]$", rowData(sce)$ENSEMBL.SYMBOL)
+# cyclin_genes <- rownames(sce)[cyclin_genes]
+# cyclin_genes
+# NOTE: temporary measure for extracting the cyclin genes
+cyclin_genes <- rownames(sce)[c(grep("^CCN[ABDE][0-9]$", rownames(sce)))]
+cyclin_genes
+```
+
+The cyclins control progression through the cell cycle and have well-characterized patterns of expression across cell cycle phases.
+The cyclins available in this dataset are as follows: `r glue::glue_collapse(cyclin_genes, ", ", last = ", and ")`.
+Cyclin D is expressed throughout but peaks at G1; cyclin E is expressed highest in the G1/S transition; cyclin A is expressed across S and G2; and cyclin B is expressed highest in late G2 and mitosis.
+Inspection of the relative expression of cyclins across the population can often be sufficient to determine the relative cell cycle activity in each cluster.
+
+Figure \@ref(fig:cyclin-heatmap) shows the expression of the cyclin genes in the dataset.
+We see, for example, that *cyclin A2, B1, and B2* are more highly expressed in *cluster 4*, implying cells are likely spanning around *S,late G2 and mitosis phases*. 
+
+```{r cyclin-heatmap, fig.cap = "Heatmap of the log-normalized expression values of the cyclin genes in the dataset."}
+plotHeatmap(
+  sce,
+  colour_columns_by = "cluster",
+  cluster_cols = FALSE, 
+  columns = order(sce$cluster),
+  cluster_rows = FALSE, 
+  features = sort(cyclin_genes),
+  column_annotation_colors = list(cluster = cluster_colours),
+  show_colnames = FALSE,
+  zlim = c(0, 4),
+  color = viridisLite::viridis(101, option = "inferno"))
+```
+
+We can also use standard differential expression methods to look for upregulation of each cyclin, allowing us to determine if there are more cells in the corresponding phase of the cell cycle between subpopulations.
+
+```{r}
+markers <- findMarkers(
+  sce,
+  subset.row = cyclin_genes, 
+  groups = sce$cluster,
+  test.type = "wilcox", 
+  direction = "up", 
+  block = sce$plate_number)
+```
+
+Here we use pairwise Wilcoxon rank sum tests to compute differential expression of cyclin genes between each pair of clusters.
+The Wilcoxon test estimates effect sizes as the area under the curve (`AUC` in the tables below).
+Consider the distribution of expression values for gene $X$ within each of two groups $A$ and $B$.
+The `AUC` is the probability that a randomly selected cell in $A$ has a greater expression of $X$ than a randomly selected cell in $B$^[Ties are assumed to be randomly broken].
+Concordance probabilities near 0 indicate that most observations in $A$ are lower than most observations in $B$; conversely, probabilities near 1 indicate that most observations in $A$ are higher than those in $B$.
+The Wilcoxon rank sum test effectively tests for significant deviations from an `AUC` of 0.5.
+
+```{r}
+knitr::kable(
+  .adf(markers[[4]]),
+  caption = "Cyclin DE analysis comparing cluster 4 to all other clusters.",
+  digits = 3)
+```
+
+Direct examination of cyclin expression is easily understood, interpreted and validated with other technologies.
+However, it is best suited for statements about relative cell cycle activity; for example, we would find it difficult to assign cell cycle phase in Figure \@ref(fig:cyclin-heatmap) without the presence of clusters spanning all phases to provide benchmarks for "high" and "low" expression of each cyclin.
+We also assume that cyclin expression is not affected by biological processes other than the cell cycle, which may be a strong assumption in some cases, e.g., malignant cells.
+
+
+
+
+
+
+# Concluding remarks
+
+```{r}
+saveRDS(
+  sce,
+  here("data", "SCEs", "JinNg.xenograft_annotate.SCE.rds"),
+  compress = "xz")
+```
+
+The processed *SingleCellExperiment* object is available (see [`data/SCEs/JinNg.xenograft_annotate.SCE.rds`](../data/SCEs/JinNg.xenograft_annotate.SCE.rds)).
+This will be used in downstream analyses, e.g., differential expression analysis between conditions within each cluster and differential abundance analyses between conditions for each cluster.
+
+# Additional information {.appendix}
+
+The following are available on request:
+
+- Full CSV tables of any data presented.
+- PDF/PNG files of any static plots.
+
+# Session info {.appendix}
+
+The analysis and this document were prepared using the following software:
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
+
+```{r}
+sessioninfo::session_info()
+```
+
+</details>
