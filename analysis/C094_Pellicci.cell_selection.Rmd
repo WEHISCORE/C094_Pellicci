@@ -910,30 +910,14 @@ reducedDim(sce3, "corrected_3") <- reducedDim(mnn_out_3, "corrected")
 # generate UMAP
 set.seed(1248)
 sce3 <- runUMAP(sce3, dimred = "corrected_1", name = "UMAP_corrected_1")
-corrected_umap_1 <- cbind(
-  data.frame(
-    x = reducedDim(sce3, "UMAP_corrected_1")[, 1],
-    y = reducedDim(sce3, "UMAP_corrected_1")[, 2]),
-  as.data.frame(colData(sce3)))
-
 set.seed(1248)
 sce3 <- runUMAP(sce3, dimred = "corrected_2", name = "UMAP_corrected_2")
-corrected_umap_2 <- cbind(
-  data.frame(
-    x = reducedDim(sce3, "UMAP_corrected_2")[, 1],
-    y = reducedDim(sce3, "UMAP_corrected_2")[, 2]),
-  as.data.frame(colData(sce3)))
-
 set.seed(1248)
 sce3 <- runUMAP(sce3, dimred = "corrected_3", name = "UMAP_corrected_3")
-corrected_umap_3 <- cbind(
-  data.frame(
-    x = reducedDim(sce3, "UMAP_corrected_3")[, 1],
-    y = reducedDim(sce3, "UMAP_corrected_3")[, 2]),
-  as.data.frame(colData(sce3)))
 
 # re-clustering after each MNN correction
 set.seed(4759)
+
 snn_gr_1 <- buildSNNGraph(sce3, use.dimred = "corrected_1")
 clusters_1 <- igraph::cluster_louvain(snn_gr_1)
 sce3$cluster_1 <- factor(clusters_1$membership)
@@ -942,7 +926,6 @@ cluster_colours_1 <- setNames(
   levels(sce3$cluster_1))
 sce3$colours$cluster_colours_1 <- cluster_colours_1[sce3$cluster_1]
 
-set.seed(4759)
 snn_gr_2 <- buildSNNGraph(sce3, use.dimred = "corrected_2")
 clusters_2 <- igraph::cluster_louvain(snn_gr_2)
 sce3$cluster_2 <- factor(clusters_2$membership)
@@ -951,7 +934,6 @@ cluster_colours_2 <- setNames(
   levels(sce3$cluster_2))
 sce3$colours$cluster_colours_2 <- cluster_colours_2[sce3$cluster_2]
 
-set.seed(4759)
 snn_gr_3 <- buildSNNGraph(sce3, use.dimred = "corrected_3")
 clusters_3 <- igraph::cluster_louvain(snn_gr_3)
 sce3$cluster_3 <- factor(clusters_3$membership)
@@ -1172,54 +1154,26 @@ sce$cluster_colours <- cluster_colours[sce$cluster]
 To sumup, there are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-cell-selected-merged) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-cell-selected-merged).
 
 ```{r clusterplot-umap-cell-selected-merged, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
-p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = cluster), size = 0.25) +
-  scale_colour_manual(values = cluster_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
 
-p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = sample_type), size = 0.25) +
-  scale_colour_manual(values = sample_type_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample_type", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_type_colours, name = "sample_type")
 
-p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = sample_name), size = 0.25) +
-  scale_colour_manual(values = sample_name_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
 
-p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = post_hoc_sample_gate), size = 0.25) +
-  scale_colour_manual(values = sample_gate_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
 
-p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = plate_number), size = 0.25) +
-  scale_colour_manual(values = plate_number_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
 
-p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = tissue), size = 0.25) +
-  scale_colour_manual(values = tissue_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
 
-p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = donor), size = 0.25) +
-  scale_colour_manual(values = donor_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p7 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
 
 (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
 ```

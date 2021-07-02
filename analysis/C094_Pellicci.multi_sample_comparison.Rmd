@@ -38,7 +38,7 @@ This provides more biological insight than conventional scRNA-seq experiments in
 Differential analyses of multi-condition scRNA-seq experiments can be broadly split into two categories - differential expression (DE) and differential abundance (DA) analyses.
 The former tests for changes in expression between conditions for cells of the same type that are present in both conditions, while the latter tests for changes in the composition of cell types (or states, etc.) between conditions.
 
-**TODO: double check if I understand the comparisons above correctly**
+**TODO: double check if I understand the comparisons above correctly ^^^ **
 
 For this experiment, we are interested in identifying differences between:
 1) `thymus` cells sorted from different `post_hoc_sample_gate` (`P6`, `P7`, `P8`);
@@ -62,15 +62,19 @@ sce$post_hoc_sample_gate <- relevel(sce$post_hoc_sample_gate, "P6")
 sce$tissue <- relevel(sce$tissue, "Thymus")
 ```
 
-**TODO: check if `sample` should be set like this instead (i.e. block on `donor` as well) ?**
-**sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$donor, ".", sce$post_hoc_sample_gate))**
-**but based on Dan's description, we should not be interested in the difference between `donor`, thus the above is sufficient !?**
+**TODO: check if `sample` below was set correctly? **
+**but based on Dan's description, we should not be interested in the difference between `donor`, thus, set like this :**
+**sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$post_hoc_sample_gate))**
+
 
 **or based on Dan's target, I should group `tissue` and `post_hoc_sample_gate` to get `sample` like `Thymus.P6`**
 
 ```{r}
 # Define what constitutes a sample (i.e. replicate) in this experiment.
-sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$post_hoc_sample_gate))
+sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$donor, ".", sce$post_hoc_sample_gate))
+
+# Define groups that are to be compared
+sce$group <- factor(paste0(sce$tissue, ".", sce$post_hoc_sample_gate))
 ```
 
 ```{r}
@@ -93,11 +97,11 @@ tissue_colours <- setNames(
 donor_colours <- setNames(
   unique(sce$colours$donor_colours),
   unique(names(sce$colours$donor_colours)))
-# set sample colour
-sample_colours <- setNames(
-  Polychrome::palette36.colors(nlevels(sce$sample)),
-  levels(sce$sample))
-sce$colours$sample_colours <- sample_colours[sce$sample]
+# set group colour
+group_colours <- setNames(
+  Polychrome::kelly.colors(nlevels(sce$group)+1)[-1],
+  levels(sce$group))
+sce$colours$group_colours <- group_colours[sce$group]
 # set cluster colour
 cluster_colours <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
@@ -106,7 +110,7 @@ sce$colours$cluster_colours <- cluster_colours[sce$cluster]
 # set label colour
 sce$label <- factor(
   paste0("cluster_", sce$cluster),
-  levels = paste0("cluster_", 1:4))
+  levels = paste0("cluster_", sort(levels(sce$cluster))))
 label_colours <- setNames(
   cluster_colours, 
   paste0("cluster_", names(cluster_colours)))
@@ -127,7 +131,7 @@ pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
-```{r barplot-by-plate, fig.cap = "Breakdown of experiment by plate."}
+```{r barplot-by-plate, fig.cap = "Breakdown of experiment by plate.", fig.asp = 1}
 p1 <- ggcells(sce) + 
   geom_bar(
     aes(x = plate_number, fill = tissue),
@@ -175,12 +179,12 @@ p5 <- ggcells(sce) +
 
 p6 <- ggcells(sce) + 
   geom_bar(
-    aes(x = plate_number, fill = sample),
+    aes(x = plate_number, fill = group),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Number of samples") +
   theme_cowplot(font_size = 9) +
-  scale_fill_manual(values = sample_colours)
+  scale_fill_manual(values = group_colours)
 
 p1 + p2 + p3 + p4 + p5 + p6 +
   plot_layout(ncol = 2, guides = "collect")
@@ -188,14 +192,14 @@ p1 + p2 + p3 + p4 + p5 + p6 +
 
 Figure \@ref(fig:collabels-umap) shows the cell labels.
 
-```{r collabels-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 0.8}
+```{r collabels-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 0.5}
 plotReducedDim(sce, dimred = "UMAP_corrected", colour_by = "label") + 
   scale_fill_manual(values = label_colours, name = "label")
 ```
 
 Figure \@ref(fig:collabels-barplot) breaks down the cell labels by key experimental factors.
 
-```{r collabels-barplot, fig.asp = 1 / 2, fig.cap = "Breakdown of cell labels by experimental factors."}
+```{r collabels-barplot, fig.asp = 1, fig.cap = "Breakdown of cell labels by experimental factors."}
 p1 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
     aes(x = label, fill = plate_number),
@@ -234,11 +238,11 @@ p4 <- ggplot(as.data.frame(colData(sce))) +
 
 p5 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
-    aes(x = label, fill = sample),
+    aes(x = label, fill = group),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
-  scale_fill_manual(values = sample_colours) +
+  scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
 
 p6 <- ggplot(as.data.frame(colData(sce))) +  
@@ -273,7 +277,7 @@ This leverages the resolution offered by single-cell technologies to define the 
 
 ```{r}
 # Define colData columns to be kept for pseudo-bulked data.
-columns_to_keep <- c("plate_number", "tissue", "donor", "post_hoc_sample_gate")
+columns_to_keep <- c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group")
 summed <- aggregateAcrossCells(
   sce,
   id = colData(sce)[, c("label", "sample", columns_to_keep)],
@@ -352,11 +356,18 @@ As noted in [Setting up the data], we start by using the aggregated cluster labe
 **TODO: check with Pete, if I setting this up right, i.e. block on `plate_number`, then test on variation of `tissue` and of `post_hoc_sample_gate`**
 
 ```{r}
+# # Pulling out a sample-level 'targets' data.frame.
+# targets <- colData(summed)[!duplicated(summed$sample),]
+# # Constructing the design matrix.
+# design <- model.matrix(~plate_number + tissue + donor + post_hoc_sample_gate, targets)
+# colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate", "", colnames(design))
+# rownames(design) <- targets$sample
+
 # Pulling out a sample-level 'targets' data.frame.
 targets <- colData(summed)[!duplicated(summed$sample),]
 # Constructing the design matrix.
-design <- model.matrix(~plate_number + tissue + post_hoc_sample_gate, targets)
-colnames(design) <- sub("plate\\_number|tissue|post\\hoc\\sample\\gate", "", colnames(design))
+design <- model.matrix(~plate_number + group, targets)
+colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate|group", "", colnames(design))
 rownames(design) <- targets$sample
 ```
 
@@ -381,15 +392,32 @@ The single-cell data are plotted per sample using abbreviated sample labels, e.g
 Note that the DEG list spreadsheets contain all labels and genes whereas the Glimma plots only contain labels and genes actually tested for DE. The column names in the Glimma tables may be abbreviated.
 </aside>
 
-### `Thymus P7` vs. `Thymus P6`
+### `Thymus.P6` vs. `Thymus.P7`
 
 **check with Pete, is it: A vs B, B vs C, C vs A, but do I need the reverse order, B vs A, C vs B, A vs C ???**
 
 ```{r}
-gate <- c("P7", "P6")
+group <- c("Thymus.P6", "Thymus.P7")
 ```
 
-**check: do I need to compare between the actual `post_hoc_facs_gate` or segregate of cells based on `cluster/label` ???**
+
+
+
+
+
+
+
+```{r}
+knitr::knit_exit()
+```
+
+
+
+
+
+
+
+**check: why do I keep getting error when "rownames(design) == levels(summed_filt$sample == 90 (?)**
 
 ```{r}
 de_results <- pseudoBulkDGE(
@@ -397,9 +425,23 @@ de_results <- pseudoBulkDGE(
   sample = summed_filt$sample,
   label = summed_filt$label,
   design = design,
-  coef = gate[1],
-  condition = summed_filt$gate)
+  coef = group[1],
+  condition = summed_filt$group)
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 all_features <- lapply(
@@ -409,18 +451,6 @@ features <- unique(unlist(all_features))
 # Need at least 2 features to make a heatmap.
 stopifnot(length(features) < 2)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
 
 The following table gives the number of DEGs at a FDR of `r scales::percent(fdr)` for each label.
 
@@ -761,7 +791,7 @@ knitr::kable(
   fig.cap = "Number of cells assigned to each label from each sample.")
 ```
 
-```{r collabels-barplot-by-plate, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
+```{r collabels-barplot-by-plate-1, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
 p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = tissue)) + 
   geom_bar(position = position_fill(reverse = TRUE)) +
   coord_flip() +
@@ -798,7 +828,7 @@ knitr::kable(
   fig.cap = "Number of cells assigned to each label from each sample.")
 ```
 
-```{r collabels-barplot-by-plate, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
+```{r collabels-barplot-by-plate-2, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
 p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = post_hoc_sample_gate)) + 
   geom_bar(position = position_fill(reverse = TRUE)) +
   coord_flip() +

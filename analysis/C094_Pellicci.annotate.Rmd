@@ -152,54 +152,26 @@ There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Fig
 A sensible partitioning was confirmed to be generated.
 
 ```{r clusterplot-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
-p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = cluster), size = 0.25) +
-  scale_colour_manual(values = cluster_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
 
-p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = sample_type), size = 0.25) +
-  scale_colour_manual(values = sample_type_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample_type", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_type_colours, name = "sample_type")
 
-p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = sample_name), size = 0.25) +
-  scale_colour_manual(values = sample_name_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample_name", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_name_colours, name = "sample_name")
 
-p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = post_hoc_sample_gate), size = 0.25) +
-  scale_colour_manual(values = sample_gate_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "post_hoc_sample_gate", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = sample_gate_colours, name = "post_hoc_sample_gate")
 
-p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = plate_number), size = 0.25) +
-  scale_colour_manual(values = plate_number_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
 
-p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = tissue), size = 0.25) +
-  scale_colour_manual(values = tissue_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
 
-p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = donor), size = 0.25) +
-  scale_colour_manual(values = donor_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
+p7 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
 
 (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
 ```
