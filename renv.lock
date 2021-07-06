@@ -137,6 +137,12 @@
       "Source": "Bioconductor",
       "Hash": "1a9c016231c53483de05bec235ff8bfd"
     },
+    "ExperimentHub": {
+      "Package": "ExperimentHub",
+      "Version": "1.16.1",
+      "Source": "Bioconductor",
+      "Hash": "67bd9bb371676927c2d3ae1bb7991090"
+    },
     "FNN": {
       "Package": "FNN",
       "Version": "1.1.3",
@@ -533,6 +539,12 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "25da2c6fba6a13b5da94e37acdb3f532"
+    },
+    "celldex": {
+      "Package": "celldex",
+      "Version": "1.0.0",
+      "Source": "Bioconductor",
+      "Hash": "1bed4a4c05354e8620e0bf813c1fbb96"
     },
     "cellranger": {
       "Package": "cellranger",
