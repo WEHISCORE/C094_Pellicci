@@ -23,8 +23,8 @@ navbar:
           href: C094_Pellicci.mini-bulk.multi-sample_comparisons.html
     - text: "Supplementary files"
       menu:
-        - text: "CellRanger reports"
-          href: ../output/CellRanger/
+        - text: "scPipe reports"
+          href: ../output/scPipe/
         - text: "Differentially expressed genes"
           href: ../output/DEGs/
         - text: "Glimma plots"
