@@ -86,7 +86,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 </style>
 
   <!--radix_placeholder_meta_tags-->
-  <title>C094: Annotating Pellicci gamma-delta T-cell dataset</title>
+  <title>C094: Annotating Pellicci gamma-delta T-cell single-cell dataset</title>
 
 
 
@@ -96,14 +96,14 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <meta name="article:author" content="William Ho"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
-  <meta property="og:title" content="C094: Annotating Pellicci gamma-delta T-cell dataset"/>
+  <meta property="og:title" content="C094: Annotating Pellicci gamma-delta T-cell single-cell dataset"/>
   <meta property="og:type" content="article"/>
   <meta property="og:locale" content="en_US"/>
   <meta property="og:site_name" content="C094"/>
 
   <!--  https://dev.twitter.com/cards/types/summary -->
   <meta property="twitter:card" content="summary"/>
-  <meta property="twitter:title" content="C094: Annotating Pellicci gamma-delta T-cell dataset"/>
+  <meta property="twitter:title" content="C094: Annotating Pellicci gamma-delta T-cell single-cell dataset"/>
 
   <!--/radix_placeholder_meta_tags-->
   
@@ -113,7 +113,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Annotating Pellicci gamma-delta T-cell dataset"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-07-07"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Annotating Pellicci gamma-delta T-cell single-cell dataset"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-07-07"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2058,7 +2058,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Annotating Pellicci gamma-delta T-cell dataset","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-07-07T00:00:00.000+10:00","citationText":"Ho, 2021"}
+{"title":"Annotating Pellicci gamma-delta T-cell single-cell dataset","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-07-07T00:00:00.000+10:00","citationText":"Ho, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2079,8 +2079,26 @@ Preprocessing
 <a href="C094_Pellicci.mini-bulk.preprocess.html">Mini bulk</a>
 </div>
 </div>
-<a href="C094_Pellicci.cell_selection.html">Selecting biologically relevant cells</a>
-<a href="C094_Pellicci.annotate.html">Annotating cells</a>
+<div class="nav-dropdown">
+<button class="nav-dropbtn">
+Selecting biologically relevant cells
+ 
+<span class="down-arrow">&#x25BE;</span>
+</button>
+<div class="nav-dropdown-content">
+<a href="C094_Pellicci.single-cell.cell_selection.html">Single cell</a>
+</div>
+</div>
+<div class="nav-dropdown">
+<button class="nav-dropbtn">
+Annotating cells
+ 
+<span class="down-arrow">&#x25BE;</span>
+</button>
+<div class="nav-dropdown-content">
+<a href="C094_Pellicci.single-cell.annotate.html">Single cell</a>
+</div>
+</div>
 <div class="nav-dropdown">
 <button class="nav-dropbtn">
 Differential analyses
@@ -2118,7 +2136,7 @@ Supplementary files
 <!--/radix_placeholder_site_before_body-->
 
 <div class="d-title">
-<h1>Annotating Pellicci gamma-delta T-cell dataset</h1>
+<h1>Annotating Pellicci gamma-delta T-cell single-cell dataset</h1>
 <!--radix_placeholder_categories-->
 <!--/radix_placeholder_categories-->
 
@@ -2188,7 +2206,7 @@ Show code
 <span class='co'># NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.</span>
 <span class='fu'><a href='https://rdrr.io/r/base/options.html'>options</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.info.html'>Sys.info</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>[[</span><span class='st'>"nodename"</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>==</span> <span class='st'>"PC1331"</span>, <span class='fl'>2L</span>, <span class='fl'>8L</span><span class='op'>)</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/pkg/BiocParallel/man/register.html'>register</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/pkg/BiocParallel/man/MulticoreParam-class.html'>MulticoreParam</a></span><span class='op'>(</span>workers <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-<span class='fu'>knitr</span><span class='fu'>::</span><span class='va'><a href='https://rdrr.io/pkg/knitr/man/opts_chunk.html'>opts_chunk</a></span><span class='op'>$</span><span class='fu'>set</span><span class='op'>(</span>fig.path <span class='op'>=</span> <span class='st'>"C094_Pellicci.annotate_files/"</span><span class='op'>)</span>
+<span class='fu'>knitr</span><span class='fu'>::</span><span class='va'><a href='https://rdrr.io/pkg/knitr/man/opts_chunk.html'>opts_chunk</a></span><span class='op'>$</span><span class='fu'>set</span><span class='op'>(</span>fig.path <span class='op'>=</span> <span class='st'>"C094_Pellicci.single-cell.annotate_files/"</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
@@ -2485,7 +2503,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-logFC"></span>
-<img src="C094_Pellicci.annotate_files/heat-logFC-1.png" alt="Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-logFC-1.png" alt="Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
 <p class="caption">
 Figure 1: Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
 </p>
@@ -2534,7 +2552,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-logExp"></span>
-<img src="C094_Pellicci.annotate_files/heat-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
 <p class="caption">
 Figure 2: Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
 </p>
@@ -2724,7 +2742,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-focused-logFC"></span>
-<img src="C094_Pellicci.annotate_files/heat-focused-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
 <p class="caption">
 Figure 3: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.
 </p>
@@ -2772,7 +2790,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-focused-logExp"></span>
-<img src="C094_Pellicci.annotate_files/heat-focused-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change &gt; 1' marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change &gt; 1' marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
 <p class="caption">
 Figure 4: Heatmap of log-expression values in each sample for the top 10 ‘upregulated with a log-fold change &gt; 1’ marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
 </p>
@@ -2954,7 +2972,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logFC"></span>
-<img src="C094_Pellicci.annotate_files/heat-uniquely-up-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
 <p class="caption">
 Figure 5: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.
 </p>
@@ -3008,7 +3026,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp"></span>
-<img src="C094_Pellicci.annotate_files/heat-uniquely-up-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
 <p class="caption">
 Figure 6: Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
 </p>
@@ -3115,7 +3133,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:dot-plot"></span>
-<img src="C094_Pellicci.annotate_files/dot-plot-1.png" alt="Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level" width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/dot-plot-1.png" alt="Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level" width="624" />
 <p class="caption">
 Figure 7: Dot plot of the top-3 ‘uniquely up-regulated’ marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level
 </p>
@@ -3144,7 +3162,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:dot-plot-centered"></span>
-<img src="C094_Pellicci.annotate_files/dot-plot-centered-1.png" alt="Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average (centered) expression level. Each gene (column) is centred by the average expression over all clusters." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/dot-plot-centered-1.png" alt="Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average (centered) expression level. Each gene (column) is centred by the average expression over all clusters." width="624" />
 <p class="caption">
 Figure 8: Dot plot of the top-3 ‘uniquely up-regulated’ marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average (centered) expression level. Each gene (column) is centred by the average expression over all clusters.
 </p>
@@ -3203,7 +3221,7 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:cyclin-heatmap"></span>
-<img src="C094_Pellicci.annotate_files/cyclin-heatmap-1.png" alt="Heatmap of the log-normalized expression values of the cyclin genes in the dataset." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/cyclin-heatmap-1.png" alt="Heatmap of the log-normalized expression values of the cyclin genes in the dataset." width="624" />
 <p class="caption">
 Figure 9: Heatmap of the log-normalized expression values of the cyclin genes in the dataset.
 </p>
