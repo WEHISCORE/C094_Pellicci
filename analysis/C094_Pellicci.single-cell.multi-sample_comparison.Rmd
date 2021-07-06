@@ -1,5 +1,5 @@
 ---
-title: "Multi-sample comparisons with the Pellicci gamma-delta T-cell dataset"
+title: "Multi-sample comparisons with the Pellicci gamma-delta T-cell single-cell dataset"
 description: |
 author:
   - name: William Ho
@@ -26,7 +26,7 @@ source(here("code", "helper_functions.R"))
 # NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
 register(MulticoreParam(workers = getOption("mc.cores")))
-knitr::opts_chunk$set(fig.path = "C094_Pellicci_multi-sample_comparisons_files/")
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.multi-sample_comparisons_files/")
 ```
 
 # Motivation
@@ -41,7 +41,7 @@ The former tests for changes in expression between conditions for cells of the s
 **TODO: double check if I understand the comparisons above correctly ^^^ **
 
 For this experiment, we are interested in identifying differences between:
-1) `thymus` cells sorted from different `post_hoc_sample_gate` (`P6`, `P7`, `P8`);
+1) `thymus` cells sorted from different `stage` (`P6`, `P7`, `P8`);
 2) `thymus` cells in `P8` vs `blood` cells in `P8`
 We are not interested in the differences due to `plate_number` (or `donor`) so we will block on these variables where possible.
 
@@ -50,63 +50,65 @@ We are not interested in the differences due to `plate_number` (or `donor`) so w
 We start from the preprocessed *SingleCellExperiment* object created in ['Annotating Pellicci gamma-delta T-cell dataset'](C094_Pellicci.annotate.html).
 
 ```{r}
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci_annotate.SCE.rds"))
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"))
 ```
 
 ```{r}
 # remove cells labelled as `P5` (as Dan suggested) to facilitate DE analysis
-sce <- sce[,sce$post_hoc_sample_gate !="P5"]
+sce <- sce[,sce$stage !="P5"]
 colData(sce) <- droplevels(colData(sce))
 # Re-level to set the baseline.
-sce$post_hoc_sample_gate <- relevel(sce$post_hoc_sample_gate, "P6")
+sce$stage <- relevel(sce$stage, "P6")
 sce$tissue <- relevel(sce$tissue, "Thymus")
 ```
 
 **TODO: check if `sample` below was set correctly? **
 **but based on Dan's description, we should not be interested in the difference between `donor`, thus, set like this :**
-**sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$post_hoc_sample_gate))**
+**sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$stage))**
 
 
-**or based on Dan's target, I should group `tissue` and `post_hoc_sample_gate` to get `sample` like `Thymus.P6`**
+**or based on Dan's target, I should group `tissue` and `stage` to get `sample` like `Thymus.P6`**
 
 ```{r}
 # Define what constitutes a sample (i.e. replicate) in this experiment.
-sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$donor, ".", sce$post_hoc_sample_gate))
+sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$donor, ".", sce$stage))
 
 # Define groups that are to be compared
-sce$group <- factor(paste0(sce$tissue, ".", sce$post_hoc_sample_gate))
+sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
 ```
 
 ```{r}
 # Some useful colours
-sample_type_colours <- setNames(
-  unique(sce$colours$sample_type_colours),
-  unique(names(sce$colours$sample_type_colours)))
-sample_name_colours <- setNames(
-  unique(sce$colours$sample_name_colours),
-  unique(names(sce$colours$sample_name_colours)))
-sample_gate_colours <- setNames(
-  unique(sce$colours$sample_gate_colours),
-  unique(names(sce$colours$sample_gate_colours)))
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
   unique(names(sce$colours$plate_number_colours)))
+plate_number_colours <- plate_number_colours[levels(sce$plate_number)]
 tissue_colours <- setNames(
   unique(sce$colours$tissue_colours),
   unique(names(sce$colours$tissue_colours)))
+tissue_colours <- tissue_colours[levels(sce$tissue)]
 donor_colours <- setNames(
   unique(sce$colours$donor_colours),
   unique(names(sce$colours$donor_colours)))
+donor_colours <- donor_colours[levels(sce$donor)]
+sample_colours <- setNames(
+  unique(sce$colours$sample_colours),
+  unique(names(sce$colours$sample_colours)))
+sample_colours <- sample_colours[levels(sce$sample)]
+stage_colours <- setNames(
+  unique(sce$colours$stage_colours),
+  unique(names(sce$colours$stage_colours)))
+stage_colours <- stage_colours[levels(sce$stage)]
+cluster_colours <- setNames(
+  unique(sce$colours$cluster_colours),
+  unique(names(sce$colours$cluster_colours)))
+cluster_colours <- cluster_colours[levels(sce$cluster)]
+
 # set group colour
 group_colours <- setNames(
   Polychrome::kelly.colors(nlevels(sce$group)+1)[-1],
   levels(sce$group))
 sce$colours$group_colours <- group_colours[sce$group]
-# set cluster colour
-cluster_colours <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
-  levels(sce$cluster))
-sce$colours$cluster_colours <- cluster_colours[sce$cluster]
 # set label colour
 sce$label <- factor(
   paste0("cluster_", sce$cluster),
@@ -143,16 +145,16 @@ p1 <- ggcells(sce) +
 
 p2 <- ggcells(sce) + 
   geom_bar(
-    aes(x = plate_number, fill = sample_name),
+    aes(x = plate_number, fill = sample),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
-  scale_fill_manual(values = sample_name_colours)
+  scale_fill_manual(values = sample_colours)
 
 p3 <- ggcells(sce) + 
   geom_bar(
-    aes(x = plate_number, fill = post_hoc_sample_gate),
+    aes(x = plate_number, fill = stage),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
@@ -220,11 +222,11 @@ p2 <- ggplot(as.data.frame(colData(sce))) +
 
 p3 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
-    aes(x = label, fill = sample_name),
+    aes(x = label, fill = sample),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
-  scale_fill_manual(values = sample_name_colours) +
+  scale_fill_manual(values = sample_colours) +
   theme_cowplot(font_size = 8)
 
 p4 <- ggplot(as.data.frame(colData(sce))) + 
@@ -273,11 +275,11 @@ This leverages the resolution offered by single-cell technologies to define the 
 
 **TODO: check with Pete and see if these are the right columns selected for `columns_to_keep` (for me, `sample` already consist of everything**
 
-**TODO: which value should be put in `design`?? `post_hoc_sample_gate` or `tissue` ?**
+**TODO: which value should be put in `design`?? `stage` or `tissue` ?**
 
 ```{r}
 # Define colData columns to be kept for pseudo-bulked data.
-columns_to_keep <- c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group")
+columns_to_keep <- c("plate_number", "tissue", "donor", "stage", "group")
 summed <- aggregateAcrossCells(
   sce,
   id = colData(sce)[, c("label", "sample", columns_to_keep)],
@@ -291,7 +293,7 @@ assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
   assay(summed, "logCPM"), 
   batch = summed$plate_number,
-  design = model.matrix(~post_hoc_sample_gate, colData(summed)))
+  design = model.matrix(~stage, colData(summed)))
 ```
 
 At this point, it is worth reflecting on the motivations behind the use of pseudo-bulking:
@@ -353,13 +355,13 @@ DEGs are defined as those with non-zero log-fold changes at a false discovery ra
 
 As noted in [Setting up the data], we start by using the aggregated cluster labels as the cell labels.
 
-**TODO: check with Pete, if I setting this up right, i.e. block on `plate_number`, then test on variation of `tissue` and of `post_hoc_sample_gate`**
+**TODO: check with Pete, if I setting this up right, i.e. block on `plate_number`, then test on variation of `tissue` and of `stage`**
 
 ```{r}
 # # Pulling out a sample-level 'targets' data.frame.
 # targets <- colData(summed)[!duplicated(summed$sample),]
 # # Constructing the design matrix.
-# design <- model.matrix(~plate_number + tissue + donor + post_hoc_sample_gate, targets)
+# design <- model.matrix(~plate_number + tissue + donor + stage, targets)
 # colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate", "", colnames(design))
 # rownames(design) <- targets$sample
 
@@ -371,7 +373,7 @@ colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate|gro
 rownames(design) <- targets$sample
 ```
 
-Now that we have laid out the theory underlying the DE analysis, we repeat this process for each of the labels to identify *`tissue-` or `post_hoc_sample_gate` associated* DE in each cell type.
+Now that we have laid out the theory underlying the DE analysis, we repeat this process for each of the labels to identify *`tissue-` or `stage` associated* DE in each cell type.
 To prepare for this, we filter out all sample-label combinations with insufficient cells.
 
 ```{r}
@@ -510,7 +512,7 @@ metadata(de_results)
 summed <- aggregateAcrossCells(
   sce,
   # columns_to_keep
-  id=colData(sce)[,c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group", "sample")],
+  id=colData(sce)[,c("plate_number", "tissue", "donor", "stage", "group", "sample")],
   coldata.merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
@@ -599,7 +601,7 @@ knitr::kable(
 summed <- aggregateAcrossCells(
   sce,
   # columns_to_keep
-  id=colData(sce)[,c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group", "sample", "cluster")],
+  id=colData(sce)[,c("plate_number", "tissue", "donor", "stage", "group", "sample", "cluster")],
   coldata.merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
@@ -652,7 +654,7 @@ metadata(de_results)
 summed <- aggregateAcrossCells(
   sce,
   # columns_to_keep
-  id=colData(sce)[,c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group", "sample", "cluster")],
+  id=colData(sce)[,c("plate_number", "tissue", "donor", "stage", "group", "sample", "cluster")],
   coldata.merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
@@ -707,10 +709,10 @@ metadata(de_results)
 
 
 
-design <- model.matrix(~plate_number + tissue + post_hoc_sample_gate, targets)
+design <- model.matrix(~plate_number + tissue + stage, targets)
 
 ```{r}
-post_hoc_sample_gate <- c("post_hoc_sample_gateP7", "post_hoc_sample_gateP8")
+stage <- c("stageP7", "stageP8")
 ```
 
 ```{r}
@@ -719,10 +721,10 @@ de_results <- pseudoBulkDGE(
   summed_filt,
   # help page: label = cluster or cell type assignment for each column of x (I: cell type !?)
   label = summed_filt$tissue,
-  design = ~plate_number + tissue + post_hoc_sample_gate,
-  coef = post_hoc_sample_gate[1],
+  design = ~plate_number + tissue + stage,
+  coef = stage[1],
   # help page: condition = experimental condition for each column of x (I: cell status !?)
-  condition = summed_filt$post_hoc_sample_gate)
+  condition = summed_filt$stage)
 ```
 
 ```{r}
@@ -1107,8 +1109,8 @@ By performing it here, we effectively treat scRNA-seq as a "super-FACS" technolo
 We prepare for the DA analysis by quantifying the number of cells assigned to each label.
 The table below and Figure \@ref(fig:collabels-barplot-by-plate) summarise the number of cells assigned to each label per plate.
 
-In this case, we are aiming to identify labels that change in abundance among the different `post_hoc_sample_gate` or `tissue`.
-For example, visually, `cluster_???` has a strong and consistent difference in abundance between `post_hoc_sample_gate`.
+In this case, we are aiming to identify labels that change in abundance among the different `stage` or `tissue`.
+For example, visually, `cluster_???` has a strong and consistent difference in abundance between `stage`.
 
 ```{r}
 abundances <- table(sce$label, sce$sample)
@@ -1151,26 +1153,26 @@ p1 / p2
 abundances <- table(sce$label, sce$sample)
 abundances <- unclass(abundances)
 abundances_df <- as.data.frame(colData(sce)) %>%
-  dplyr::count(label, sample, post_hoc_sample_gate) %>%
+  dplyr::count(label, sample, stage) %>%
   tidyr::pivot_wider(
     names_from = label,
-    id_cols = c(post_hoc_sample_gate, sample), 
+    id_cols = c(stage, sample), 
     values_from = n) %>%
-  dplyr::arrange(post_hoc_sample_gate)
+  dplyr::arrange(stage)
 knitr::kable(
   abundances_df,
   fig.cap = "Number of cells assigned to each label from each sample.")
 ```
 
 ```{r collabels-barplot-by-plate-2, fig.asp = 1 / 2, fig.cap = "Breakdown of labels by experimental factors.", layout = "l-page"}
-p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = post_hoc_sample_gate)) + 
+p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = stage)) + 
   geom_bar(position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   scale_fill_manual(values = sample_gate_colours) +
   theme_cowplot(font_size = 5) + 
   facet_grid(~plate_number)
-p2 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = post_hoc_sample_gate)) + 
+p2 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = stage)) + 
   geom_bar() +
   coord_flip() +
   ylab("Number of cells") +
