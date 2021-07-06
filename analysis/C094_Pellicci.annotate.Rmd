@@ -829,7 +829,7 @@ We also assume that cyclin expression is not affected by biological processes ot
 ```{r}
 saveRDS(
   sce,
-  here("data", "SCEs", "C094_Pellicci_annotate.SCE.rds"),
+  here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"),
   compress = "xz")
 ```
 
