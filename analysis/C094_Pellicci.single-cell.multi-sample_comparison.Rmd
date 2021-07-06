@@ -26,7 +26,7 @@ source(here("code", "helper_functions.R"))
 # NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
 register(MulticoreParam(workers = getOption("mc.cores")))
-knitr::opts_chunk$set(fig.path = "C094_Pellicci.multi-sample_comparisons_files/")
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.multi-sample_comparisons_files/")
 ```
 
 # Motivation
@@ -41,8 +41,8 @@ The former tests for changes in expression between conditions for cells of the s
 **TODO: double check if I understand the comparisons above correctly ^^^ **
 
 For this experiment, we are interested in identifying differences between:
-1) `thymus` cells sorted from different `stage` (`P6`, `P7`, `P8`);
-2) `thymus` cells in `P8` vs `blood` cells in `P8`
+1) `thymus` cells sorted from different `stage` (`S1 (CD4+/CD161-)`, `S2 (CD4-/CD161-)`, `S3 (CD4-/CD161+)`);
+2) `thymus` cells in `S3 (CD4-/CD161+)` vs `blood` cells in `S3 (CD4-/CD161+)`
 We are not interested in the differences due to `plate_number` (or `donor`) so we will block on these variables where possible.
 
 # Setting up the data
@@ -54,11 +54,11 @@ sce <- readRDS(here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"))
 ```
 
 ```{r}
-# remove cells labelled as `P5` (as Dan suggested) to facilitate DE analysis
-sce <- sce[,sce$stage !="P5"]
+# remove cells labelled as `Unknown` (as Dan suggested) to facilitate DE analysis
+sce <- sce[,sce$stage !="Unknown"]
 colData(sce) <- droplevels(colData(sce))
 # Re-level to set the baseline.
-sce$stage <- relevel(sce$stage, "P6")
+sce$stage <- relevel(sce$stage, "S1 (CD4+/CD161-)")
 sce$tissue <- relevel(sce$tissue, "Thymus")
 ```
 
@@ -67,11 +67,11 @@ sce$tissue <- relevel(sce$tissue, "Thymus")
 **sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$stage))**
 
 
-**or based on Dan's target, I should group `tissue` and `stage` to get `sample` like `Thymus.P6`**
+**or based on Dan's target, I should group `tissue` and `stage` to get `sample` like `Thymus.S1 (CD4+/CD161-)`**
 
 ```{r}
 # Define what constitutes a sample (i.e. replicate) in this experiment.
-sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$donor, ".", sce$stage))
+sce$rep <- paste0(sce$sample, ".", sce$stage)
 
 # Define groups that are to be compared
 sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
@@ -159,7 +159,7 @@ p3 <- ggcells(sce) +
   coord_flip() +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
-  scale_fill_manual(values = sample_gate_colours)
+  scale_fill_manual(values = stage_colours)
 
 p4 <- ggcells(sce) + 
   geom_bar(
@@ -282,12 +282,12 @@ This leverages the resolution offered by single-cell technologies to define the 
 columns_to_keep <- c("plate_number", "tissue", "donor", "stage", "group")
 summed <- aggregateAcrossCells(
   sce,
-  id = colData(sce)[, c("label", "sample", columns_to_keep)],
+  id = colData(sce)[, c("label", "rep", columns_to_keep)],
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
 
-colnames(summed) <- paste0(summed$label, ".", summed$sample)
+colnames(summed) <- paste0(summed$label, ".", summed$rep)
 # Construct values for plotting in heatmaps
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
@@ -369,7 +369,7 @@ As noted in [Setting up the data], we start by using the aggregated cluster labe
 targets <- colData(summed)[!duplicated(summed$sample),]
 # Constructing the design matrix.
 design <- model.matrix(~plate_number + group, targets)
-colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate|group", "", colnames(design))
+colnames(design) <- sub("plate\\_number|tissue|donor|stage|group", "", colnames(design))
 rownames(design) <- targets$sample
 ```
 
@@ -393,12 +393,12 @@ If it is necessary to extract statistics in the absence of replicates, several s
 <!-- Note that the DEG list spreadsheets contain all labels and genes whereas the Glimma plots only contain labels and genes actually tested for DE. The column names in the Glimma tables may be abbreviated. -->
 <!-- </aside> -->
 
-### `Thymus.P6` vs. `Thymus.P7`
+### `Thymus.S1 (CD4+/CD161-)` vs. `Thymus.S2 (CD4-/CD161-)`
 
 **check with Pete, is it: A vs B, B vs C, C vs A, but do I need the reverse order, B vs A, C vs B, A vs C ???**
 
 ```{r}
-group <- c("Thymus.P6", "Thymus.P8")
+group <- c("Thymus.S1 (CD4+/CD161-)", "Thymus.S3 (CD4-/CD161+)")
 ```
 
 
@@ -417,7 +417,7 @@ knitr::knit_exit()
 
 
 ```{r}
-tmp <- sce[, sce$group=="Thymus.P6" | sce$group=="Thymus.P7"]
+tmp <- sce[, sce$group=="Thymus.S1 (CD4+/CD161-)" | sce$group=="Thymus.S2 (CD4-/CD161-)"]
 colData(tmp) <- droplevels(colData(tmp))
 # tmp$group
 
@@ -430,10 +430,10 @@ test <- findMarkers(
 
 # > test
 # List of length 2
-# names(2): Thymus.P6 Thymus.P7
+# names(2): Thymus.S1 (CD4+/CD161-) Thymus.S2 (CD4-/CD161-)
 
-rownames(test$Thymus.P6)[test$Thymus.P6$FDR <= 0.05]
-rownames(test$Thymus.P7)[test$Thymus.P7$FDR <= 0.05]
+rownames(test$Thymus.S1 (CD4+/CD161-))[test$Thymus.S1 (CD4+/CD161-)$FDR <= 0.05]
+rownames(test$Thymus.S2 (CD4-/CD161-))[test$Thymus.S2 (CD4-/CD161-)$FDR <= 0.05]
 
 
 
@@ -441,7 +441,7 @@ rownames(test$Thymus.P7)[test$Thymus.P7$FDR <= 0.05]
 
 ###
 
-tmp <- sce[, sce$group=="Thymus.P7" | sce$group=="Thymus.P8"]
+tmp <- sce[, sce$group=="Thymus.S2 (CD4-/CD161-)" | sce$group=="Thymus.S3 (CD4-/CD161+)"]
 colData(tmp) <- droplevels(colData(tmp))
 # tmp$group
 
@@ -453,8 +453,8 @@ test <- findMarkers(
   direction = "any")
 
 
-rownames(test$Thymus.P7)[test$Thymus.P7$FDR <= 0.05]
-rownames(test$Thymus.P8)[test$Thymus.P8$FDR <= 0.05]
+rownames(test$Thymus.S2 (CD4-/CD161-))[test$Thymus.S2 (CD4-/CD161-)$FDR <= 0.05]
+rownames(test$Thymus.S3 (CD4-/CD161+))[test$Thymus.S3 (CD4-/CD161+)$FDR <= 0.05]
 
 
 
@@ -544,7 +544,7 @@ colnames(summed) <- paste0(summed$group, ".", summed$sample)
 ```
 
 ```{r}
-group <- c("groupThymus.P6", "groupThymus.P8")
+group <- c("groupThymus.S1 (CD4+/CD161-)", "groupThymus.S3 (CD4-/CD161+)")
 ```
 
 ```{r}
@@ -561,7 +561,7 @@ de_results <- pseudoBulkDGE(
 ```{r}
 metadata(de_results)
 # $failed
-# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+# [1] "Blood.S3 (CD4-/CD161+)"  "Thymus.S1 (CD4+/CD161-)" "Thymus.S2 (CD4-/CD161-)" "Thymus.S3 (CD4-/CD161+)"
 ```
 
 
@@ -615,7 +615,7 @@ colnames(summed) <- paste0(summed$group, ".", summed$sample)
 ```
 
 ```{r}
-group <- c("groupThymus.P8", "groupBlood.P8")
+group <- c("groupThymus.S3 (CD4-/CD161+)", "groupBlood.S3 (CD4-/CD161+)")
 ```
 
 ```{r}
@@ -633,7 +633,7 @@ de_results <- pseudoBulkDGE(
 ```{r}
 metadata(de_results)
 # $failed
-# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+# [1] "Blood.S3 (CD4-/CD161+)"  "Thymus.S1 (CD4+/CD161-)" "Thymus.S2 (CD4-/CD161-)" "Thymus.S3 (CD4-/CD161+)"
 ```
 
 
@@ -668,7 +668,7 @@ summed <- logNormCounts(summed)
 ```
 
 ```{r}
-group <- c("Thymus.P7", "Thymus.P8")
+group <- c("Thymus.S2 (CD4-/CD161-)", "Thymus.S3 (CD4-/CD161+)")
 ```
 
 ```{r}
@@ -686,7 +686,7 @@ de_results <- pseudoBulkDGE(
 ```{r}
 metadata(de_results)
 # $failed
-# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+# [1] "Blood.S3 (CD4-/CD161+)"  "Thymus.S1 (CD4+/CD161-)" "Thymus.S2 (CD4-/CD161-)" "Thymus.S3 (CD4-/CD161+)"
 ```
 
 
@@ -712,7 +712,7 @@ metadata(de_results)
 design <- model.matrix(~plate_number + tissue + stage, targets)
 
 ```{r}
-stage <- c("stageP7", "stageP8")
+stage <- c("stageS2 (CD4-/CD161-)", "stageS3 (CD4-/CD161+)")
 ```
 
 ```{r}
@@ -730,7 +730,7 @@ de_results <- pseudoBulkDGE(
 ```{r}
 metadata(de_results)
 # $failed
-# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+# [1] "Blood.S3 (CD4-/CD161+)"  "Thymus.S1 (CD4+/CD161-)" "Thymus.S2 (CD4-/CD161-)" "Thymus.S3 (CD4-/CD161+)"
 ```
 
 
@@ -1169,14 +1169,14 @@ p1 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = stage)) +
   geom_bar(position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
-  scale_fill_manual(values = sample_gate_colours) +
+  scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 5) + 
   facet_grid(~plate_number)
 p2 <- ggplot(as.data.frame(colData(sce)), aes(x = label, fill = stage)) + 
   geom_bar() +
   coord_flip() +
   ylab("Number of cells") +
-  scale_fill_manual(values = sample_gate_colours) +
+  scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 5) + 
   facet_grid(~plate_number)
 p1 / p2
