@@ -384,20 +384,19 @@ This function puts some additional effort into automatically dealing with labels
 Note that genes listed as `NA` in the DEG lists were either filtered out as low-abundance genes for a given label's analysis, or the comparison of interest was not possible for a particular label, e.g., due to lack of residual degrees of freedom or an absence of samples from both conditions.
 If it is necessary to extract statistics in the absence of replicates, several strategies can be applied such as reducing the complexity of the model or using a predefined value for the NB dispersion.
 
-Please see [`output/DEGs/`](../output/DEGs/) for spreadsheets of these DEG lists, including results of GO and KEGG analyses using the `goana()` and `kegga()` functions from the `r BiocStyle::Biocpkg("limma")` package^[Please note that these results do not take into account the directionality of the log-fold change.], and [`output/glimma-plots`](../output/glimma-plots/) for interactive `r BiocStyle::Biocpkg("Glimma")` plots of the differential expression results.
-The `r BiocStyle::Biocpkg("Glimma")` plots show the pseudobulk data for that label on the left-hand side and the single-cell data for that label on the right-hand side.
-The single-cell data are plotted per sample using abbreviated sample labels, e.g., `C.P043` means "C57BL/6 mouse on plate P043", `M.P043` means "Mpl mouse on plate P043", etc.
+<!-- Please see [`output/DEGs/`](../output/DEGs/) for spreadsheets of these DEG lists, including results of GO and KEGG analyses using the `goana()` and `kegga()` functions from the `r BiocStyle::Biocpkg("limma")` package^[Please note that these results do not take into account the directionality of the log-fold change.], and [`output/glimma-plots`](../output/glimma-plots/) for interactive `r BiocStyle::Biocpkg("Glimma")` plots of the differential expression results. -->
+<!-- The `r BiocStyle::Biocpkg("Glimma")` plots show the pseudobulk data for that label on the left-hand side and the single-cell data for that label on the right-hand side. -->
 
-<aside>
-Note that the DEG list spreadsheets contain all labels and genes whereas the Glimma plots only contain labels and genes actually tested for DE. The column names in the Glimma tables may be abbreviated.
-</aside>
+<!-- <aside> -->
+<!-- Note that the DEG list spreadsheets contain all labels and genes whereas the Glimma plots only contain labels and genes actually tested for DE. The column names in the Glimma tables may be abbreviated. -->
+<!-- </aside> -->
 
 ### `Thymus.P6` vs. `Thymus.P7`
 
 **check with Pete, is it: A vs B, B vs C, C vs A, but do I need the reverse order, B vs A, C vs B, A vs C ???**
 
 ```{r}
-group <- c("Thymus.P6", "Thymus.P7")
+group <- c("Thymus.P6", "Thymus.P8")
 ```
 
 
@@ -415,19 +414,342 @@ knitr::knit_exit()
 
 
 
+```{r}
+tmp <- sce[, sce$group=="Thymus.P6" | sce$group=="Thymus.P7"]
+colData(tmp) <- droplevels(colData(tmp))
+# tmp$group
+
+test <- findMarkers(
+  tmp, 
+  groups = tmp$group,
+  block = tmp$plate_number,
+  pval.type = "all",
+  direction = "any")
+
+# > test
+# List of length 2
+# names(2): Thymus.P6 Thymus.P7
+
+rownames(test$Thymus.P6)[test$Thymus.P6$FDR <= 0.05]
+rownames(test$Thymus.P7)[test$Thymus.P7$FDR <= 0.05]
 
 
-**check: why do I keep getting error when "rownames(design) == levels(summed_filt$sample == 90 (?)**
+
+
+
+###
+
+tmp <- sce[, sce$group=="Thymus.P7" | sce$group=="Thymus.P8"]
+colData(tmp) <- droplevels(colData(tmp))
+# tmp$group
+
+test <- findMarkers(
+  tmp, 
+  groups = tmp$group,
+  block = tmp$plate_number,
+  pval.type = "all",
+  direction = "any")
+
+
+rownames(test$Thymus.P7)[test$Thymus.P7$FDR <= 0.05]
+rownames(test$Thymus.P8)[test$Thymus.P8$FDR <= 0.05]
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
+# NOTE: to prevent `Error in .pseudo_bulk_old; rownames(design) != levels(summed_filt$sample)`, design needed to be specified (not: design = design)
 de_results <- pseudoBulkDGE(
   summed_filt, 
   sample = summed_filt$sample,
   label = summed_filt$label,
-  design = design,
+  design = ~plate_number + group,
   coef = group[1],
   condition = summed_filt$group)
 ```
+
+```{r}
+metadata(de_results)
+# $failed
+# [1] "cluster_1" "cluster_2" "cluster_3" "cluster_4"
+```
+
+
+
+
+
+
+# try with C088 latest version of scripts
+
+```{r}
+summed <- aggregateAcrossCells(
+  sce,
+  # columns_to_keep
+  id=colData(sce)[,c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group", "sample")],
+  coldata.merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
+
+colLabels(summed) <- summed$group
+colnames(summed) <- paste0(summed$group, ".", summed$sample)
+```
+
+```{r}
+# summed <- runMDS(summed)
+# p1 <- plotMDS(
+#   summed,
+#   colour_by = "inferred_treatment",
+#   shape_by = "group",
+#   point_size = 3,
+#   point_alpha = 2) +
+#   scale_colour_manual(values = treatment_colours, name = "Treatment")
+# p2 <- plotMDS(
+#   summed,
+#   colour_by = "sample",  
+#   shape_by = "group",
+#   point_size = 3,
+#   point_alpha = 2) +
+#   scale_colour_manual(values = sample_colours, name = "Donor")
+# p1 + p2 + plot_layout(guides = "collect")
+```
+
+```{r}
+group <- c("groupThymus.P6", "groupThymus.P8")
+```
+
+```{r}
+summed_filt <- summed[, summed$ncells >= 10]
+
+de_results <- pseudoBulkDGE(
+  summed_filt,
+  label = summed_filt$sample,
+  design = ~plate_number + group,
+  coef = group[1],
+  condition = summed_filt$group)
+```
+
+```{r}
+metadata(de_results)
+# $failed
+# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+# try with my understanding
+
+```{r}
+abundances <- table(sce$label, sce$group)
+abundances <- unclass(abundances)
+abundances_df <- as.data.frame(colData(sce)) %>%
+  dplyr::count(label, group, tissue) %>%
+  tidyr::pivot_wider(
+    names_from = label,
+    id_cols = c(tissue, group), 
+    values_from = n) %>%
+  dplyr::arrange(tissue)
+knitr::kable(
+  abundances_df,
+  fig.cap = "Number of cells assigned to each label from each group")
+# or simply:
+# abundances <- table(sce$group, sce$cluster)
+# abundances <- unclass(abundances)
+# abundances
+```
+
+```{r}
+summed <- aggregateAcrossCells(
+  sce,
+  # columns_to_keep
+  id=colData(sce)[,c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group", "sample", "cluster")],
+  coldata.merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
+
+# unsure vvv
+colLabels(summed) <- summed$group
+colnames(summed) <- paste0(summed$group, ".", summed$sample)
+```
+
+```{r}
+group <- c("groupThymus.P8", "groupBlood.P8")
+```
+
+```{r}
+summed_filt <- summed[, summed$ncells >= 10]
+de_results <- pseudoBulkDGE(
+  summed_filt,
+  # help page: label = cluster or cell type assignment for each column of x
+  label = summed_filt$cluster,
+  design = ~plate_number + group,
+  coef = group[1],
+  # help page: condition = experimental condition for each column of x
+  condition = summed_filt$group)
+```
+
+```{r}
+metadata(de_results)
+# $failed
+# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+# try with my understanding 2 (need to find out what should be "label" and what should be "conditions" in my case)
+
+```{r}
+summed <- aggregateAcrossCells(
+  sce,
+  # columns_to_keep
+  id=colData(sce)[,c("plate_number", "tissue", "donor", "post_hoc_sample_gate", "group", "sample", "cluster")],
+  coldata.merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
+
+# unsure vvv
+# colLabels(summed) <- summed$group
+# colnames(summed) <- paste0(summed$group, ".", summed$sample)
+```
+
+```{r}
+group <- c("Thymus.P7", "Thymus.P8")
+```
+
+```{r}
+summed_filt <- summed[, summed$ncells >= 10]
+de_results <- pseudoBulkDGE(
+  summed_filt,
+  # help page: label = cluster or cell type assignment for each column of x
+  label = summed_filt$group,
+  design = ~plate_number + group,
+  coef = group[1],
+  # help page: condition = experimental condition for each column of x
+  condition = summed_filt$tissue)
+```
+
+```{r}
+metadata(de_results)
+# $failed
+# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+design <- model.matrix(~plate_number + tissue + post_hoc_sample_gate, targets)
+
+```{r}
+post_hoc_sample_gate <- c("post_hoc_sample_gateP7", "post_hoc_sample_gateP8")
+```
+
+```{r}
+summed_filt <- summed[, summed$ncells >= 10]
+de_results <- pseudoBulkDGE(
+  summed_filt,
+  # help page: label = cluster or cell type assignment for each column of x (I: cell type !?)
+  label = summed_filt$tissue,
+  design = ~plate_number + tissue + post_hoc_sample_gate,
+  coef = post_hoc_sample_gate[1],
+  # help page: condition = experimental condition for each column of x (I: cell status !?)
+  condition = summed_filt$post_hoc_sample_gate)
+```
+
+```{r}
+metadata(de_results)
+# $failed
+# [1] "Blood.P8"  "Thymus.P6" "Thymus.P7" "Thymus.P8"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -469,6 +791,18 @@ createDEGOutputs(
   strains = strains,
   fdr = 0.05)
 ```
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### `Mpl` vs. `C57BL/6`
 
