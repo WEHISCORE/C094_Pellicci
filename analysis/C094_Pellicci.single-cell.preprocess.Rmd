@@ -24,7 +24,7 @@ library(scales)
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 3L))
 
 knitr::opts_chunk$set(
-  fig.path = "C094_Pellicci.preprocess_files/")
+  fig.path = "C094_Pellicci.single-cell.preprocess_files/")
 
 source(here("code", "helper_functions.R"))
 ```
@@ -34,7 +34,7 @@ source(here("code", "helper_functions.R"))
 The count data were processed using `r Biocpkg("scPipe")` and available in a *SingleCellExperiment* object, along with their metadata.
 
 <aside>
-See [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds)).
+See [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds).
 </aside>
 
 ```{r}
@@ -44,7 +44,7 @@ sce <- readRDS(here("data", "SCEs", "C094_Pellicci.scPipe.SCE.rds"))
 This data was processed to clean up the sample metadata, tidy the FACS index sorting data, and attach the gene metadata.
 
 <aside>
-See [`analysis/C094_Pellicci.preprocess.R`](../analysis/C094_Pellicci.preprocess.R)).
+See [`analysis/C094_Pellicci.preprocess.R`](../analysis/C094_Pellicci.preprocess.R).
 </aside>
 
 ```{r}
@@ -71,7 +71,7 @@ Gamma-delta T-cells are classified into 3 developmental stages based on the expr
 
 Figure \@ref(fig:facs) shows the expression of *CD4* and *CD161*, as measured by FACS, for all single-cells.
 
-```{r facs, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample."}
+```{r facs, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample.", fig.asp = 2 / 3}
 # Some useful colours
 stage_colours <- setNames(
   unique(sce$colours$stage_colours),
@@ -98,7 +98,7 @@ Not all single-cells can be classified using these gates (e.g., some cells are s
 Figure \@ref(fig:facs-stages) re-plots the same data and colours each cell according to the *post-hoc* `stage`.
 We observe that boundaries between `S1`, `S2`, and `S3` appear rather arbitrary^[It should be remembered that the gates are set using more cells than are collected for scRNA-seq and so the boundaries may appear more defined in the original FACS files. Furthermore, the data here are shown on a 'pseudolog' scale, which may be different to the scale used when viewing the data in FlowJo.] and that the `Unknown` cells are a *potpourri* that includes cells that are intermediate between `S1`, `S2`, and `S3` as well as a handful of *CD4+*/*CD161+* cells.
 
-```{r facs-stages, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample and colouring each cell by its *post-hoc* `stage`."}
+```{r facs-stages, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample and colouring each cell by its *post-hoc* `stage`.", fig.asp = 3 / 4}
 bg <- dplyr::select(x, -donor, -tissue)
 ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
@@ -110,7 +110,7 @@ ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
     values = stage_colours,
     name = "stage") +
   theme_cowplot(font_size = 10) +
-  facet_wrap(tissue ~ donor, labeller = label_both) +
+  facet_grid(tissue ~ donor, labeller = label_both) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
   xlab("CD4") + 
   ylab("CD161")
@@ -123,12 +123,20 @@ ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
   unique(names(sce$colours$plate_number_colours)))
+plate_number_colours <- plate_number_colours[levels(sce$plate_number)]
 tissue_colours <- setNames(
   unique(sce$colours$tissue_colours),
   unique(names(sce$colours$tissue_colours)))
+tissue_colours <- tissue_colours[levels(sce$tissue)]
 donor_colours <- setNames(
   unique(sce$colours$donor_colours),
   unique(names(sce$colours$donor_colours)))
+donor_colours <- donor_colours[levels(sce$donor)]
+
+sample_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$sample))],
+  levels(sce$sample))
+sce$colours$sample_colours <- sample_colours[sce$sample]
 ```
 
 Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
@@ -277,7 +285,8 @@ p1 <- plotColData(
       lex.order = TRUE)), 
   colour_by = "donor",
   shape_by = "tissue",
-  point_alpha = 1) + 
+  point_alpha = 1,
+  theme_size = 8) + 
   scale_y_log10() + 
   scale_colour_manual(values = donor_colours, name = "donor") +
   guides(colour = FALSE) +
@@ -295,7 +304,8 @@ p2 <- plotColData(
       lex.order = TRUE)), 
   colour_by = "donor",
   shape_by = "tissue",
-  point_alpha = 1) + 
+  point_alpha = 1,
+  theme_size = 8) + 
   scale_colour_manual(values = donor_colours, name = "donor") +
   guides(colour = FALSE) +
   xlab("Row.tissue.donor") +
@@ -380,8 +390,6 @@ colData(sce) <- droplevels(colData(sce))
 
 # Quality control of cells
 
-**TODO** UP TO HERE.
-
 ## Defining the quality control metrics
 
 Low-quality cells need to be removed to ensure that technical effects do not distort downstream analysis results.
@@ -409,300 +417,91 @@ sce <- addPerCellQC(
 
 ## Visualizing the QC metrics
 
-Figure \@ref(fig:qcplot) compares the QC metrics of the single-cells to the mini-bulk samples within the 'experimental' (i.e. `sample_name` not set as `Cell line`) and 'control' (i.e. `sample_name` set as `Cell line`) samples.
-As expected, within each group, the mini-bulk samples have more UMIs and genes detected than the single-cells.
-
+Figure \@ref(fig:qcplot) compares the QC metrics of the single-cell samples across the different `sample` (combination of `tissue` and `donor`) and Figure \@ref(fig:qcplot-by-plate-number) further stratifies by `plate_number`.
 The number of UMIs, number of gene detected, and percentage of UMIs that are mapped to ERCC spike-ins are all higher in the 'experimental' samples than in the 'control' samples
 This likely reflects that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells (rather than this result being due to technical factors, although we cannot rule this out entirely).
-
-```{r qcplot, fig.cap = "Distributions of various QC metrics for all cells in the dataset.", fig.asp = 1}
-sce$cell_line <- sce$sample_name == "Cell line"
-p1 <- plotColData(
-  sce,
-  "sum",
-  x = "sample_type",
-  point_alpha = 1,
-  other_fields = "cell_line",
-  colour_by = "sample_type",
-  point_size = 0.5) +
-  scale_y_log10() +
-  annotation_logticks(
-    sides = "l",
-    short = unit(0.03, "cm"),
-    mid = unit(0.06, "cm"),
-    long = unit(0.09, "cm")) +
-  theme(axis.text.x = element_blank()) +
-  facet_grid(~cell_line, labeller = label_both)
-p2 <-plotColData(
-  sce,
-  "detected",
-  x = "sample_type",
-  point_alpha = 1,
-  other_fields = "cell_line",
-  colour_by = "sample_type",
-  point_size = 0.5) +
-  scale_y_log10() +
-  annotation_logticks(
-    sides = "l",
-    short = unit(0.03, "cm"),
-    mid = unit(0.06, "cm"),
-    long = unit(0.09, "cm")) +
-  theme(axis.text.x = element_blank()) +
-  facet_grid(~cell_line, labeller = label_both)
-p3 <- plotColData(
-  sce,
-  "subsets_Mito_percent",
-  x = "sample_type",
-  point_alpha = 1,
-  other_fields = "cell_line",
-  colour_by = "sample_type",
-  point_size = 0.5) +
-  ylim(0, NA) +
-  theme(axis.text.x = element_blank()) +
-  facet_grid(~cell_line, labeller = label_both)
-p4 <- plotColData(
-  sce,
-  "subsets_Ribo_percent",
-  x = "sample_type",
-  point_alpha = 1,
-  other_fields = "cell_line",
-  colour_by = "sample_type",
-  point_size = 0.5) +
-  ylim(0, NA) +
-  theme(axis.text.x = element_blank()) +
-  facet_grid(~cell_line, labeller = label_both)
-p5 <- plotColData(
-  sce,
-  "altexps_ERCC_percent",
-  x = "sample_type",
-  point_alpha = 1,
-  other_fields = "cell_line",
-  colour_by = "sample_type",
-  point_size = 0.5) +
-  ylim(0, NA) +
-  theme(axis.text.x = element_blank()) +
-  facet_grid(~cell_line, labeller = label_both)
-p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 2, guides = "collect")
-```
-
-### Single-cell samples
-
-Figure \@ref(fig:qcplot-single-cells) compares the QC metrics of the single-cell samples across the different `sample_name` and Figure \@ref(fig:qcplot-single-cells-by-plate-number) further stratifies by `plate_number`.
 Together, these figures show that the vast majority of single-cell samples are good-quality^[Bearing in mind that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells.]:
 
-- The median library size is around `r number(median(sce$sum[sce$sample_type == "Single cell"]), accuracy = 100, big.mark = ",")`.
-- The median number of genes detected is around `r number(median(sce$detected[sce$sample_type == "Single cell"]), accuracy = 100, big.mark = ",")`.
-- The median percentage of UMIs that are mapped to mitochondrial RNA is around  `r percent(median(sce$subsets_Mito_percent[sce$sample_type == "Single cell"]), scale = 1)`.
-- The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_Ribo_percent[sce$sample_type == "Single cell"]), scale = 1)`.
-- The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent[sce$sample_type == "Single cell"]), scale = 1)`.
+- The median library size is around `r number(median(sce$sum), accuracy = 100, big.mark = ",")`.
+- The median number of genes detected is around `r number(median(sce$detected), accuracy = 100, big.mark = ",")`.
+- The median percentage of UMIs that are mapped to mitochondrial RNA is around  `r percent(median(sce$subsets_Mito_percent), scale = 1)`.
+- The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_Ribo_percent), scale = 1)`.
+- The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent), scale = 1)`.
 
-```{r qcplot-single-cells, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset.", fig.asp = 1}
+```{r qcplot, fig.cap = "Distributions of various QC metrics for all samples in the dataset.", fig.asp = 1}
 p1 <- plotColData(
-  sce[, sce$sample_type == "Single cell"],
+  sce,
   "sum",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   scale_y_log10() +
   annotation_logticks(
     sides = "l",
     short = unit(0.03, "cm"),
     mid = unit(0.06, "cm"),
     long = unit(0.09, "cm")) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") +
+  xlab("")
 p2 <- plotColData(
-  sce[, sce$sample_type == "Single cell"],
+  sce,
   "detected",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
-  theme(axis.text.x = element_blank())
+  colour_by = "sample") +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") +
+  xlab("")
 p3 <- plotColData(
-  sce[, sce$sample_type == "Single cell"],
+  sce,
   "subsets_Mito_percent",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") + 
+  xlab("")
 p4 <- plotColData(
-  sce[, sce$sample_type == "Single cell"],
+  sce,
   "subsets_Ribo_percent",
-  x = "sample_name",
+  x = "sample",
   other_fields = c("plate_number", "sample_type"),
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") + 
+  xlab("")
 p5 <- plotColData(
-  sce[, sce$sample_type == "Single cell"],
+  sce,
   "altexps_ERCC_percent",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") + 
+  xlab("")
 p1 + p2 + p3 + p4 + p5 + 
-  plot_layout(ncol = 2, guides = "collect") +
-  plot_annotation("Single-cell samples")
+  plot_layout(ncol = 2, guides = "collect")
 ```
 
-Figure \@ref(fig:qcplot-single-cells-by-plate-number) shows that QC metrics are generally consistent across plates.
+Figure \@ref(fig:qcplot-by-plate-number) shows that QC metrics are generally consistent across plates.
 
-```{r qcplot-single-cells-by-plate-number, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
+```{r qcplot-by-plate-number, fig.cap = "Distributions of various QC metrics for all samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
 p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
 p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
 p3 <- p3 + facet_wrap(~plate_number, ncol = 3)
 p4 <- p4 + facet_wrap(~plate_number, ncol = 3)
 p5 <- p5 + facet_wrap(~plate_number, ncol = 3)
 p1 + p2 + p3 + p4 + p5 + 
-  plot_layout(ncol = 2, guides = "collect") +
-  plot_annotation("Single-cell samples")
-```
-
-### Mini-bulk samples
-
-Figure \@ref(fig:qcplot-mini-bulks) compares the QC metrics of the mini-bulk samples across the different `sample_name`
-This shows that the vast majority of mini-bulk samples are good-quality^[Bearing in mind that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells.]:
-
-- The median library size is around `r number(median(sce$sum[sce$sample_type != "Single cell"]), accuracy = 100, big.mark = ",")`.
-- The median number of genes detected is around `r number(median(sce$detected[sce$sample_type != "Single cell"]), accuracy = 100, big.mark = ",")`.
-- The median percentage of UMIs that are mapped to mitochondrial RNA is around  `r percent(median(sce$subsets_Mito_percent[sce$sample_type != "Single cell"]), scale = 1)`.
-- The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_Ribo_percent[sce$sample_type != "Single cell"]), scale = 1)`.
-- The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent[sce$sample_type != "Single cell"]), scale = 1)`.
-
-We observe that the `Thymus` samples generally have more UMIs, genes detected, and lower percentage of UMIs that are mapped to mitochondrial RNA, compared to the `Blood` samples.
-However, this is partly because the the `Blood` samples have poorer QC metrics in `NN215` than in `NN227` whereas the `Thymus` samples have consistent QC metrics across sequencing runs `NN215` and `NN227`^[This difference in QC metrics by sequencing run by tissue is not explained by the `sample_type` (i.e. 50 cells vs. 99 or 100 cells).].
-
-```{r qcplot-mini-bulks, fig.cap = "Distributions of various QC metrics for all **mini-bulk** samples in the dataset.", fig.asp = 1}
-p1 <- plotColData(
-  sce[, sce$sample_type != "Single cell"],
-  "sum",
-  x = I(
-    interaction(
-      sce[, sce$sample_type != "Single cell"]$donor, 
-      sce[, sce$sample_type != "Single cell"]$sequencing_run,
-      drop = TRUE, 
-      lex.order = TRUE)),
-  other_fields = "tissue",
-  point_size = 1,
-  shape_by = "sample_type",
-  colour_by = "donor",
-  theme_size = 5) +
-  scale_y_log10() +
-  annotation_logticks(
-    sides = "l",
-    short = unit(0.03, "cm"),
-    mid = unit(0.06, "cm"),
-    long = unit(0.09, "cm")) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  scale_shape_manual(
-    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21))
-p2 <- plotColData(
-  sce[, sce$sample_type != "Single cell"],
-  "detected",
-  x = I(
-    interaction(
-      sce[, sce$sample_type != "Single cell"]$donor, 
-      sce[, sce$sample_type != "Single cell"]$sequencing_run,
-      drop = TRUE, 
-      lex.order = TRUE)),
-  other_fields = "tissue",
-  point_size = 1,
-  shape_by = "sample_type",
-  colour_by = "donor",
-  theme_size = 5) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  scale_shape_manual(
-    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21))
-p3 <- plotColData(
-  sce[, sce$sample_type != "Single cell"],
-  "subsets_Mito_detected",
-  x = I(
-    interaction(
-      sce[, sce$sample_type != "Single cell"]$donor, 
-      sce[, sce$sample_type != "Single cell"]$sequencing_run,
-      drop = TRUE, 
-      lex.order = TRUE)),
-  other_fields = "tissue",
-  point_size = 1,
-  shape_by = "sample_type",
-  colour_by = "donor",
-  theme_size = 5) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  scale_shape_manual(
-    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21)) +
-  ylim(0, NA)
-p4 <- plotColData(
-  sce[, sce$sample_type != "Single cell"],
-  "subsets_Ribo_percent",
-  x = I(
-    interaction(
-      sce[, sce$sample_type != "Single cell"]$donor, 
-      sce[, sce$sample_type != "Single cell"]$sequencing_run,
-      drop = TRUE, 
-      lex.order = TRUE)),
-  other_fields = "tissue",
-  point_size = 1,
-  shape_by = "sample_type",
-  colour_by = "donor",
-  theme_size = 5) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  scale_shape_manual(
-    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21)) +
-  ylim(0, NA)
-p5 <- plotColData(
-  sce[, sce$sample_type != "Single cell"],
-  "altexps_ERCC_percent",
-  x = I(
-    interaction(
-      sce[, sce$sample_type != "Single cell"]$donor, 
-      sce[, sce$sample_type != "Single cell"]$sequencing_run,
-      drop = TRUE, 
-      lex.order = TRUE)),
-  other_fields = "tissue",
-  point_size = 1,
-  shape_by = "sample_type",
-  colour_by = "donor",
-  theme_size = 5) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  scale_shape_manual(
-    values = c("50 cells" = 24, "99 cells" = 22, "100 cells" = 21)) +
-  ylim(0, NA)
-p1 + p2 + p3 + p4 + p5 + 
-  plot_layout(ncol = 2, guides = "collect") +
-  plot_annotation("Mini-bulk samples")
-```
-
-<aside>
-At this point, we split off the mini-bulk samples from the single-cell samples.
-**The remainder of this report focuses on the single-cells with the mini-bulk samples analysed elsewhere.**
-**TODO**: Include link to report when it is written.
-</aside>
-
-```{r}
-sce_minibulk <- sce[, sce$sample_type != "Single cell"]
-colData(sce_minibulk) <- droplevels(colData(sce_minibulk))
-saveRDS(
-  sce_minibulk,
-  here("data", "SCEs", "C094_Pellicci.mini-bulk.preprocessed.SCE.rds"),
-  compress = "xz")
-sce <- sce[, sce$sample_type == "Single cell"]
-colData(sce) <- droplevels(colData(sce))
+  plot_layout(ncol = 2, guides = "collect")
 ```
 
 ## Identifying outliers by each metric
@@ -711,10 +510,10 @@ Outliers are defined based on the median absolute deviation (MADs) from the medi
 We remove small and large outliers for the library size and the number of expressed features, and large outliers for the spike-in proportions and mitochondrial gene expression proportions.
 Removal of low-quality cells is then performed by combining the filters for all of the metrics.
 
-Due to the differences in the QC metrics by `sample_name`, we will compute the separate outlier thresholds for each `sample_name`.
+Due to the differences in the QC metrics by `sample`, we will compute the separate outlier thresholds for each `sample`.
 
 ```{r}
-sce$batch <- sce$sample_name
+sce$batch <- sce$sample
 libsize_drop <- isOutlier(
   metric = sce$sum, 
   nmads = 3,
@@ -786,7 +585,7 @@ sce <- sce[, keep]
 ```
 
 The table below summarises the number of cells per plate left following removal of outliers based on the QC metrics.
-The vast majority of cells are retained for all `sample_name`.
+The vast majority of cells are retained for all `sample`.
 
 More cells are removed due to high percentages of ERCC transcripts or mitochondrial RNA than due to low library size and number of expressed genes.
 In total, we remove `r number(sum(!keep))` cells based on these QC metrics, and retain `r number(sum(keep), big.mark = ",")` cells.
@@ -795,7 +594,7 @@ In total, we remove `r number(sum(!keep))` cells based on these QC metrics, and 
 inner_join(
   distinct(
     as.data.frame(colData(sce)), 
-    batch, sample_gate, sample_name),
+    batch, sample_gate, sample),
   data.frame(
     ByLibSize = tapply(
       libsize_drop, 
@@ -915,7 +714,7 @@ Finally, Figure \@ref(fig:qcplot-highlighting-outliers) compares the QC metrics 
 p1 <- plotColData(
   sce_pre_QC_outlier_removal,
   "sum",
-  x = "sample_name",
+  x = "sample",
   colour_by = "keep",
   point_size = 0.5) +
   scale_y_log10() +
@@ -928,21 +727,21 @@ p1 <- plotColData(
 p2 <- plotColData(
   sce_pre_QC_outlier_removal,
   "detected",
-  x = "sample_name",
+  x = "sample",
   colour_by = "keep",
   point_size = 0.5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 p3 <- plotColData(
   sce_pre_QC_outlier_removal,
   "subsets_Mito_percent",
-  x = "sample_name",
+  x = "sample",
   colour_by = "keep",
   point_size = 0.5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 p4 <- plotColData(
   sce_pre_QC_outlier_removal,
   "subsets_Ribo_percent",
-  x = "sample_name",
+  x = "sample",
   colour_by = "keep",
   point_size = 0.5) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -953,62 +752,68 @@ p1 + p2 + p3 + p4 + plot_layout(guides = "collect")
 
 To conclude, Figures \@ref(fig:qcplot-post-outlier-removal) and \@ref(fig:qcplot-post-outlier-removal-by-plate-number) shows that following QC that most samples have similar QC metrics, as is to be expected.
 
-```{r qcplot-post-outlier-removal, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset.", fig.asp = 1}
+```{r qcplot-post-outlier-removal, fig.cap = "Distributions of various QC metrics for all samples in the dataset post-QC.", fig.asp = 1}
 p1 <- plotColData(
   sce,
   "sum",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   scale_y_log10() +
   annotation_logticks(
     sides = "l",
     short = unit(0.03, "cm"),
     mid = unit(0.06, "cm"),
     long = unit(0.09, "cm")) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") +
+  xlab("")
 p2 <- plotColData(
   sce,
   "detected",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
-  theme(axis.text.x = element_blank())
+  colour_by = "sample") +
+  theme(axis.text.x = element_blank()) +
+  xlab("")
 p3 <- plotColData(
   sce,
   "subsets_Mito_percent",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   scale_y_log10() +
   ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) +
+  xlab("")
 p4 <- plotColData(
   sce,
   "subsets_Ribo_percent",
-  x = "sample_name",
+  x = "sample",
   other_fields = c("plate_number", "sample_type"),
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   scale_y_log10() +
   ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) +
+  xlab("")
 p5 <- plotColData(
   sce,
   "altexps_ERCC_percent",
-  x = "sample_name",
+  x = "sample",
   other_fields = "plate_number",
   point_size = 0.5,
-  colour_by = "sample_name") +
+  colour_by = "sample") +
   scale_y_log10() +
   ylim(0, NA) +
-  theme(axis.text.x = element_blank())
+  theme(axis.text.x = element_blank()) +
+  xlab("")
+
 p1 + p2 + p3 + p4 + p5 + 
-  plot_layout(ncol = 2, guides = "collect") +
-  plot_annotation("Single-cell samples")
+  plot_layout(ncol = 2, guides = "collect")
 ```
 
 ```{r qcplot-post-outlier-removal-by-plate-number, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
@@ -1017,9 +822,9 @@ p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
 p3 <- p3 + facet_wrap(~plate_number, ncol = 3)
 p4 <- p4 + facet_wrap(~plate_number, ncol = 3)
 p5 <- p5 + facet_wrap(~plate_number, ncol = 3)
+
 p1 + p2 + p3 + p4 + p5 + 
-  plot_layout(ncol = 2, guides = "collect") +
-  plot_annotation("Single-cell samples")
+  plot_layout(ncol = 2, guides = "collect")
 ```
 
 Figure \@ref(fig:coldata-postqc) summarises the experimental design following QC.
@@ -1028,12 +833,12 @@ We remind ourself that all `Blood 2` samples on plate number `LCE511` were exclu
 ```{r coldata-postqc, fig.asp = 1 / 2, fig.cap = "Breakdown of experiment by plate."}
 p1 <- ggcells(sce) + 
   geom_bar(
-    aes(x = plate_number, fill = sample_name),
+    aes(x = plate_number, fill = sample),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   theme_cowplot(font_size = 10) +
-  scale_fill_manual(values = sample_name_colours)
+  scale_fill_manual(values = sample_colours)
 p2 <- ggcells(sce) + 
   geom_bar(aes(x = plate_number, fill = plate_number)) +
   coord_flip() +
@@ -1424,12 +1229,12 @@ p2 <- plotUMAP(
   theme_cowplot(font_size = 10)
 p3 <- plotUMAP(
   sce, 
-  colour_by = "post_hoc_sample_gate",
+  colour_by = "stage",
   point_size = 0.5, 
   point_alpha = 1) +
   scale_colour_manual(
-    values = sample_gate_colours,
-    name = "post_hoc_sample_gate") +
+    values = stage_colours,
+    name = "stage") +
   theme_cowplot(font_size = 10)
 p4 <- plotUMAP(sce, colour_by = "tissue", point_size = 0.5, point_alpha = 1) +
   scale_colour_manual(values = tissue_colours, name = "tissue") +
@@ -1476,22 +1281,22 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   guides(colour = FALSE)
 ```
 
-```{r umap-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `post_hoc_sample_gate`.", fig.asp = 2 / 3}
+```{r umap-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `stage`.", fig.asp = 1}
 umap_df <- makePerCellDF(sce)
-bg <- dplyr::select(umap_df, -post_hoc_sample_gate)
+bg <- dplyr::select(umap_df, -stage)
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = post_hoc_sample_gate), alpha = 1, size = 0.5) +
+  geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
   scale_fill_manual(
-    values = sample_gate_colours,
-    name = "post_hoc_sample_gate") +
+    values = stage_colours,
+    name = "stage") +
   scale_colour_manual(
-    values = sample_gate_colours,
-    name = "post_hoc_sample_gate") +
+    values = stage_colours,
+    name = "stage") +
   theme_cowplot(font_size = 10) +
   xlab("UMAP 1") +
   ylab("UMAP 2") +
-  facet_wrap(~post_hoc_sample_gate, ncol = 3) +
+  facet_wrap(~stage, ncol = 2) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE)
 ```
@@ -1512,9 +1317,9 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   guides(colour = FALSE)
 ```
 
-```{r umap-tissue-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue` and `post_hoc_sample_gate` and further coloured by `plate_number`.", fig.asp = 1.2}
+```{r umap-tissue-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue` and `stage` and further coloured by `plate_number`.", fig.asp = 1.2}
 umap_df <- makePerCellDF(sce)
-bg <- dplyr::select(umap_df, -tissue, -post_hoc_sample_gate)
+bg <- dplyr::select(umap_df, -tissue, -stage)
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
@@ -1523,7 +1328,7 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   theme_cowplot(font_size = 10) +
   xlab("UMAP 1") +
   ylab("UMAP 2") +
-  facet_grid(post_hoc_sample_gate ~ tissue) +
+  facet_grid(stage ~ tissue) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1)))
 ```
 
@@ -1533,19 +1338,19 @@ Although Figures \@ref(fig:umap) - \@ref(fig:umap-tissue-post-hoc-sample-gate) a
 
 - There are no strong `donor`-associated differences.
 - There are strong `plate_number`-associated differences.
-- There are strong `post_hoc_sample_gate`-associated differences.
+- There are strong `stage`-associated differences.
 - There are strong `tissue`-associated differences.
 - There are library size-associated differences, which is itself largely driven by differences in library size between the `Cell line` and non-`Cell line` samples.
 
 However, it is premature to draw any strong conclusions
-We will seek to mitigate the differences associated with technical factors (e.g., `plate_number` and library size) in downstream analyses so that we might better investigate the biological factors (i.e. `tissue` and `post_hoc_sample_gate`).
+We will seek to mitigate the differences associated with technical factors (e.g., `plate_number` and library size) in downstream analyses so that we might better investigate the biological factors (i.e. `tissue` and `stage`).
 
 # Concluding remarks
 
 ```{r}
 saveRDS(
   sce,
-  here("data", "SCEs", "C094_Pellicci.preprocessed.SCE.rds"),
+  here("data", "SCEs", "C094_Pellicci.single-cell.preprocessed.SCE.rds"),
   compress = "xz")
 ```
 
@@ -1569,10 +1374,3 @@ sessioninfo::session_info()
 ```
 
 </details>
-
-# TODOs
-
-- [ ] Discuss *post hoc* gating results with SCORE and Dan.
-  - [ ] How did Casey actually do this?
-  - [ ] Should we 'manually' tweak the gates?
-  - [ ] Should the `Cell line` have a gate (some do, some are NA)?

@@ -75,6 +75,8 @@ colData(sce) <- DataFrame(
   }),
   row.names = colnames(sce))
 
+sce$sample <- interaction(sce$tissue, sce$donor, drop = TRUE, lex.order = TRUE)
+
 # Incorporating FACS data ------------------------------------------------------
 
 pseudoLog <- scales::pseudo_log_trans(sigma = 150 / 2)$transform
@@ -172,7 +174,7 @@ colData(sce) <- left_join(
     gate_to_stage_df,
     by = c("post_hoc_sample_gate" = "gate")) %>%
   select(
-    plate_number, well_position, sample_type, sample_gate, sequencing_run, tissue, donor, stage,
+    plate_number, well_position, sample_type, sample_gate, sequencing_run, tissue, donor, stage, sample,
     unaligned, aligned_unmapped, mapped_to_exon, mapped_to_intron, ambiguous_mapping, mapped_to_ERCC, mapped_to_MT) %>%
   DataFrame(row.names = colnames(sce))
 sce$stage <- factor(
@@ -278,3 +280,4 @@ rownames(sce) <- uniquifyFeatureNames(
     }
   },
   character(1)))
+
