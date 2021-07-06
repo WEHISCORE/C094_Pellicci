@@ -12,9 +12,13 @@ navbar:
         - text: "Mini bulk"
           href: C094_Pellicci.mini-bulk.preprocess.html
     - text: "Selecting biologically relevant cells"
-      href: C094_Pellicci.cell_selection.html
+      menu:
+        - text: "Single cell"
+          href: C094_Pellicci.single-cell.cell_selection.html
     - text: "Annotating cells"
-      href: C094_Pellicci.annotate.html
+      menu:
+        - text: "Single cell"
+          href: C094_Pellicci.single-cell.annotate.html
     - text: "Differential analyses"
       menu:
         - text: "Single cell"

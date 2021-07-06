@@ -1,5 +1,5 @@
 ---
-title: "Selection of biologically relevant cells for Pellicci gamma-delta T-cell dataset"
+title: "Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset"
 description: |
 author:
   - name: William Ho 
@@ -28,7 +28,7 @@ source(here("code", "helper_functions.R"))
 # NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
 register(MulticoreParam(workers = getOption("mc.cores")))
-knitr::opts_chunk$set(fig.path = "C094_Pellicci.cell_selection_files/")
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.cell_selection_files/")
 ```
 
 # Motivation
