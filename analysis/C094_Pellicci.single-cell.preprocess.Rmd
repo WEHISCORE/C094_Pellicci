@@ -1,0 +1,1376 @@
+---
+title: "Preprocessing the Pellicci gamma-delta T-cell data set"
+description: |
+author:
+  - name: Peter Hickey 
+    url: https://peterhickey.org
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+```{r setup}
+library(here)
+library(BiocStyle)
+library(ggplot2)
+library(cowplot)
+library(patchwork)
+library(scales)
+
+# NOTE: Using >= 4 cores seizes up my laptop. Can use more on unix box.
+options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 3L))
+
+knitr::opts_chunk$set(
+  fig.path = "C094_Pellicci.single-cell.preprocess_files/")
+
+source(here("code", "helper_functions.R"))
+```
+
+# Setting up the data
+
+The count data were processed using `r Biocpkg("scPipe")` and available in a *SingleCellExperiment* object, along with their metadata.
+
+<aside>
+See [`data/SCEs/C094_Pellicci.scPipe.SCE.rds`](../data/SCEs/C094_Pellicci.scPipe.SCE.rds).
+</aside>
+
+```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.scPipe.SCE.rds"))
+```
+
+This data was processed to clean up the sample metadata, tidy the FACS index sorting data, and attach the gene metadata.
+
+<aside>
+See [`analysis/C094_Pellicci.preprocess.R`](../analysis/C094_Pellicci.preprocess.R).
+</aside>
+
+```{r}
+source(here("analysis", "C094_Pellicci.preprocess.R"))
+```
+
+**We then filter the data to only include the single-cells**.
+
+```{r}
+sce <- sce[, sce$sample_type == "Single cell"]
+colData(sce) <- droplevels(colData(sce))
+
+# Only retain genes with non-zero counts in at least 1 cell.
+sce <- sce[rowSums(counts(sce)) > 0, ]
+```
+
+## *Post-hoc* gating into developmental stages
+
+Gamma-delta T-cells are classified into 3 developmental stages based on the expression of the cell surface markers *CD4* and *CD161*:
+
+- `S1`: *CD4+*/*CD161-*
+- `S2`: *CD4-*/*CD161-*
+- `S3`: *CD4-*/*CD161+*
+
+Figure \@ref(fig:facs) shows the expression of *CD4* and *CD161*, as measured by FACS, for all single-cells.
+
+```{r facs, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample.", fig.asp = 2 / 3}
+# Some useful colours
+stage_colours <- setNames(
+  unique(sce$colours$stage_colours),
+  unique(names(sce$colours$stage_colours)))
+
+x <- makePerCellDF(
+  sce, 
+  features = c("V525_50_A_CD4_BV510", "B530_30_A_CD161_FITC"),
+  assay.type = "pseudolog")
+
+ggplot(
+  aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC),
+  data = x) +
+  geom_point(data = x, colour = "black", size = 0.5) +
+  theme_cowplot(font_size = 10) +
+  xlab("CD4") + 
+  ylab("CD161") +
+  facet_grid(tissue ~ donor, labeller = label_both)
+```
+
+Casey '*post-hoc* gated' the single-cells into `S1`, `S2`, or `S3` by transplanting the gating strategy used for the mini-bulk samples to the single-cells.
+Not all single-cells can be classified using these gates (e.g., some cells are seemingly *CD4+*/*CD161+*); these cells are labelled as `Unknown`.
+
+Figure \@ref(fig:facs-stages) re-plots the same data and colours each cell according to the *post-hoc* `stage`.
+We observe that boundaries between `S1`, `S2`, and `S3` appear rather arbitrary^[It should be remembered that the gates are set using more cells than are collected for scRNA-seq and so the boundaries may appear more defined in the original FACS files. Furthermore, the data here are shown on a 'pseudolog' scale, which may be different to the scale used when viewing the data in FlowJo.] and that the `Unknown` cells are a *potpourri* that includes cells that are intermediate between `S1`, `S2`, and `S3` as well as a handful of *CD4+*/*CD161+* cells.
+
+```{r facs-stages, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample and colouring each cell by its *post-hoc* `stage`.", fig.asp = 3 / 4}
+bg <- dplyr::select(x, -donor, -tissue)
+ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = stage_colours,
+    name = "stage") +
+  scale_colour_manual(
+    values = stage_colours,
+    name = "stage") +
+  theme_cowplot(font_size = 10) +
+  facet_grid(tissue ~ donor, labeller = label_both) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  xlab("CD4") + 
+  ylab("CD161")
+```
+
+## Incorporating cell-based annotations
+
+```{r}
+# Some more useful colours
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))
+plate_number_colours <- plate_number_colours[levels(sce$plate_number)]
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))
+tissue_colours <- tissue_colours[levels(sce$tissue)]
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))
+donor_colours <- donor_colours[levels(sce$donor)]
+
+sample_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$sample))],
+  levels(sce$sample))
+sce$colours$sample_colours <- sample_colours[sce$sample]
+```
+
+Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
+Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
+
+<aside>
+The 'SKW-3' sample is a control cell line, originally thought to originate from the peripheral blood of a 61 year old male patient with T cell chronic lymphocytic leukemia. (although [this is known to be problematic](https://web.expasy.org/cellosaurus/CVCL_2197)).
+</aside>
+
+```{r coldata, fig.cap = "Breakdown of experiment by plate."}
+p1 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = tissue_colours)
+p2 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = donor_colours)
+p3 <-  ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = stage),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = stage_colours)
+p4 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = plate_number)) +
+  coord_flip() +
+  ylab("Number of single cells") +
+  theme_cowplot(font_size = 9) +
+  scale_fill_manual(values = plate_number_colours)
+p1 + p2 + p3 + p4
+```
+
+Figure \@ref(fig:plate-map) shows the design of each plate.
+
+```{r plate-map, fig.cap = "Plate maps.", fig.asp = 0.8}
+# TODO: Fix legend
+p <- lapply(levels(sce$plate_number), function(p) {
+  z <- sce[, sce$plate_number == p]
+  plotPlatePosition(
+    z,
+    as.character(z$well_position),
+    point_size = 2,
+    point_alpha = 1,
+    theme_size = 5,
+    colour_by = "donor",
+    shape_by = "tissue") +
+    scale_colour_manual(values = donor_colours, name = "donor") +
+    ggtitle(p) +
+    theme(
+      legend.text = element_text(size = 6),
+      legend.title = element_text(size = 6)) +
+    guides(
+      colour = guide_legend(override.aes = list(size = 4)),
+      shape = guide_legend(override.aes = list(size = 4)))
+})
+
+wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
+```
+
+## Incorporating FACS data
+
+We store the values from the FACS measurements as an 'alternative experiment'.
+We store both the 'raw' data and the 'pseudolog-transformed' data.
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'raw' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "raw")) %>% 
+  skimr::skim()
+```
+
+The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'pseudolog-transformed' FACS measurements.
+
+```{r}
+t(assay(altExp(sce, "FACS"), "pseudolog")) %>% 
+  skimr::skim()
+```
+
+
+## Incorporating gene-based annotation
+
+I used the `r BiocStyle::Biocpkg("Homo.sapiens")` package and the `EnsDb.Hsapiens.v98` resource, which respectively cover the NCBI/RefSeq and Ensembl databases, to obtain gene-based annotations, such as the chromosome and gene symbol.
+
+Having quantified gene expression against the GENCODE gene annotation, we have Ensembl-style identifiers for the genes. 
+These identifiers are used as they are unambiguous and highly stable. 
+However, they are difficult to interpret compared to the gene symbols which are more commonly used in the literature.
+Henceforth, we will use gene symbols (where available) to refer to genes in our analysis and otherwise use the Ensembl-style gene identifiers^[Some care is taken to account for missing and duplicate gene symbols; missing symbols are replaced with the Ensembl identifier and duplicated symbols are concatenated with the (unique) Ensembl identifiers.].
+
+We also construct some useful gene sets: mitochondrial genes, ribosomal protein genes, sex chromosome genes, and pseudogenes.
+
+```{r}
+# Some useful gene sets
+mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes 
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+# Plate alignment issue (LCE511)
+
+## Motivation
+
+Casey and Dan reported that plate `LCE511` came out alignment during the sort, specifically while sorting the final row (row `P`), which contains the `Blood 2` cells (see Figure \@ref(fig:plate-map)).
+Depending on how exactly the plate came out of alignment, this may have resulted in the wells in the adjacent row (row O) containing 2 cells (i.e. doublets with 1 cell from those intended for row O and 1 cells from those intended for row P).
+
+We want to check:
+
+1. Do the wells in row P appear to be missing a cell?
+2. Do the wells in the previous row (row O) contain 2 cells (i.e. do they contain doublets)?
+
+## Analysis
+
+Figure \@ref(fig:qc-lce511) plots the number of UMIs (`sum`) and number of genes detected (`detected`) for wells in each row of place `LCE511`.
+We observe substantially fewer UMIs and genes detected for the wells in row P, confirming that these wells appear to be missing a cell.
+However, we do not observe any strong differences in the number of UMIs or genes detected for the wells in row O compared to wells in rows L - N.
+
+```{r qc-lce511, fig.cap = "Distributions of various QC metrics for all samples on plate `LCE511`.", fig.asp = 1 / 2}
+z <- sce[, sce$plate_number == "LCE511"]
+z <- addPerCellQC(z, use.altexps = "ERCC")
+
+p1 <- plotColData(
+  z, 
+  y = "sum",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$tissue,
+      z$donor,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "donor",
+  shape_by = "tissue",
+  point_alpha = 1,
+  theme_size = 8) + 
+  scale_y_log10() + 
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  guides(colour = FALSE) +
+  xlab("Row.tissue.donor") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p2 <- plotColData(
+  z, 
+  y = "detected",
+  x = I(
+    interaction(
+      substr(z$well_position, 1, 1), 
+      z$tissue,
+      z$donor,
+      drop = TRUE, 
+      lex.order = TRUE)), 
+  colour_by = "donor",
+  shape_by = "tissue",
+  point_alpha = 1,
+  theme_size = 8) + 
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  guides(colour = FALSE) +
+  xlab("Row.tissue.donor") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p1 + p2 +
+  plot_layout(ncol = 2, guides = "collect") +
+  plot_annotation("LCE511")
+```
+
+Thus far, we have no strong evidence that row O contains doublets.
+As another check, we look to see if the samples in these wells co-express mutually-exclusive tissue-marker genes.
+That is, since row O nominally contains `Blood` samples and row P nominally contained `Thymus` samples, we check if the samples in row `O` co-express `Blood` and `Thymus` marker genes^[These marker genes are identified by a Wilcox test comparing the `Blood` and `Thymus` single-cells on all plates except `LCE511`], which would provide evidence that row O wells contain doublets.
+
+Figure \@ref(fig:marker-genes-lce511) is a heatmap of `Blood` and `Thymus` marker genes for all wells on plate `LCE511`.
+Firstly, it shows that there aren't any great markers of `Blood` vs. `Thymus` single-cells in this data.
+Secondly, and more importantly, there is some evidence that row O wells express some `Blood`-specific markers (e.g., *NKG7*, *CCL5*, *HLA-B*, *HLA-C*).
+However, these same markers are also expressed by the `Thymus 1` samples in row J.
+There is no strong expression of the `Thymus`-specific markers in row O wells, but nor is there in any of the `Thymus` samples on this plate.
+
+```{r marker-genes-lce511, fig.cap = "Expression of the top-10 `Blood` and `Thymus` marker genes for all wells on plate `LCE511` grouped by `Tissue` then `row`. We are looking to see if the wells in row `O` co-express these marker genes."}
+# TODO: Fix figure size and legend size.
+library(scran)
+
+tmp <- logNormCounts(
+  sce[, sce$plate_number != "LCE511" & 
+        sce$tissue %in% c("Blood", "Thymus")])
+colData(tmp) <- droplevels(colData(tmp))
+w <- logNormCounts(
+  sce[, sce$plate_number == "LCE511" &
+        sce$tissue %in% c("Blood", "Thymus")])
+w$row <- substr(w$well_position, 1, 1)
+colData(w) <- droplevels(colData(w))
+
+markers <- findMarkers(
+  tmp, 
+  groups = tmp$tissue,
+  direction = "up",
+  test.type = "wilcox",
+  block = tmp$donor)
+
+features <- unlist(
+  lapply(markers, function(x) head(rownames(x[x$FDR < 0.05, ]), 10)))
+plotHeatmap(
+  w, 
+  features,
+  order_columns_by = c("tissue", "row", "donor"),
+  center = TRUE,
+  cluster_rows = FALSE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  annotation_row = data.frame(
+    tissue = sub("[0-9]+", "", names(features)),
+    row.names = features),
+  column_annotation_colors = list(
+    tissue = tissue_colours[levels(w$tissue)],
+    donor = donor_colours[levels(w$donor)]),
+  main = "LCE511")
+```
+
+## Summary
+
+Consistent with plate `LCE511` having come out of alignment during the sort, specifically while sorting the final row (row P), we find that wells in this row have an unusually small number of UMIs and genes detected.
+We therefore remove these wells from further analysis.
+Since row P is the only row on plate `LCE511` containing samples from `Blood 2`, this means that there are are no longer any single-cells from this sample on this plate.
+
+```{r}
+remove_p <- sce$plate_number == "LCE511" & 
+  substr(sce$well_position, 1, 1) == "P"
+sce <- sce[, !remove_p]
+```
+
+We have not found any strong evidence that the wells in the prior row (row O) have been contaminated by the sample intended for row P.
+However, since we have many additional single-cells from this sample elsewhere on this plate and on the other plates, we opt to also the row O wells on plate `LCE511`.
+
+```{r}
+remove_o <- sce$plate_number == "LCE511" &
+  substr(sce$well_position, 1, 1) == "O"
+sce <- sce[, !remove_o]
+colData(sce) <- droplevels(colData(sce))
+```
+
+# Quality control of cells
+
+## Defining the quality control metrics
+
+Low-quality cells need to be removed to ensure that technical effects do not distort downstream analysis results.
+We use several quality control (QC) metrics to measure the quality of the cells:
+
+- `sum`: This measures the library size of the cells, which is the total sum of UMI counts across both genes and spike-in transcripts. We want cells to have high library sizes as this means more RNA has been successfully captured during library preparation. 
+- `detected`: This is the number of expressed features^[The number of expressed genes refers to the number of genes which have non-zero counts (ie. they have been identified in the cell at least once)] in each cell. Cells with few expressed features are likely to be of poor quality, as the diverse transcript population has not been successful captured. 
+- `altexps_ERCC_detected`: This measures the proportion of reads which are mapped to spike-in transcripts relative to the library size of each cell. High proportions are indicative of poor-quality cells, where endogenous RNA has been lost during processing (e.g., due to cell lysis or RNA degradation). 
+The same amount of spike-in RNA to each cell, so an enrichment in spike-in counts is symptomatic of loss of endogenous RNA.
+- `subsets_Mito_percent`: This measures the proportion of reads which are mapped to mitochondrial RNA. If there is a higher than expected proportion of mitochondrial RNA this is often symptomatic of a cell which is under stress and is therefore of low quality and will not be used for the analysis. 
+- `subsets_Ribo_percent`: This measures the proportion of UMIs which are mapped to ribosomal protein genes. If there is a higher than expected proportion of ribosomal protein gene expression this is often symptomatic of a cell which is of compromised quality and we may want to exclude it from the analysis. 
+
+For CEL-Seq2 data, we typically observe library sizes that are in the tens of thousands^[This is consistent with the use of UMI counts rather than read counts, as each transcript molecule can only produce one UMI count but can yield many reads after fragmentation.] and several thousand expressed genes per cell.
+
+```{r, results = "hide"}
+is_mito <- rownames(sce) %in% mito_set
+summary(is_mito)
+is_ribo <- rownames(sce) %in% ribo_set
+summary(is_ribo)
+sce <- addPerCellQC(
+  sce, 
+  subsets = list(Mito = which(is_mito), Ribo = which(is_ribo)),
+  use.altexps = "ERCC")
+```
+
+## Visualizing the QC metrics
+
+Figure \@ref(fig:qcplot) compares the QC metrics of the single-cell samples across the different `sample` (combination of `tissue` and `donor`) and Figure \@ref(fig:qcplot-by-plate-number) further stratifies by `plate_number`.
+The number of UMIs, number of gene detected, and percentage of UMIs that are mapped to ERCC spike-ins are all higher in the 'experimental' samples than in the 'control' samples
+This likely reflects that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells (rather than this result being due to technical factors, although we cannot rule this out entirely).
+Together, these figures show that the vast majority of single-cell samples are good-quality^[Bearing in mind that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells.]:
+
+- The median library size is around `r number(median(sce$sum), accuracy = 100, big.mark = ",")`.
+- The median number of genes detected is around `r number(median(sce$detected), accuracy = 100, big.mark = ",")`.
+- The median percentage of UMIs that are mapped to mitochondrial RNA is around  `r percent(median(sce$subsets_Mito_percent), scale = 1)`.
+- The median percentage of UMIs that are mapped to ribosomal protein genes is around  `r percent(median(sce$subsets_Ribo_percent), scale = 1)`.
+- The median percentage of UMIs that are mapped to ERCC spike-ins is around  `r percent(median(sce$altexps_ERCC_percent), scale = 1)`.
+
+```{r qcplot, fig.cap = "Distributions of various QC metrics for all samples in the dataset.", fig.asp = 1}
+p1 <- plotColData(
+  sce,
+  "sum",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  scale_y_log10() +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm")) +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") +
+  xlab("")
+p2 <- plotColData(
+  sce,
+  "detected",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") +
+  xlab("")
+p3 <- plotColData(
+  sce,
+  "subsets_Mito_percent",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") + 
+  xlab("")
+p4 <- plotColData(
+  sce,
+  "subsets_Ribo_percent",
+  x = "sample",
+  other_fields = c("plate_number", "sample_type"),
+  point_size = 0.5,
+  colour_by = "sample") +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") + 
+  xlab("")
+p5 <- plotColData(
+  sce,
+  "altexps_ERCC_percent",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") + 
+  xlab("")
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+Figure \@ref(fig:qcplot-by-plate-number) shows that QC metrics are generally consistent across plates.
+
+```{r qcplot-by-plate-number, fig.cap = "Distributions of various QC metrics for all samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
+p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
+p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
+p3 <- p3 + facet_wrap(~plate_number, ncol = 3)
+p4 <- p4 + facet_wrap(~plate_number, ncol = 3)
+p5 <- p5 + facet_wrap(~plate_number, ncol = 3)
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+## Identifying outliers by each metric
+
+Outliers are defined based on the median absolute deviation (MADs) from the median value of each metric across all cells. 
+We remove small and large outliers for the library size and the number of expressed features, and large outliers for the spike-in proportions and mitochondrial gene expression proportions.
+Removal of low-quality cells is then performed by combining the filters for all of the metrics.
+
+Due to the differences in the QC metrics by `sample`, we will compute the separate outlier thresholds for each `sample`.
+
+```{r}
+sce$batch <- sce$sample
+libsize_drop <- isOutlier(
+  metric = sce$sum, 
+  nmads = 3,
+  type = "lower", 
+  log = TRUE,
+  batch = sce$batch)
+feature_drop <- isOutlier(
+  metric = sce$detected,
+  nmads = 3, 
+  type = "lower", 
+  log = TRUE,
+  batch = sce$batch)
+spike_drop <- isOutlier(
+  metric = sce$altexps_ERCC_percent, 
+  nmads = 3, 
+  type = "higher",
+  batch = sce$batch)
+mito_drop <- isOutlier(
+  metric = sce$subsets_Mito_percent, 
+  nmads = 3, 
+  type = "higher",
+  batch = sce$batch)
+ribo_drop <- isOutlier(
+  metric = sce$subsets_Ribo_percent, 
+  nmads = 3, 
+  type = "higher",
+  batch = sce$batch)
+```
+
+The following table summarises the QC cutoffs:
+
+```{r}
+libsize_drop_df <- data.frame(
+  batch = colnames(attributes(libsize_drop)$thresholds),
+  cutoff = attributes(libsize_drop)$thresholds["lower", ])
+feature_drop_df <- data.frame(
+  batch = colnames(attributes(feature_drop)$thresholds),
+  cutoff = attributes(feature_drop)$thresholds["lower", ])
+spike_drop_df <- data.frame(
+  batch = colnames(attributes(spike_drop)$thresholds),
+  cutoff = attributes(spike_drop)$thresholds["higher", ])
+mito_drop_df <- data.frame(
+  batch = colnames(attributes(mito_drop)$thresholds),
+  cutoff = attributes(mito_drop)$thresholds["higher", ])
+ribo_drop_df <- data.frame(
+  batch = colnames(attributes(ribo_drop)$thresholds),
+  cutoff = attributes(ribo_drop)$thresholds["higher", ])
+qc_cutoffs_df <- Reduce(
+  function(x, y) inner_join(x, y, by = "batch"),
+  list(
+    libsize_drop_df,
+    feature_drop_df, 
+    spike_drop_df, 
+    mito_drop_df, 
+    ribo_drop_df))
+qc_cutoffs_df$batch <- factor(qc_cutoffs_df$batch, levels(sce$batch))
+colnames(qc_cutoffs_df) <- c(
+  "batch", "total counts", "total features", "%ERCC", "%mito", "%ribo")
+qc_cutoffs_df %>%
+  arrange(batch) %>%
+  knitr::kable(caption = "QC cutoffs", digits = 1)
+```
+
+```{r}
+sce_pre_QC_outlier_removal <- sce
+keep <- !(libsize_drop | feature_drop | spike_drop | mito_drop)
+sce_pre_QC_outlier_removal$keep <- keep
+sce <- sce[, keep]
+```
+
+The table below summarises the number of cells per plate left following removal of outliers based on the QC metrics.
+The vast majority of cells are retained for all `sample`.
+
+More cells are removed due to high percentages of ERCC transcripts or mitochondrial RNA than due to low library size and number of expressed genes.
+In total, we remove `r number(sum(!keep))` cells based on these QC metrics, and retain `r number(sum(keep), big.mark = ",")` cells.
+
+```{r}
+inner_join(
+  distinct(
+    as.data.frame(colData(sce)), 
+    batch, sample_gate, sample),
+  data.frame(
+    ByLibSize = tapply(
+      libsize_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum),
+    ByFeature = tapply(
+      feature_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum), 
+    BySpike = tapply(
+      spike_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum,
+      na.rm = TRUE),
+    ByMito = tapply(
+      mito_drop, 
+      sce_pre_QC_outlier_removal$batch,
+      sum,
+      na.rm = TRUE),
+    Remaining = as.vector(
+      unname(table(sce$batch))),
+    PercRemaining = round(
+      100 * as.vector(unname(table(sce$batch))) /
+        as.vector(unname(table(sce_pre_QC_outlier_removal$batch))),
+      1)) %>%
+    tibble::rownames_to_column("batch")) %>%
+  dplyr::select(-batch) %>%
+  arrange(desc(PercRemaining)) %>%
+  knitr::kable(
+    caption = "Number of samples removed by each QC step and the number of samples remaining. Rows are ordered by the percentage of cells remaining in that group.")
+```
+
+### Checking for removal of biologically relevant subpopulations
+
+The biggest practical concern during QC is whether an entire cell type is inadvertently discarded.
+There is always some risk of this occurring as the QC metrics are never fully independent of biological state.
+We can diagnose cell type loss by looking for systematic differences in gene expression between the discarded and retained cells.
+
+```{r}
+lost <- calculateAverage(counts(sce_pre_QC_outlier_removal)[, !keep])
+kept <- calculateAverage(counts(sce_pre_QC_outlier_removal)[, keep])
+library(edgeR)
+logged <- cpm(cbind(lost, kept), log = TRUE, prior.count = 2)
+logFC <- logged[, 1] - logged[, 2]
+abundance <- rowMeans(logged)
+```
+
+If the discarded pool is enriched for a certain cell type, we should observe increased expression of the corresponding marker genes.
+Figure \@ref(fig:qc-md-plot) shows the result of this analysis, highlighting that there are few genes with a large $logFC$ between 'lost' and 'kept' cells (those few genes with larger $logFC$ have low average expression).
+This suggests that the QC step did not inadvertently filter out an entire biologically relevant subpopulation.
+
+<aside>
+An interactive version of Figure \@ref(fig:qc-md-plot) is available from [`output/glimma-plots/qc-md-plot.html`](../output/glimma-plots/qc-md-plot.html).
+</aside>
+
+```{r qc-md-plot, fig.cap = "Log-fold change in expression in the discarded cells compared to the retained cells. Each point represents a gene with mitochondrial transcripts in blue and ribosomal protein genes in orange. Dashed red lines indicate $|logFC| = 1", fig.asp = 0.7}
+is_mito <- rownames(sce) %in% mito_set
+is_ribo <- rownames(sce) %in% ribo_set
+par(mfrow = c(1, 1))
+plot(
+  abundance,
+  logFC,
+  xlab = "Average expression",
+  ylab = "Log-FC (lost/kept)",
+  pch = 16)
+points(
+  abundance[is_mito],
+  logFC[is_mito],
+  col = "dodgerblue",
+  pch = 16,
+  cex = 1)
+points(
+  abundance[is_ribo],
+  logFC[is_ribo],
+  col = "orange",
+  pch = 16,
+  cex = 1)
+abline(h = c(-1, 1), col = "red", lty = 2)
+
+library(Glimma)
+glMDPlot(
+  x = data.frame(abundance = abundance, logFC = logFC),
+  xval = "abundance", 
+  yval = "logFC",
+  counts = cbind(lost, kept),
+    anno = cbind(
+      flattenDF(rowData(sce_pre_QC_outlier_removal)), 
+      DataFrame(
+        GeneID = rownames(sce_pre_QC_outlier_removal))),
+  display.columns = c("ENSEMBL.SYMBOL", "ENSEMBL.GENEID", "ENSEMBL.SEQNAME"),
+  groups = factor(c("lost", "kept")),
+  samples = c("lost", "kept"),
+  status = unname(ifelse(is_mito, 1, ifelse(is_ribo, -1, 0))),
+  transform = FALSE,
+  main = "lost vs. kept",
+  side.ylab = "Average count",
+  cols = c("orange", "black", "dodgerBlue"),
+  path = here("output"),
+  html = "qc-md-plot",
+  launch = FALSE)
+```
+
+Another concern is whether the cells removed during QC preferentially derive from particular experimental groups.
+Figure \@ref(fig:barplot-highlighting-outliers) shows that we exclude more `Thymus` than `Blood` samples, although this is roughly proportional to the abundance of samples from each tissue.
+
+```{r barplot-highlighting-outliers, fig.cap = "Cells removed during QC, stratified by experimental group. "}
+ggcells(sce_pre_QC_outlier_removal, exprs_values = "counts") +
+  geom_bar(aes(x = batch, fill = keep)) + 
+  ylab("Number of cells") + 
+  theme_cowplot(font_size = 6) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Finally, Figure \@ref(fig:qcplot-highlighting-outliers) compares the QC metrics of the discarded and retained cells.
+
+```{r qcplot-highlighting-outliers, fig.cap = "Distribution of QC metrics for each plate in the dataset. Each point represents a cell and is colored according to whether it was discarded during the QC process. Note that a cell will only be kept if it passes the relevant threshold for all QC metrics.", fig.asp = 1}
+p1 <- plotColData(
+  sce_pre_QC_outlier_removal,
+  "sum",
+  x = "sample",
+  colour_by = "keep",
+  point_size = 0.5) +
+  scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm"))
+p2 <- plotColData(
+  sce_pre_QC_outlier_removal,
+  "detected",
+  x = "sample",
+  colour_by = "keep",
+  point_size = 0.5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p3 <- plotColData(
+  sce_pre_QC_outlier_removal,
+  "subsets_Mito_percent",
+  x = "sample",
+  colour_by = "keep",
+  point_size = 0.5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p4 <- plotColData(
+  sce_pre_QC_outlier_removal,
+  "subsets_Ribo_percent",
+  x = "sample",
+  colour_by = "keep",
+  point_size = 0.5) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p1 + p2 + p3 + p4 + plot_layout(guides = "collect")
+```
+
+## Summary
+
+To conclude, Figures \@ref(fig:qcplot-post-outlier-removal) and \@ref(fig:qcplot-post-outlier-removal-by-plate-number) shows that following QC that most samples have similar QC metrics, as is to be expected.
+
+```{r qcplot-post-outlier-removal, fig.cap = "Distributions of various QC metrics for all samples in the dataset post-QC.", fig.asp = 1}
+p1 <- plotColData(
+  sce,
+  "sum",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  scale_y_log10() +
+  annotation_logticks(
+    sides = "l",
+    short = unit(0.03, "cm"),
+    mid = unit(0.06, "cm"),
+    long = unit(0.09, "cm")) +
+  theme(axis.text.x = element_blank()) + 
+  scale_colour_manual(values = sample_colours, name = "sample") +
+  xlab("")
+p2 <- plotColData(
+  sce,
+  "detected",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  theme(axis.text.x = element_blank()) +
+  xlab("")
+p3 <- plotColData(
+  sce,
+  "subsets_Mito_percent",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) +
+  xlab("")
+p4 <- plotColData(
+  sce,
+  "subsets_Ribo_percent",
+  x = "sample",
+  other_fields = c("plate_number", "sample_type"),
+  point_size = 0.5,
+  colour_by = "sample") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) +
+  xlab("")
+p5 <- plotColData(
+  sce,
+  "altexps_ERCC_percent",
+  x = "sample",
+  other_fields = "plate_number",
+  point_size = 0.5,
+  colour_by = "sample") +
+  scale_y_log10() +
+  ylim(0, NA) +
+  theme(axis.text.x = element_blank()) +
+  xlab("")
+
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+```{r qcplot-post-outlier-removal-by-plate-number, fig.cap = "Distributions of various QC metrics for all **single-cell** samples in the dataset, stratified by `plate_number`.", fig.asp = 1}
+p1 <- p1 + facet_wrap(~plate_number, ncol = 3)
+p2 <- p2 + facet_wrap(~plate_number, ncol = 3)
+p3 <- p3 + facet_wrap(~plate_number, ncol = 3)
+p4 <- p4 + facet_wrap(~plate_number, ncol = 3)
+p5 <- p5 + facet_wrap(~plate_number, ncol = 3)
+
+p1 + p2 + p3 + p4 + p5 + 
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+Figure \@ref(fig:coldata-postqc) summarises the experimental design following QC.
+We remind ourself that all `Blood 2` samples on plate number `LCE511` were excluded in [Plate alignment issue (LCE511)].
+
+```{r coldata-postqc, fig.asp = 1 / 2, fig.cap = "Breakdown of experiment by plate."}
+p1 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = plate_number, fill = sample),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  theme_cowplot(font_size = 10) +
+  scale_fill_manual(values = sample_colours)
+p2 <- ggcells(sce) + 
+  geom_bar(aes(x = plate_number, fill = plate_number)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 10) +
+  scale_fill_manual(values = plate_number_colours)
+p1 | p2
+```
+
+# Examining gene-level metrics
+
+## Inspecting the most highly expressed genes
+
+Figure \@ref(fig:topgenes) shows the most highly expressed genes across the cell population in the combined data set.
+Some of them are mitochondrial genes, matching what we've already seen in the QC metrics, and ribosomal protein genes, which commonly are amongst the most highly expressed genes in scRNA-seq data.
+
+```{r topgenes, fig.asp = 1, fig.cap = "Percentage of total counts assigned to the top 50 most highly-abundant features in the combined data set. For each feature, each bar represents the percentage assigned to that feature for a single cell, while the circle represents the average across all cells."}
+plotHighestExprs(sce, n = 50)
+```
+
+Figure \@ref(fig:topgenes-filtered) shows the most highly expressed endogenous genes after excluding the mitochondrial and ribosomal protein genes.
+
+<aside>
+A cursory analysis shows that many of these are lncRNAs. **TODO**: What does this mean?
+</aside>
+
+```{r topgenes-filtered, fig.asp = 1, fig.cap = "Percentage of total counts assigned to the top 50 most highly-abundant features in the combined data set. For each feature, each bar represents the percentage assigned to that feature for a single cell, while the circle represents the average across all cells. Bars are coloured by the total number of expressed features in each cell, while circles are coloured according to whether the feature is labelled as a control feature."}
+plotHighestExprs(
+  sce,
+  drop_features = rownames(sce) %in% c(mito_set, ribo_set),
+  n = 50)
+```
+
+## Filtering out low-abundance genes
+
+Low-abundance genes are problematic as zero or near-zero counts do not contain much information for reliable statistical inference [@bourgon2010independent].
+These genes typically do not provide enough evidence to reject the null hypothesis during testing, yet they still increase the severity of the multiple testing correction.
+In addition, the discreteness of the counts may interfere with statistical procedures, e.g., by compromising the accuracy of continuous approximations.
+Thus, low-abundance genes are often removed in many RNA-seq analysis pipelines before the application of downstream methods.
+
+The 'optimal' choice of filtering strategy depends on the downstream application.
+A more aggressive filter is usually required to remove discreteness (e.g., for normalization) compared to that required for removing underpowered tests.
+For hypothesis testing, the filter statistic should also be independent of the test statistic under the null hypothesis.
+Thus, we (or the relevant function) will filter at each step as needed, rather than applying a single filter for the entire analysis.
+
+Several metrics can be used to define low-abundance genes.
+The most obvious is the average count for each gene, computed across all cells in the data set.
+We typically observe a peak of moderately expressed genes following a plateau of lowly expressed genes (Figure \@ref(fig:abhist)).
+
+```{r abhist, fig.cap = "Histogram of log-average counts for all genes in the combined data set.", results = "hide"}
+ave_counts <- calculateAverage(sce)
+par(mfrow = c(1, 1))
+hist(
+  x = log10(ave_counts), 
+  breaks = 100, 
+  main = "", 
+  col = "grey",
+  xlab = expression(Log[10] ~ "average count"))
+to_keep <- ave_counts > 0
+sce <- sce[to_keep, ]
+```
+
+We remove `r number(sum(!to_keep), big.mark = ",")` genes that are not expressed in any cell.
+Such genes provide no information and would be removed by any filtering strategy.
+We retain `r number(sum(to_keep), big.mark = ",")` for downstream analysis.
+
+# Normalization
+
+UMI counts are subject to differences in capture efficiency and sequencing depth between cells [@stegle2015computational].
+Normalization is required to eliminate these cell-specific biases prior to downstream quantitative analyses.
+This is often done by assuming that most genes are not differentially expressed (DE) between cells.
+Any systematic difference in count size across the non-DE majority of genes between two cells is assumed to represent bias and is removed by scaling.
+More specifically, 'size factors' are calculated that represent the extent to which counts should be scaled in each library.
+
+## Using the deconvolution method to deal with zero counts
+
+Size factors can be computed with several different approaches, e.g., using the `estimateSizeFactorsFromMatrix` function in the `r Biocpkg("DESeq2")` package [@anders2010differential;@love2014moderated], or with the `calcNormFactors` function [@robinson2010scaling] in the `r Biocpkg("edgeR")` package.
+However, single-cell data can be problematic for these bulk data-based methods due to the dominance of low and zero counts.
+To overcome this, we pool counts from many cells to increase the count size for accurate size factor estimation [@lun2016pooling].
+Pool-based size factors are then 'deconvolved' into cell-based factors for cell-specific normalization.
+This removes scaling biases associated with cell-specific differences in capture efficiency, sequencing depth and composition biases.
+
+```{r, results = "hide"}
+library(scran)
+set.seed(9434887)
+clusters <- quickCluster(sce)
+round(prop.table(table(clusters, sce$batch), 1), 2)
+sce <- computeSumFactors(sce, clusters = clusters, min.mean = 0.1)
+summary(sizeFactors(sce))
+```
+
+We check that the size factors are roughly aligned with the total library sizes (Figure \@ref(fig:normplot)).
+Deviations from the diagonal correspond to composition biases due to differential expression between cell subpopulations.
+
+```{r normplot, fig.cap = "Size factors from deconvolution, plotted against library sizes for all cells in each dataset. Axes are shown on a log-scale.", results = "hide", fig.asp = 1}
+xlim <- c(0.1, max(sce$sum) / 1e3)
+ylim <- range(sizeFactors(sce))
+par(mfrow = c(3, 3))
+lapply(levels(sce$batch), function(b) {
+  sce <- sce[, sce$batch == b]
+  plot(
+    x = sce$sum / 1e3, 
+    y = sizeFactors(sce), 
+    log = "xy",
+    xlab = "Library size (thousands)", 
+    ylab = "Size factor",
+    xlim = xlim,
+    ylim = ylim,
+    main = b,
+    pch = 16,
+    cex = 0.5)
+})
+```
+
+## Applying the size factors to normalize gene expression
+
+The count data are used to compute normalized log-expression values for use in downstream analyses.
+Each value is defined as the log~2~-ratio of each count to the size factor for the corresponding cell, after adding a prior count of 1 to avoid undefined values at zero counts.
+Division by the size factor ensures that any cell-specific biases are removed.
+
+```{r, results = "hide"}
+# NOTE: No need for multiBatchNorm() since the size factors were computed 
+#       jointly using all samples.
+sce <- logNormCounts(sce)
+```
+
+## Computing separate size factors for spike-in transcripts
+
+Size factors computed from the counts for endogenous genes are usually not appropriate for normalizing the counts for spike-in transcripts. 
+To ensure normalization is performed correctly, we compute a separate set of size factors for the spike-in set.
+For each cell, the spike-in-specific size factor is defined as the total count across all transcripts in the spike-in set. 
+This assumes that none of the spike-in transcripts are differentially expressed, which is reasonable given that the same amount and composition of spike-in RNA should have been added to each cell [@lun2017assessing]. 
+
+```{r}
+sizeFactors(altExp(sce, "ERCC")) <- librarySizeFactors(altExp(sce, "ERCC"))
+```
+
+# Feature selection
+
+## Motivation
+
+We often use scRNA-seq data in exploratory analyses to characterize heterogeneity across cells.
+Procedures like dimensionality reduction and clustering compare cells based on their gene expression profiles, which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells.
+The choice of genes to use in this calculation has a major impact on the behaviour of the metric and the performance of downstream methods.
+We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise.
+This aims to preserve interesting biological structure without the variance that obscures that structure.
+It also reduces the size of the dataset to improve computational efficiency of later steps.
+
+## Quantifying per-gene variation
+
+### Variance of the log-counts
+
+The simplest approach to quantifying per-gene variation is to simply compute the variance of the log-normalized expression values (referred to as "log-counts" for simplicity) for each gene across all cells in the population [@lun2016step].
+This has an advantage in that the feature selection is based on the same log-values that are used for later downstream steps.
+In particular, genes with the largest variances in log-values will contribute the most to the Euclidean distances between cells.
+By using log-values here, we ensure that our quantitative definition of heterogeneity is consistent throughout the entire analysis.
+
+Calculation of the per-gene variance is simple but feature selection requires modelling of the mean-variance relationship.
+
+### Quantifying technical noise
+
+To account for the mean-variance relationship, we fit a trend to the variance with respect to abundance across the ERCC spike-in transcripts.
+The premise here is that spike-ins should not be affected by biological variation, so the fitted value of the spike-in trend should represent a better estimate of the technical component for each gene.
+
+### Accounting for blocking factors
+
+Data containing multiple batches will often exhibit batch effects.
+We are usually not interested in highly variable genes (HVGs) that are driven by batch effects. 
+Rather, we want to focus on genes that are highly variable within each batch.
+This is naturally achieved by performing trend fitting and variance decomposition separately for each batch.
+Here we treat each plate as a separate batch.
+
+```{r}
+sce$batch <- sce$plate_number
+batch_colours <- plate_number_colours
+var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
+```
+
+The use of a batch-specific trend fit is useful as it accommodates differences in the mean-variance trends between batches.
+This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage or in the amount of spike-in RNA added.
+
+Figure \@ref(fig:trendplots) visualizes the quality of the batch-specific trend fits and Figure \@ref(fig:trendplots-fits) highlights the need for batch-specific estimates of these fits.
+The analysis of each plate yields estimates of the biological and technical components for each gene, which are averaged across plates to take advantage of information from multiple batches.
+
+```{r trendplots, fig.cap = "Variance of normalized log-expression values for each gene in each plate, plotted against the mean log-expression. The coloured line represents the mean-dependent trend fitted to the variances of the spike-in transcripts (red).", results = "hide", fig.asp = 2 / 3}
+xlim <- c(0, max(sapply(var_fit$per.block, function(x) max(x$mean))))
+ylim <- c(0, max(sapply(var_fit$per.block, function(x) max(x$total))))
+par(mfrow = c(2, 3))
+blocked_stats <- var_fit$per.block
+for (i in colnames(blocked_stats)) {
+  current <- blocked_stats[[i]]
+  plot(
+    current$mean,
+    current$total,
+    main = i,
+    pch = 16,
+    cex = 0.5,
+    xlab = "Mean of log-expression",
+    ylab = "Variance of log-expression",
+    xlim = xlim,
+    ylim = ylim)
+  curfit <- metadata(current)
+  points(curfit$mean, curfit$var, col = "red", pch = 16)
+  curve(curfit$trend(x), col = batch_colours[[i]], add = TRUE, lwd = 2) 
+}
+```
+
+```{r trendplots-fits, fig.cap = "An overlay of the trend fits from the previous figure, highlighting the need for the batch-specific trend fits. Each line is a the trend line for a particular batch (with colours matching the previous plot).", results = "hide", fig.asp = 1}
+par(mfrow = c(1, 1))
+# NOTE: 'Fake' plot with right dimensions to overlay trends.
+plot(
+  x = current$mean, 
+  y = current$total, 
+  pch = 0,
+  cex = 0.6, 
+  xlab = "Mean log-expression", 
+  ylab = "Variance of log-expression", 
+  main = "Trends", 
+  xlim = xlim, 
+  ylim = ylim,
+  col = "white")
+lapply(colnames(blocked_stats), function(b) {
+  curve(
+    metadata(var_fit$per.block[[b]])$trend(x), 
+    col = batch_colours[b], 
+    lwd = 1, 
+    add = TRUE)
+})
+legend(
+  "topright", 
+  legend = levels(sce$batch), 
+  col = batch_colours,
+  lwd = 2,
+  title = "Plate number",
+  ncol = 2,
+  cex = 0.8)
+```
+
+## Selecting highly variable genes (HVGs)
+
+Once we have quantified the per-gene variation, the next step is to select the subset of HVGs to use in downstream analyses.
+A larger subset will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes, at the cost of increasing noise from irrelevant genes that might obscure said signal.
+It is difficult to determine the optimal trade-off for any given application as noise in one context may be useful signal in another.
+For example, heterogeneity in T cell activation responses is an interesting phenomena but may be irrelevant noise in studies that only care about distinguishing the major immunophenotypes.
+
+We opt to only remove the obviously uninteresting genes with variances below the trend.
+By doing so, we avoid the need to make any judgement calls regarding what level of variation is interesting enough to retain.
+This approach represents one extreme of the bias-variance trade-off where bias is minimized at the cost of maximizing noise.
+
+```{r}
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+```
+
+### Exclusion of gene sets from HVGs
+
+```{r}
+is_mito <- hvg %in% mito_set
+is_ribo <- hvg %in% ribo_set
+is_pseudogene <- hvg %in% pseudogene_set
+is_sex <- hvg %in% sex_set
+```
+
+We find that the most highly variable genes in this dataset are somewhat enriched for pseudogenes (n = `r sum(is_pseudogene)`), with Figure \@ref(fig:hvg-check) showing around 1/3 of the top-500 HVGs are pseudogenes.
+Figure \@ref(fig:hvg-check) also shows the percentage of the top-k HVGs that are ribosomal protein genes^[Here, ribosomal protein genes are defined as those gene symbols starting with "Rpl" or "Rps" or otherwise found in the ["KEGG_RIBOSOME" gene set published by MSigDB](https://www.gsea-msigdb.org/gsea/msigdb/cards/KEGG_RIBOSOME.html), namely: `r glue::glue_collapse(sort(ribo_set), sep = ", ")`] (n = `r sum(is_ribo)`), genes on the sex chromosomes (n = `r sum(is_sex)`), and mitochondrial genes (n = `r sum(is_mito)`).
+
+```{r hvg-check, fig.cap = "Percentage of top-K HVGs that are genes of a given class."}
+plot(
+  100 * cumsum(is_mito) / seq_along(hvg),
+  log = "x",
+  ylim = c(0, 100),
+  ylab = "%",
+  xlab = "Top-k genes",
+  col = "#DF536B",
+  pch = 16)
+points(100 * cumsum(is_ribo) / seq_along(hvg), col = "#61D04F", pch = 16)
+points(100 * cumsum(is_pseudogene) / seq_along(hvg), col = "#2297E6", pch = 16)
+points(100 * cumsum(is_sex) / seq_along(hvg), col = "#28E2E5", pch = 16)
+points(
+  100 * cumsum(is_mito | is_ribo | is_pseudogene | is_sex) / seq_along(hvg), 
+  col = "black",
+  pch = 16)
+legend(
+  "topright",
+  pch = 16,
+  col = c("black",  "#2297E6", "#61D04F", "#28E2E5", "#DF536B"),
+  legend = c("Union", "Pseudogene", "Ribosomal protein", "Sex", "Mitochondrial"))
+```
+
+Generally speaking, pseudogenes, ribosomal protein genes, and mitochondrial genes are of lesser biological relevance, so we tend may exclude them from the HVGs.
+This means that these genes can no longer **directly** influence some of the subsequent steps in the analysis, including:
+
+- Dimensionality reduction
+  - Principal component analysis (PCA)
+  - Uniform manifold approximation and projection (UMAP)
+- Data integration
+  - Mutual nearest neighbours (MNN)
+- Clustering
+
+Although the exclusion of these genes from the HVGs prevents them from directly influencing these analyses, they may still **indirectly**  associated with these steps or their outcomes.
+For example, if there is a set of (non ribosomal protein) genes that are strongly associated with ribosomal protein gene expression, then we may still see a cluster associated with ribosomal protein gene expression.
+
+Finally, and to emphasise, we have only excluded these gene sets from the HVGs, i.e. we have not excluded them entirely from the dataset.
+In particular, this means that these genes may appear in downstream results (e.g., gene lists resulting from a differential expression analysis between cells in different clusters or with different genotypes).
+
+```{r}
+hvg <- hvg[!(is_mito | is_ribo | is_pseudogene)]
+```
+
+## Summary
+
+We are left with `r scales::number(length(hvg), big.mark = ",")` HVGs by this approach^[This is a large number of HVGs but the results don't qualitatively change by reducing this to, say, the top-1000 HVGs.].
+Figure \@ref(fig:hvgs) shows the expression of the top-10 HVGs.
+
+```{r hvgs, fig.cap = "Violin plots of normalized log-expression values for the top-10 HVGs. Each point represents the log-expression value in a single cell."}
+plotExpression(object = sce, features = hvg[1:10])
+```
+
+# Dimensionality reduction
+
+Many scRNA-seq analysis procedures involve comparing cells based on their expression values across multiple genes.
+In these applications, each individual gene represents a dimension of the data. 
+If we had a scRNA-seq data set with two genes, we could make a two-dimensional plot where each axis represents the expression of one gene and each point in the plot represents a cell.
+Dimensionality reduction extends this idea to data sets with thousands of genes where each cell’s expression profile defines its location in the high-dimensional expression space.
+
+As the name suggests, dimensionality reduction aims to reduce the number of separate dimensions in the data.
+This is possible because different genes are correlated if they are affected by the same biological process.
+Thus, we do not need to store separate information for individual genes, but can instead compress multiple features into a single dimension.
+This reduces computational work in downstream analyses, as calculations only need to be performed for a few dimensions rather than thousands of genes; reduces noise by averaging across multiple genes to obtain a more precise representation of the patterns in the data; and enables effective plotting of the data, for those of us who are not capable of visualizing more than 3 dimensions.
+
+## Principal component analysis
+
+Principal components analysis (PCA) discovers axes in high-dimensional space that capture the largest amount of variation.
+In PCA, the first axis (or "principal component", PC) is chosen such that it captures the greatest variance across cells.
+The next PC is chosen such that it is orthogonal to the first and captures the greatest remaining amount of variation, and so on.
+
+By definition, the top PCs capture the dominant factors of heterogeneity in the data set.
+Thus, we can perform dimensionality reduction by restricting downstream analyses to the top PCs.
+This strategy is simple, highly effective and widely used throughout the data sciences.
+
+When applying PCA to scRNA-seq data, our assumption is that biological processes affect multiple genes in a coordinated manner.
+This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behaviour of many genes.
+By comparison, random technical or biological noise is expected to affect each gene independently.
+There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs.
+This motivates the use of the earlier PCs in our downstream analyses, which concentrates the biological signal to simultaneously reduce computational work and remove noise.
+
+We perform the PCA on the log-normalized expression values.
+PCA is generally robust to random noise but an excess of it may cause the earlier PCs to capture noise instead of biological structure.
+This effect can be avoided - or at least mitigated - by restricting the PCA to a subset of HVGs, as done in [Feature selection].
+
+The choice of the number of PCs is a decision that is analogous to the choice of the number of HVGs to use.
+Using more PCs will avoid discarding biological signal in later PCs, at the cost of retaining more noise.
+
+We use the strategy of retaining all PCs until the percentage of total variation explained reaches some threshold.
+We derive a suitable value for this threshold by calculating the proportion of variance in the data that is attributed to the biological component.
+This is done using the the variance modelling results from [Quantifying per-gene variation].
+
+```{r}
+set.seed(557)
+sce <- denoisePCA(sce, var_fit, subset.row = hvg)
+```
+
+This retains `r ncol(reducedDim(sce, "PCA"))` dimensions, which represents the lower bound on the number of PCs required to retain all biological variation.
+Any fewer PCs will definitely discard some aspect of biological signal^[Note that the converse is not true, i.e., there is no guarantee that the retained PCs capture all of the signal, which is only generally possible if no dimensionality reduction is performed at all.].
+This approach provides a reasonable choice when we want to retain as much signal as possible while still removing some noise.
+
+## Dimensionality reduction for visualization
+
+We use the uniform manifold approximation and projection (UMAP) method [@McInnes2018-hy] to perform further dimensionality reduction for visualization.
+
+```{r}
+library(uwot)
+set.seed(785146)
+sce <- runUMAP(sce, dimred = "PCA")
+```
+
+Figure \@ref(fig:umap) visualizes the cells using the UMAP co-ordinates, colouring the cells by key experimental factors, and Figures \@ref(fig:umap-tissue-post-hoc-sample-gate) use facetting to further tease out associations between UMAP co-ordinates and experimental factors.
+
+```{r umap, fig.cap = "UMAP plot of the dataset. Each point represents a cell and is coloured according to the legend.", fig.asp = 1}
+p1 <- plotUMAP(sce, colour_by = "donor", point_size = 0.5, point_alpha = 1) +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  theme_cowplot(font_size = 10)
+p2 <- plotUMAP(
+  sce, 
+  colour_by = "plate_number", 
+  point_size = 0.5, 
+  point_alpha = 1) +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10)
+p3 <- plotUMAP(
+  sce, 
+  colour_by = "stage",
+  point_size = 0.5, 
+  point_alpha = 1) +
+  scale_colour_manual(
+    values = stage_colours,
+    name = "stage") +
+  theme_cowplot(font_size = 10)
+p4 <- plotUMAP(sce, colour_by = "tissue", point_size = 0.5, point_alpha = 1) +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10)
+p5 <- plotUMAP(
+  sce,
+  colour_by = data.frame(`log10(sum)` = log10(sce$sum), check.names = FALSE),
+  point_size = 0.5, 
+  point_alpha = 1) +
+  theme_cowplot(font_size = 10)
+
+p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 2)
+```
+
+```{r umap-donor, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `donor`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -donor)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = donor), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = donor_colours, name = "donor") +
+  scale_colour_manual(values = donor_colours, name = "donor") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~donor, ncol = 2, labeller = label_both) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+  guides(colour = FALSE)
+```
+
+```{r umap-plate-number, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number`.", fig.asp = 2 / 3}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -plate_number)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~plate_number, ncol = 3) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `stage`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -stage)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
+  scale_fill_manual(
+    values = stage_colours,
+    name = "stage") +
+  scale_colour_manual(
+    values = stage_colours,
+    name = "stage") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~stage, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`.", fig.asp = 1}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -tissue)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = tissue_colours, name = "tissue") +
+  scale_colour_manual(values = tissue_colours, name = "tissue") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_wrap(~tissue, ncol = 2) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
+  guides(colour = FALSE)
+```
+
+```{r umap-tissue-post-hoc-sample-gate, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue` and `stage` and further coloured by `plate_number`.", fig.asp = 1.2}
+umap_df <- makePerCellDF(sce)
+bg <- dplyr::select(umap_df, -tissue, -stage)
+ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+  theme_cowplot(font_size = 10) +
+  xlab("UMAP 1") +
+  ylab("UMAP 2") +
+  facet_grid(stage ~ tissue) +
+  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1)))
+```
+
+## Summary
+
+Although Figures \@ref(fig:umap) - \@ref(fig:umap-tissue-post-hoc-sample-gate) are only preliminary summaries of the data, there are few points worth highlighting:
+
+- There are no strong `donor`-associated differences.
+- There are strong `plate_number`-associated differences.
+- There are strong `stage`-associated differences.
+- There are strong `tissue`-associated differences.
+- There are library size-associated differences, which is itself largely driven by differences in library size between the `Cell line` and non-`Cell line` samples.
+
+However, it is premature to draw any strong conclusions
+We will seek to mitigate the differences associated with technical factors (e.g., `plate_number` and library size) in downstream analyses so that we might better investigate the biological factors (i.e. `tissue` and `stage`).
+
+# Concluding remarks
+
+```{r}
+saveRDS(
+  sce,
+  here("data", "SCEs", "C094_Pellicci.single-cell.preprocessed.SCE.rds"),
+  compress = "xz")
+```
+
+The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.preprocessed.SCE.rds`](../data/SCEs/C094_Pellicci.preprocessed.SCE.rds)).
+This will be used in downstream analyses, e.g., selecting biologically relevant cells.
+
+# Additional information {.appendix}
+
+The following are available on request:
+
+- Full CSV tables of any data presented.
+- PDF/PNG files of any static plots.
+
+# Session info {.appendix}
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
+
+```{r}
+sessioninfo::session_info()
+```
+
+</details>
