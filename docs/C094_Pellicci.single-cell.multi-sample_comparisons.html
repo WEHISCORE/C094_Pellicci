@@ -2242,7 +2242,6 @@ Show code
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># Define what constitutes a sample (i.e. replicate) in this experiment.</span>
 <span class='va'>sce</span><span class='op'>$</span><span class='va'>rep</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>, <span class='st'>"."</span>, <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span><span class='op'>)</span>
-
 <span class='co'># Define groups that are to be compared</span>
 <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>, <span class='st'>"."</span>, <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span><span class='op'>)</span><span class='op'>)</span>
 </code></pre>
@@ -2280,7 +2279,6 @@ Show code
   <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span><span class='op'>)</span>,
   <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
 <span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='va'>cluster_colours</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>]</span>
-
 <span class='co'># set group colour</span>
 <span class='va'>group_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
   <span class='fu'>Polychrome</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/Polychrome/man/palettes.html'>kelly.colors</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span><span class='op'>)</span><span class='op'>+</span><span class='fl'>1</span><span class='op'>)</span><span class='op'>[</span><span class='op'>-</span><span class='fl'>1</span><span class='op'>]</span>,
@@ -2293,7 +2291,6 @@ Show code
 <span class='va'>label_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
   <span class='va'>cluster_colours</span>, 
   <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>, <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>cluster_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-
 <span class='co'># Some useful gene sets</span>
 <span class='va'>mito_set</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/any.html'>any</a></span><span class='op'>(</span><span class='fu'>rowData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>$</span><span class='va'>ENSEMBL.SEQNAME</span> <span class='op'>==</span> <span class='st'>"MT"</span><span class='op'>)</span><span class='op'>]</span>
 <span class='va'>ribo_set</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>grep</a></span><span class='op'>(</span><span class='st'>"^RP(S|L)"</span>, <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span>, value <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
@@ -2326,7 +2323,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>9</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span><span class='op'>)</span>
-
 <span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>plate_number</span>, fill <span class='op'>=</span> <span class='va'>sample</span><span class='op'>)</span>,
@@ -2335,7 +2331,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>9</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>sample_colours</span><span class='op'>)</span>
-
 <span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>plate_number</span>, fill <span class='op'>=</span> <span class='va'>stage</span><span class='op'>)</span>,
@@ -2344,7 +2339,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>9</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span><span class='op'>)</span>
-
 <span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>plate_number</span>, fill <span class='op'>=</span> <span class='va'>plate_number</span><span class='op'>)</span>,
@@ -2353,7 +2347,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Number of samples"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>9</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>
-
 <span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>plate_number</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span>,
@@ -2362,7 +2355,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Number of samples"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>9</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>
-
 <span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>plate_number</span>, fill <span class='op'>=</span> <span class='va'>group</span><span class='op'>)</span>,
@@ -2371,7 +2363,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Number of samples"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>9</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>group_colours</span><span class='op'>)</span>
-
 <span class='va'>p1</span> <span class='op'>+</span> <span class='va'>p2</span> <span class='op'>+</span> <span class='va'>p3</span> <span class='op'>+</span> <span class='va'>p4</span> <span class='op'>+</span> <span class='va'>p5</span> <span class='op'>+</span> <span class='va'>p6</span> <span class='op'>+</span>
   <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_layout.html'>plot_layout</a></span><span class='op'>(</span>ncol <span class='op'>=</span> <span class='fl'>2</span>, guides <span class='op'>=</span> <span class='st'>"collect"</span><span class='op'>)</span>
 </code></pre>
@@ -2418,7 +2409,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
-
 <span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>label</span>, fill <span class='op'>=</span> <span class='va'>tissue</span><span class='op'>)</span>,
@@ -2427,7 +2417,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
-
 <span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>label</span>, fill <span class='op'>=</span> <span class='va'>sample</span><span class='op'>)</span>,
@@ -2436,7 +2425,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>sample_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
-
 <span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>label</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span>,
@@ -2445,7 +2433,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
-
 <span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>geom_bar</span><span class='op'>(</span>
     <span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>label</span>, fill <span class='op'>=</span> <span class='va'>group</span><span class='op'>)</span>,
@@ -2454,7 +2441,6 @@ Show code
   <span class='fu'>ylab</span><span class='op'>(</span><span class='st'>"Frequency"</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>group_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
-
 <span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>  
   <span class='fu'>geom_bar</span><span class='op'>(</span><span class='fu'>aes</span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>label</span>, fill <span class='op'>=</span> <span class='va'>label</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'>coord_flip</span><span class='op'>(</span><span class='op'>)</span> <span class='op'>+</span>
@@ -2462,7 +2448,6 @@ Show code
   <span class='fu'>scale_fill_manual</span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>label_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'>guides</span><span class='op'>(</span>fill <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
-
 <span class='va'>p1</span> <span class='op'>+</span> <span class='va'>p2</span> <span class='op'>+</span> <span class='va'>p3</span> <span class='op'>+</span> <span class='va'>p4</span> <span class='op'>+</span> <span class='va'>p5</span> <span class='op'>+</span> <span class='va'>p6</span> <span class='op'>+</span>
   <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_layout.html'>plot_layout</a></span><span class='op'>(</span>ncol <span class='op'>=</span> <span class='fl'>2</span>, guides <span class='op'>=</span> <span class='st'>"collect"</span><span class='op'>)</span>
 </code></pre>
@@ -2506,7 +2491,6 @@ Show code
   coldata_merge <span class='op'>=</span> <span class='cn'>FALSE</span>,
   use.dimred <span class='op'>=</span> <span class='cn'>FALSE</span>,
   use.altexps <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
-
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>summed</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='va'>summed</span><span class='op'>$</span><span class='va'>label</span>, <span class='st'>"."</span>, <span class='va'>summed</span><span class='op'>$</span><span class='va'>rep</span><span class='op'>)</span>
 <span class='co'># Construct values for plotting in heatmaps</span>
 <span class='fu'>assay</span><span class='op'>(</span><span class='va'>summed</span>, <span class='st'>"logCPM"</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'>edgeR</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/edgeR/man/cpm.html'>cpm</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/pkg/SingleCellExperiment/man/assays.html'>counts</a></span><span class='op'>(</span><span class='va'>summed</span><span class='op'>)</span>, log <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
@@ -2574,7 +2558,6 @@ Show code
 <span class='co'># design &lt;- model.matrix(~plate_number + tissue + donor + stage, targets)</span>
 <span class='co'># colnames(design) &lt;- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate", "", colnames(design))</span>
 <span class='co'># rownames(design) &lt;- targets$sample</span>
-
 <span class='co'># Pulling out a sample-level 'targets' data.frame.</span>
 <span class='va'>targets</span> <span class='op'>&lt;-</span> <span class='fu'>colData</span><span class='op'>(</span><span class='va'>summed</span><span class='op'>)</span><span class='op'>[</span><span class='op'>!</span><span class='fu'><a href='https://rdrr.io/r/base/duplicated.html'>duplicated</a></span><span class='op'>(</span><span class='va'>summed</span><span class='op'>$</span><span class='va'>sample</span><span class='op'>)</span>,<span class='op'>]</span>
 <span class='co'># Constructing the design matrix.</span>

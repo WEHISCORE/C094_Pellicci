@@ -2203,6 +2203,7 @@ Show code
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://patchwork.data-imaginist.com'>patchwork</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'>pheatmap</span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/sfirke/janitor'>janitor</a></span><span class='op'>)</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/rstudio/distill'>distill</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/source.html'>source</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"code"</span>, <span class='st'>"helper_functions.R"</span><span class='op'>)</span><span class='op'>)</span>
 <span class='co'># NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.</span>
 <span class='fu'><a href='https://rdrr.io/r/base/options.html'>options</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.info.html'>Sys.info</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>[[</span><span class='st'>"nodename"</span><span class='op'>]</span><span class='op'>]</span> <span class='op'>==</span> <span class='st'>"PC1331"</span>, <span class='fl'>2L</span>, <span class='fl'>8L</span><span class='op'>)</span><span class='op'>)</span>
@@ -2245,7 +2246,7 @@ Throughout, we will exclude mitochondrial genes, ribosomal protein genes, sex ch
 <p>A more relevant question is “how well do the clusters approximate the cell types?” Unfortunately, this is difficult to answer given the context-dependent interpretation of biological truth. Some analysts will be satisfied with resolution of the major cell types; other analysts may want resolution of subtypes; and others still may require resolution of different states (e.g., metabolic activity, stress) within those subtypes. Two clusterings can also be highly inconsistent yet both valid, simply partitioning the cells based on different aspects of biology. Indeed, asking for an unqualified “best” clustering is akin to asking for the best magnification on a microscope without any context.</p>
 <p>It is helpful to realize that clustering, like a microscope, is simply a tool to explore the data. We can zoom in and out by changing the resolution of the clustering parameters, and we can experiment with different clustering algorithms to obtain alternative perspectives of the data. This iterative approach is entirely permissible for data exploration, which constitutes the majority of all scRNA-seq data analysis.</p>
 <h2 id="graph-based-clustering">Graph-based clustering</h2>
-<p>We build a shared nearest neighbour graph <span class="citation" data-cites="xu2015identification">(<a href="#ref-xu2015identification" role="doc-biblioref">Xu and Su 2015</a>)</span> and use the Louvain algorithm to identify clusters. We would build the graph using the principal components.</p>
+<p>We build a shared nearest neighbour graph <span class="citation" data-cites="xu2015identification">(<a href="#ref-xu2015identification" role="doc-biblioref">Xu and Su 2015</a>)</span> and use the Louvain algorithm to identify clusters. We would build the graph using the <em>principal components (PCA)</em>.</p>
 <h1 id="preparing-the-data">Preparing the data</h1>
 <p>We start from the preprocessed <em>SingleCellExperiment</em> object created in <a href="C094_Pellicci.preprocess.html">‘Preprocessing the Pellicci gamma-delta T-cell data set’</a>.</p>
 <div class="layout-chunk" data-layout="l-body">
@@ -2337,27 +2338,34 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Dimension 2"</span><span class='op'>)</span>
 
 <span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>UMAP.1</span>, y <span class='op'>=</span> <span class='va'>UMAP.2</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_point.html'>geom_point</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>colour <span class='op'>=</span> <span class='va'>stage</span><span class='op'>)</span>, size <span class='op'>=</span> <span class='fl'>0.25</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>xlab</a></span><span class='op'>(</span><span class='st'>"Dimension 1"</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Dimension 2"</span><span class='op'>)</span>
+
+<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>UMAP.1</span>, y <span class='op'>=</span> <span class='va'>UMAP.2</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_point.html'>geom_point</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>colour <span class='op'>=</span> <span class='va'>plate_number</span><span class='op'>)</span>, size <span class='op'>=</span> <span class='fl'>0.25</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>xlab</a></span><span class='op'>(</span><span class='st'>"Dimension 1"</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Dimension 2"</span><span class='op'>)</span>
 
-<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>UMAP.1</span>, y <span class='op'>=</span> <span class='va'>UMAP.2</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>UMAP.1</span>, y <span class='op'>=</span> <span class='va'>UMAP.2</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_point.html'>geom_point</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>colour <span class='op'>=</span> <span class='va'>tissue</span><span class='op'>)</span>, size <span class='op'>=</span> <span class='fl'>0.25</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>xlab</a></span><span class='op'>(</span><span class='st'>"Dimension 1"</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Dimension 2"</span><span class='op'>)</span>
 
-<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>UMAP.1</span>, y <span class='op'>=</span> <span class='va'>UMAP.2</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+<span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>UMAP.1</span>, y <span class='op'>=</span> <span class='va'>UMAP.2</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_point.html'>geom_point</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>colour <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span>, size <span class='op'>=</span> <span class='fl'>0.25</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>xlab</a></span><span class='op'>(</span><span class='st'>"Dimension 1"</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Dimension 2"</span><span class='op'>)</span>
 
-<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_spacer.html'>plot_spacer</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
+<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='va'>p6</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
@@ -2375,6 +2383,14 @@ Show code
 </summary>
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>p1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/coord_flip.html'>coord_flip</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Number of samples"</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_text.html'>geom_text</a></span><span class='op'>(</span>stat<span class='op'>=</span><span class='st'>'count'</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, label<span class='op'>=</span><span class='va'>..count..</span><span class='op'>)</span>, hjust<span class='op'>=</span><span class='fl'>1.5</span>, size<span class='op'>=</span><span class='fl'>2</span><span class='op'>)</span>
+
+<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>sample</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -2383,7 +2399,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>sample_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>stage</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -2392,7 +2408,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>plate_number</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -2401,7 +2417,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>tissue</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -2410,7 +2426,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -2419,7 +2435,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_spacer.html'>plot_spacer</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span> 
+<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='va'>p6</span><span class='op'>)</span> 
 </code></pre>
 </div>
 </details>
@@ -2433,7 +2449,7 @@ Figure 2: Breakdown of clusters by experimental factors.
 <p><strong>NOTE</strong> for the unmerged data based on these figures:</p>
 <ul>
 <li>the majority of cells in cluster <code>3</code> and <code>4</code> represent the three types/statuses of cells at <code>S3</code> and can be found in both <code>Blood</code> and <code>Thymus</code> samples</li>
-<li>most of the cells in <code>P6</code> and <code>P7</code> form one single cluster, i.e. cluster <code>2</code>, and they found mostly in <code>Thymus</code> sample only</li>
+<li>most of the cells in <code>S1</code> and <code>S2</code> form one single cluster, i.e. cluster <code>2</code>, and they found mostly in <code>Thymus</code> sample only</li>
 <li>cluster <code>1</code> and <code>5</code> are the only standalone clusters separated from the major group (and they seem to be the two obvious clusters needed to be decided if they should “be kept” or “not to be kept” during cell selection step)</li>
 <li>cluster <code>1</code> is basically the control cell line <code>SKW3</code>, accompanied with a small amount of cells from <code>Thymus 2</code> and <code>Thymus 3</code></li>
 <li>cluster <code>5</code> are formed from cells mostly from <code>Blood 3</code> and <code>Thymus 3</code> only, implying it was originated from donor <code>3</code> only somehow</li>
@@ -3071,6 +3087,14 @@ Show code
 </summary>
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>p1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/coord_flip.html'>coord_flip</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Number of samples"</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_text.html'>geom_text</a></span><span class='op'>(</span>stat<span class='op'>=</span><span class='st'>'count'</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, label<span class='op'>=</span><span class='va'>..count..</span><span class='op'>)</span>, hjust<span class='op'>=</span><span class='fl'>1.5</span>, size<span class='op'>=</span><span class='fl'>2</span><span class='op'>)</span>
+
+<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>sample</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3079,7 +3103,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>sample_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>stage</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3088,7 +3112,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>plate_number</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3097,7 +3121,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>tissue</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3106,7 +3130,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3115,7 +3139,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_spacer.html'>plot_spacer</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span> 
+<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='va'>p6</span><span class='op'>)</span> 
 </code></pre>
 </div>
 </details>
@@ -3129,7 +3153,7 @@ Figure 10: Breakdown of clusters by experimental factors.
 <p><em>NOTE</em> for the unmerged data:</p>
 <ul>
 <li>there is one big population, which is subdivided into four clusters (i.e. cluster <code>1</code>, <code>2</code>, <code>3</code>, and <code>4</code>)</li>
-<li>cells in cluster <code>1</code>, <code>3</code>, and <code>4</code> are mostly in <code>P8</code>, whilst cells in cluster <code>2</code> are mostly be mixture of <code>P6</code>, <code>P7</code>, and <code>P8</code></li>
+<li>cells in cluster <code>1</code>, <code>3</code>, and <code>4</code> are mostly in <code>S3</code>, whilst cells in cluster <code>2</code> are mostly be mixture of <code>S1</code>, <code>S2</code>, and small proportion of <code>S3</code></li>
 <li>plate-specific batch effect seems prominent without MNN correction</li>
 </ul>
 <h1 id="data-integration">Data integration</h1>
@@ -3163,7 +3187,7 @@ Show code
 </details>
 </div>
 <p>One useful diagnostic of the MNN algorithm is the proportion of variance within each batch that is lost during MNN correction<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. Large proportions of lost variance (<span class="math inline">\(&gt;10 \%\)</span>) suggest that correction is removing genuine biological heterogeneity. This would occur due to violations of the assumption of orthogonality between the batch effect and the biological subspace <span class="citation" data-cites="haghverdi2018batch">(<a href="#ref-haghverdi2018batch" role="doc-biblioref">Haghverdi et al. 2018</a>)</span>.</p>
-<p>The <em>manual merge order</em> we chosen (Table <a href="#tab:tab-cell-selected">2</a>) lead to an acceptable loss of biological variance from the dataset.</p>
+<p>The <em>manual merge order</em> we chosen (Table <a href="#tab:tab-cell-selected">2</a>) lead to an <em>acceptable</em> loss of biological variance from the dataset.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3542,6 +3566,14 @@ Show code
 </summary>
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>p1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/coord_flip.html'>coord_flip</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ylab</a></span><span class='op'>(</span><span class='st'>"Number of samples"</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_text.html'>geom_text</a></span><span class='op'>(</span>stat<span class='op'>=</span><span class='st'>'count'</span>, <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, label<span class='op'>=</span><span class='va'>..count..</span><span class='op'>)</span>, hjust<span class='op'>=</span><span class='fl'>1.5</span>, size<span class='op'>=</span><span class='fl'>2</span><span class='op'>)</span>
+
+<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>sample</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3550,7 +3582,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>sample_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>stage</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3559,7 +3591,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>plate_number</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3568,7 +3600,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>tissue</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3577,7 +3609,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
+<span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/ggsce.html'>ggcells</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>+</span> 
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_bar.html'>geom_bar</a></span><span class='op'>(</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span>,
     position <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/position_stack.html'>position_fill</a></span><span class='op'>(</span>reverse <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
@@ -3586,7 +3618,7 @@ Show code
   <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
   <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 
-<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_spacer.html'>plot_spacer</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span> 
+<span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='va'>p6</span><span class='op'>)</span> 
 </code></pre>
 </div>
 </details>
@@ -3654,7 +3686,7 @@ Show code
  P assertthat               0.2.1    2019-03-21 [?] CRAN (R 4.0.0)
  P batchelor              * 1.6.3    2021-04-16 [?] Bioconductor  
  P beachmat                 2.6.4    2020-12-20 [?] Bioconductor  
- P beeswarm                 0.3.1    2021-03-07 [?] CRAN (R 4.0.3)
+ P beeswarm                 0.3.1    2021-03-07 [?] CRAN (R 4.0.2)
  P Biobase                * 2.50.0   2020-10-27 [?] Bioconductor  
  P BiocFileCache            1.14.0   2020-10-27 [?] Bioconductor  
  P BiocGenerics           * 0.36.0   2020-10-27 [?] Bioconductor  
@@ -3669,129 +3701,129 @@ Show code
  P bitops                   1.0-6    2013-08-17 [?] CRAN (R 4.0.0)
  P blob                     1.2.1    2020-01-20 [?] CRAN (R 4.0.0)
  P bluster                  1.0.0    2020-10-27 [?] Bioconductor  
- P bslib                    0.2.4    2021-01-25 [?] CRAN (R 4.0.3)
- P cachem                   1.0.4    2021-02-13 [?] CRAN (R 4.0.3)
+ P bslib                    0.2.4    2021-01-25 [?] CRAN (R 4.0.2)
+ P cachem                   1.0.4    2021-02-13 [?] CRAN (R 4.0.2)
  P celldex                * 1.0.0    2020-10-29 [?] Bioconductor  
  P cli                      2.4.0    2021-04-05 [?] CRAN (R 4.0.3)
- P colorspace               2.0-0    2020-11-11 [?] CRAN (R 4.0.3)
- P cowplot                * 1.1.1    2020-12-30 [?] CRAN (R 4.0.3)
+ P colorspace               2.0-0    2020-11-11 [?] CRAN (R 4.0.2)
+ P cowplot                * 1.1.1    2020-12-30 [?] CRAN (R 4.0.0)
  P crayon                   1.4.1    2021-02-08 [?] CRAN (R 4.0.3)
  P curl                     4.3      2019-12-02 [?] CRAN (R 4.0.0)
- P DBI                      1.1.1    2021-01-15 [?] CRAN (R 4.0.3)
- P dbplyr                   2.1.0    2021-02-03 [?] CRAN (R 4.0.3)
+ P DBI                      1.1.1    2021-01-15 [?] CRAN (R 4.0.2)
+ P dbplyr                   2.1.0    2021-02-03 [?] CRAN (R 4.0.2)
  P DelayedArray             0.16.3   2021-03-24 [?] Bioconductor  
  P DelayedMatrixStats       1.12.3   2021-02-03 [?] Bioconductor  
  P DESeq2                   1.30.1   2021-02-19 [?] Bioconductor  
- P digest                   0.6.27   2020-10-24 [?] CRAN (R 4.0.2)
- P distill                  1.2      2021-01-13 [?] CRAN (R 4.0.3)
- P downlit                  0.2.1    2020-11-04 [?] CRAN (R 4.0.3)
- P dplyr                    1.0.5    2021-03-05 [?] CRAN (R 4.0.3)
+ P digest                   0.6.27   2020-10-24 [?] CRAN (R 4.0.0)
+ P distill                * 1.2      2021-01-13 [?] CRAN (R 4.0.0)
+ P downlit                  0.2.1    2020-11-04 [?] CRAN (R 4.0.0)
+ P dplyr                    1.0.5    2021-03-05 [?] CRAN (R 4.0.2)
  P dqrng                    0.2.1    2019-05-17 [?] CRAN (R 4.0.0)
  P edgeR                  * 3.32.1   2021-01-14 [?] Bioconductor  
  P ellipsis                 0.3.1    2020-05-15 [?] CRAN (R 4.0.0)
  P evaluate                 0.14     2019-05-28 [?] CRAN (R 4.0.0)
  P ExperimentHub            1.16.1   2021-04-16 [?] Bioconductor  
- P fansi                    0.4.2    2021-01-15 [?] CRAN (R 4.0.3)
- P farver                   2.1.0    2021-02-28 [?] CRAN (R 4.0.3)
- P fastmap                  1.1.0    2021-01-25 [?] CRAN (R 4.0.3)
+ P fansi                    0.4.2    2021-01-15 [?] CRAN (R 4.0.2)
+ P farver                   2.1.0    2021-02-28 [?] CRAN (R 4.0.2)
+ P fastmap                  1.1.0    2021-01-25 [?] CRAN (R 4.0.2)
  P FNN                      1.1.3    2019-02-15 [?] CRAN (R 4.0.0)
  P genefilter               1.72.1   2021-01-21 [?] Bioconductor  
  P geneplotter              1.68.0   2020-10-27 [?] Bioconductor  
- P generics                 0.1.0    2020-10-31 [?] CRAN (R 4.0.3)
+ P generics                 0.1.0    2020-10-31 [?] CRAN (R 4.0.0)
  P GenomeInfoDb           * 1.26.4   2021-03-10 [?] Bioconductor  
- P GenomeInfoDbData         1.2.4    2020-10-20 [?] Bioconductor  
+ P GenomeInfoDbData         1.2.4    2020-12-07 [?] Bioconductor  
  P GenomicRanges          * 1.42.0   2020-10-27 [?] Bioconductor  
  P ggbeeswarm               0.6.0    2017-08-07 [?] CRAN (R 4.0.0)
- P ggplot2                * 3.3.3    2020-12-30 [?] CRAN (R 4.0.3)
+ P ggplot2                * 3.3.3    2020-12-30 [?] CRAN (R 4.0.2)
  P Glimma                 * 2.0.0    2020-10-27 [?] Bioconductor  
  P glue                     1.4.2    2020-08-27 [?] CRAN (R 4.0.0)
  P gridExtra                2.3      2017-09-09 [?] CRAN (R 4.0.0)
  P gtable                   0.3.0    2019-03-25 [?] CRAN (R 4.0.0)
- P here                   * 1.0.1    2020-12-13 [?] CRAN (R 4.0.3)
+ P here                   * 1.0.1    2020-12-13 [?] CRAN (R 4.0.0)
  P highr                    0.8      2019-03-20 [?] CRAN (R 4.0.0)
- P htmltools                0.5.1.1  2021-01-22 [?] CRAN (R 4.0.3)
- P htmlwidgets              1.5.3    2020-12-10 [?] CRAN (R 4.0.3)
- P httpuv                   1.5.5    2021-01-13 [?] CRAN (R 4.0.3)
+ P htmltools                0.5.1.1  2021-01-22 [?] CRAN (R 4.0.2)
+ P htmlwidgets              1.5.3    2020-12-10 [?] CRAN (R 4.0.2)
+ P httpuv                   1.5.5    2021-01-13 [?] CRAN (R 4.0.0)
  P httr                     1.4.2    2020-07-20 [?] CRAN (R 4.0.0)
- P igraph                   1.2.6    2020-10-06 [?] CRAN (R 4.0.2)
+ P igraph                   1.2.6    2020-10-06 [?] CRAN (R 4.0.0)
  P interactiveDisplayBase   1.28.0   2020-10-27 [?] Bioconductor  
  P IRanges                * 2.24.1   2020-12-12 [?] Bioconductor  
  P irlba                    2.3.3    2019-02-05 [?] CRAN (R 4.0.0)
  P janitor                * 2.1.0    2021-01-05 [?] CRAN (R 4.0.3)
- P jquerylib                0.1.3    2020-12-17 [?] CRAN (R 4.0.3)
- P jsonlite                 1.7.2    2020-12-09 [?] CRAN (R 4.0.3)
- P knitr                    1.31     2021-01-27 [?] CRAN (R 4.0.3)
+ P jquerylib                0.1.3    2020-12-17 [?] CRAN (R 4.0.2)
+ P jsonlite                 1.7.2    2020-12-09 [?] CRAN (R 4.0.2)
+ P knitr                    1.31     2021-01-27 [?] CRAN (R 4.0.2)
  P labeling                 0.4.2    2020-10-20 [?] CRAN (R 4.0.0)
  P later                    1.1.0.1  2020-06-05 [?] CRAN (R 4.0.0)
  P lattice                  0.20-41  2020-04-02 [3] CRAN (R 4.0.3)
- P lifecycle                1.0.0    2021-02-15 [?] CRAN (R 4.0.3)
+ P lifecycle                1.0.0    2021-02-15 [?] CRAN (R 4.0.2)
  P limma                  * 3.46.0   2020-10-27 [?] Bioconductor  
  P locfit                   1.5-9.4  2020-03-25 [?] CRAN (R 4.0.0)
  P lubridate                1.7.10   2021-02-26 [?] CRAN (R 4.0.3)
- P magrittr                 2.0.1    2020-11-17 [?] CRAN (R 4.0.3)
+ P magrittr                 2.0.1    2020-11-17 [?] CRAN (R 4.0.2)
  P Matrix                   1.2-18   2019-11-27 [3] CRAN (R 4.0.3)
  P MatrixGenerics         * 1.2.1    2021-01-30 [?] Bioconductor  
- P matrixStats            * 0.58.0   2021-01-29 [?] CRAN (R 4.0.3)
- P memoise                  2.0.0    2021-01-26 [?] CRAN (R 4.0.3)
- P mime                     0.10     2021-02-13 [?] CRAN (R 4.0.3)
- P msigdbr                * 7.2.1    2020-10-02 [?] CRAN (R 4.0.2)
+ P matrixStats            * 0.58.0   2021-01-29 [?] CRAN (R 4.0.2)
+ P memoise                  2.0.0    2021-01-26 [?] CRAN (R 4.0.2)
+ P mime                     0.10     2021-02-13 [?] CRAN (R 4.0.2)
+ P msigdbr                * 7.2.1    2020-10-02 [?] CRAN (R 4.0.0)
  P munsell                  0.5.0    2018-06-12 [?] CRAN (R 4.0.0)
- P patchwork              * 1.1.1    2020-12-17 [?] CRAN (R 4.0.3)
+ P patchwork              * 1.1.1    2020-12-17 [?] CRAN (R 4.0.0)
  P pheatmap               * 1.0.12   2019-01-04 [?] CRAN (R 4.0.0)
- P pillar                   1.5.1    2021-03-05 [?] CRAN (R 4.0.3)
+ P pillar                   1.5.1    2021-03-05 [?] CRAN (R 4.0.2)
  P pkgconfig                2.0.3    2019-09-22 [?] CRAN (R 4.0.0)
- P Polychrome               1.2.6    2020-11-11 [?] CRAN (R 4.0.3)
- P promises                 1.2.0.1  2021-02-11 [?] CRAN (R 4.0.3)
+ P Polychrome               1.2.6    2020-11-11 [?] CRAN (R 4.0.0)
+ P promises                 1.2.0.1  2021-02-11 [?] CRAN (R 4.0.2)
  P purrr                    0.3.4    2020-04-17 [?] CRAN (R 4.0.0)
- P R6                       2.5.0    2020-10-28 [?] CRAN (R 4.0.2)
- P rappdirs                 0.3.3    2021-01-31 [?] CRAN (R 4.0.3)
+ P R6                       2.5.0    2020-10-28 [?] CRAN (R 4.0.0)
+ P rappdirs                 0.3.3    2021-01-31 [?] CRAN (R 4.0.2)
  P RColorBrewer             1.1-2    2014-12-07 [?] CRAN (R 4.0.0)
- P Rcpp                     1.0.6    2021-01-15 [?] CRAN (R 4.0.3)
- P RCurl                    1.98-1.3 2021-03-16 [?] CRAN (R 4.0.3)
+ P Rcpp                     1.0.6    2021-01-15 [?] CRAN (R 4.0.2)
+ P RCurl                    1.98-1.3 2021-03-16 [?] CRAN (R 4.0.5)
  P ResidualMatrix           1.0.0    2020-10-27 [?] Bioconductor  
- P rlang                    0.4.10   2020-12-30 [?] CRAN (R 4.0.3)
- P rmarkdown                2.7      2021-02-19 [?] CRAN (R 4.0.3)
- P rprojroot                2.0.2    2020-11-15 [?] CRAN (R 4.0.3)
+ P rlang                    0.4.10   2020-12-30 [?] CRAN (R 4.0.2)
+ P rmarkdown                2.7      2021-02-19 [?] CRAN (R 4.0.2)
+ P rprojroot                2.0.2    2020-11-15 [?] CRAN (R 4.0.2)
  P RSpectra                 0.16-0   2019-12-01 [?] CRAN (R 4.0.0)
  P RSQLite                  2.2.5    2021-03-27 [?] CRAN (R 4.0.3)
  P rsvd                     1.0.3    2020-02-17 [?] CRAN (R 4.0.0)
  P S4Vectors              * 0.28.1   2020-12-09 [?] Bioconductor  
- P sass                     0.3.1    2021-01-24 [?] CRAN (R 4.0.3)
+ P sass                     0.3.1    2021-01-24 [?] CRAN (R 4.0.2)
  P scales                   1.1.1    2020-05-11 [?] CRAN (R 4.0.0)
  P scater                 * 1.18.6   2021-02-26 [?] Bioconductor  
  P scatterplot3d            0.3-41   2018-03-14 [?] CRAN (R 4.0.0)
  P scran                  * 1.18.5   2021-02-04 [?] Bioconductor  
  P scuttle                  1.0.4    2020-12-17 [?] Bioconductor  
  P sessioninfo              1.1.1    2018-11-05 [?] CRAN (R 4.0.0)
- P shiny                    1.6.0    2021-01-25 [?] CRAN (R 4.0.3)
+ P shiny                    1.6.0    2021-01-25 [?] CRAN (R 4.0.2)
  P SingleCellExperiment   * 1.12.0   2020-10-27 [?] Bioconductor  
  P SingleR                * 1.4.1    2021-02-02 [?] Bioconductor  
  P snakecase                0.11.0   2019-05-25 [?] CRAN (R 4.0.0)
  P sparseMatrixStats        1.2.1    2021-02-02 [?] Bioconductor  
- P statmod                  1.4.35   2020-10-19 [?] CRAN (R 4.0.2)
+ P statmod                  1.4.35   2020-10-19 [?] CRAN (R 4.0.0)
  P stringi                  1.5.3    2020-09-09 [?] CRAN (R 4.0.0)
  P stringr                  1.4.0    2019-02-10 [?] CRAN (R 4.0.0)
  P SummarizedExperiment   * 1.20.0   2020-10-27 [?] Bioconductor  
  P survival                 3.2-7    2020-09-28 [3] CRAN (R 4.0.3)
- P tibble                   3.1.0    2021-02-25 [?] CRAN (R 4.0.3)
+ P tibble                   3.1.0    2021-02-25 [?] CRAN (R 4.0.2)
  P tidyr                    1.1.3    2021-03-03 [?] CRAN (R 4.0.3)
  P tidyselect               1.1.0    2020-05-11 [?] CRAN (R 4.0.0)
- P utf8                     1.2.1    2021-03-12 [?] CRAN (R 4.0.3)
- P uwot                     0.1.10   2020-12-15 [?] CRAN (R 4.0.3)
+ P utf8                     1.2.1    2021-03-12 [?] CRAN (R 4.0.2)
+ P uwot                     0.1.10   2020-12-15 [?] CRAN (R 4.0.0)
  P vctrs                    0.3.7    2021-03-29 [?] CRAN (R 4.0.3)
  P vipor                    0.4.5    2017-03-22 [?] CRAN (R 4.0.0)
  P viridis                  0.5.1    2018-03-29 [?] CRAN (R 4.0.0)
  P viridisLite              0.3.0    2018-02-01 [?] CRAN (R 4.0.0)
- P withr                    2.4.1    2021-01-26 [?] CRAN (R 4.0.3)
- P xfun                     0.22     2021-03-11 [?] CRAN (R 4.0.3)
- P XML                      3.99-0.6 2021-03-16 [?] CRAN (R 4.0.3)
+ P withr                    2.4.1    2021-01-26 [?] CRAN (R 4.0.2)
+ P xfun                     0.22     2021-03-11 [?] CRAN (R 4.0.2)
+ P XML                      3.99-0.6 2021-03-16 [?] CRAN (R 4.0.5)
  P xtable                   1.8-4    2019-04-21 [?] CRAN (R 4.0.0)
  P XVector                  0.30.0   2020-10-27 [?] Bioconductor  
  P yaml                     2.2.1    2020-02-01 [?] CRAN (R 4.0.0)
  P zlibbioc                 1.36.0   2020-10-27 [?] Bioconductor  
 
-[1] /stornext/Projects/score/Analyses/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
-[2] /tmp/RtmpEheZ4M/renv-system-library
+[1] /stornext/Home/data/allstaff/h/ho.w/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
+[2] /tmp/RtmptO3b2u/renv-system-library
 [3] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
 
  P ── Loaded and on-disk path mismatch.</code></pre>

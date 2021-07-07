@@ -27,7 +27,6 @@ library(pheatmap)
 library(batchelor)
 library(rmarkdown)
 library(BiocStyle)
-library(ggplot2)
 library(readxl)
 library(dplyr)
 library(tidyr)
@@ -92,6 +91,8 @@ pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
+**NOTE**: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at `cell` level) could not further sub-classify the developmental stage/subtype of them (cluster `4`: `Th1 cell`-/`Naive CD8`/`CD4 T cell`-alike; all other clusters, i.e. `1`, `2`, `3`: `Vd2gd T cells`) [see EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.
+
 # Marker gene detection
 
 To interpret our clustering results, we identify the genes that drive separation between clusters.
@@ -110,10 +111,6 @@ The top DE genes are likely to be good candidate markers as they can effectively
 
 The Welch *t*-test is an obvious choice of statistical method to test for differences in expression between clusters.
 It is quickly computed and has good statistical properties for large numbers of cells [@soneson2018bias].
-
-**TODO**: The below text is incorrect / out-of-date, likely because it was copied across from a previous report.
-
-We perform intra-`donor` comparisons by blocking on the `plate_number` of origin^[Equivalent to blocking on the plate of origin in this data set.] to avoid confounding effects from library-to-library variability or differential expression between mice^[Intra-`donor` comparisons are robust to differences between libraries but assume that each pair of clusters is present in at least one library. When this is not the case, we cannot commute a logFC for that pair of clusters.].
 
 ```{r}
 sce$block <- paste0(sce$plate_number)
@@ -185,16 +182,18 @@ Similarly, the set of genes with `Top` values less than or equal to 10 contains 
 We use the `Top` value to identify a set of genes that is guaranteed to distinguish cluster `r chosen` from any other cluster.
 Figure \@ref(fig:heat-logFC) plots the log-fold changes for the top 10 genes from each pairwise comparison.
 
-```{r heat-logFC, fig.asp = 2, fig.cap = sprintf("Heatmap of log-fold changes for the top 10 marker genes for cluster %s over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.5}
+```{r heat-logFC, fig.asp = 2, fig.cap = sprintf("Heatmap of log-fold changes for the top 10 marker genes for cluster %s over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -2 and 2 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
 best_set <- interesting[interesting$Top <= 10, ]
 logFCs <- as.matrix(best_set[, -(1:4)])
 colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
-pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
 ```
 
 Complementing Figure \@ref(fig:heat-logFC), Figure \@ref(fig:heat-logExp) plots the log-expression values of each cells in each cluster for the top 5 genes
 
-```{r heat-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-page"}
+*NOTE*: based on this heatmap plot of top 10 gene differentially expressed from *any other* clusters, we can already spotted useful markers to tell apart cluster `4` from at least cluster `1` and `2`.
+
+```{r heat-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-page"}
 plotHeatmap(
   sce,
   features = rownames(best_set),
@@ -215,7 +214,7 @@ plotHeatmap(
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
-  zlim = c(-5, 5),
+  zlim = c(-3, 3),
   show_colnames = FALSE,
   main = paste0("Cluster: ", chosen),
   column_annotation_colors = list(
@@ -265,7 +264,7 @@ for (cluster in levels(sce$cluster)) {
     cluster_cols = FALSE, 
     center = TRUE,
     symmetric = TRUE,
-    zlim = c(-5, 5),
+    zlim = c(-3, 3),
     show_colnames = FALSE,
     main = paste0("Cluster: ", cluster),
     column_annotation_colors = list(
@@ -377,14 +376,14 @@ interesting_up_lfc1 <- markers_union_up_lfc1[[chosen]]
 
 Combining these two settings yield a more focused set of candidate marker genes that are 'upregulated with a log-fold change > 1' in cluster `r chosen` (Figures \@ref(fig:heat-focused-logFC) and \@ref(fig:heat-focused-logExp)).
 
-```{r heat-focused-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
+```{r heat-focused-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
 best_set <- interesting_up_lfc1[interesting_up_lfc1$Top <= 10,]
 logFCs <- as.matrix(best_set[,-(1:4)])
 colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
-pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
 ```
 
-```{r heat-focused-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change > 1' marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-page"}
+```{r heat-focused-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change > 1' marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-page"}
 plotHeatmap(
   sce,
   features = rownames(best_set),
@@ -405,7 +404,7 @@ plotHeatmap(
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
-  zlim = c(-5, 5),
+  zlim = c(-3, 3),
   show_colnames = FALSE,
   main = paste0("Cluster: ", chosen),
   column_annotation_colors = list(
@@ -455,7 +454,7 @@ for (cluster in levels(sce$cluster)) {
     cluster_cols = FALSE, 
     center = TRUE,
     symmetric = TRUE,
-    zlim = c(-5, 5),
+    zlim = c(-3, 3),
     show_colnames = FALSE,
     main = paste0("Cluster: ", cluster),
     column_annotation_colors = list(
@@ -501,7 +500,7 @@ for (cluster in levels(sce$cluster)) {
     cluster_cols = FALSE, 
     center = TRUE,
     symmetric = TRUE,
-    zlim = c(-5, 5),
+    zlim = c(-3, 3),
     show_colnames = FALSE,
     main = paste0("Cluster: ", cluster),
     column_annotation_colors = list(
@@ -580,14 +579,14 @@ In comparison, the strategy in [Standard application] will detect both of these 
 
 Figures \@ref(fig:heat-uniquely-up-logFC) and \@ref(fig:heat-uniquely-up-logExp) show examples of this strategy for cluster `r chosen`.
 
-```{r heat-uniquely-up-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), layout="l-body-outset"}
+```{r heat-uniquely-up-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
 best_set <- interesting_uniquely_up[1:20, ]
 logFCs <- as.matrix(best_set[, -(1:3)])
 colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
-pheatmap(logFCs, breaks = seq(-5, 5, length.out = 101))
+pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
 ```
 
-```{r heat-uniquely-up-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.", chosen), fig.asp = 0.9, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.9, layout="l-body-outset"}
 plotHeatmap(
   sce,
   features = rownames(best_set),
@@ -608,7 +607,7 @@ plotHeatmap(
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
-  zlim = c(-5, 5),
+  zlim = c(-3, 3),
   show_colnames = FALSE,
   annotation_row = data.frame(
     Sig = factor(
@@ -617,18 +616,18 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen),
   column_annotation_colors = list(
+     Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
      sample = sample_colours,
      stage = stage_colours,
      plate_number = plate_number_colours,    
      tissue = tissue_colours,
-     donor = donor_colours,
-     Sig = c("Yes" = "red", "No" = "lightgrey")),
+     donor = donor_colours),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8)
+  fontsize = 7)
 ```
 
-Similar figures showing the top 100 uniquely upregulated marker genes for each cluster are available in [`output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf`](../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf).
+Similar figures showing the top 50 uniquely upregulated marker genes for each cluster are available in [`output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf`](../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf).
 Recall that the stringency of the 'cluster-specific marker' criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all.
 Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. $FDR < 0.05$).
 
@@ -644,7 +643,7 @@ pdf(
   height = 12)
 for (cluster in levels(sce$cluster)) {
   marker_set <- markers_uniquely_up[[cluster]]
-  best_set <- marker_set[1:100, ]
+  best_set <- marker_set[1:50, ]
   
 plotHeatmap(
   sce,
@@ -666,7 +665,7 @@ plotHeatmap(
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
-  zlim = c(-5, 5),
+  zlim = c(-3, 3),
   show_colnames = FALSE,
   annotation_row = data.frame(
     Sig = factor(
@@ -675,13 +674,13 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", cluster),
   column_annotation_colors = list(
+     Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
      sample = sample_colours,
      stage = stage_colours,
      plate_number = plate_number_colours,    
      tissue = tissue_colours,
-     donor = donor_colours,
-     Sig = c("Yes" = "red", "No" = "lightgrey")),
+     donor = donor_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 8)
 }
@@ -778,7 +777,8 @@ Cyclin D is expressed throughout but peaks at G1; cyclin E is expressed highest 
 Inspection of the relative expression of cyclins across the population can often be sufficient to determine the relative cell cycle activity in each cluster.
 
 Figure \@ref(fig:cyclin-heatmap) shows the expression of the cyclin genes in the dataset.
-Unfortunately, no obviously different expression of cyclins were observed in a particular cluster of this dataset, suggesting there could have no cell cycle-related difference between the clusters.
+
+Unfortunately, *no obviously different* expression of cyclins were observed in a particular cluster of this dataset, suggesting there could have no cell cycle-related difference between the clusters.
 
 ```{r cyclin-heatmap, fig.cap = "Heatmap of the log-normalized expression values of the cyclin genes in the dataset."}
 plotHeatmap(
@@ -824,12 +824,14 @@ Direct examination of cyclin expression is easily understood, interpreted and va
 However, it is best suited for statements about relative cell cycle activity; for example, we would find it difficult to assign cell cycle phase in Figure \@ref(fig:cyclin-heatmap) without the presence of clusters spanning all phases to provide benchmarks for "high" and "low" expression of each cyclin.
 We also assume that cyclin expression is not affected by biological processes other than the cell cycle, which may be a strong assumption in some cases, e.g., malignant cells.
 
+*NOTE*: Taken together, there is neither apparent differential nor significant up-regulation of cyclin genes in the 4 clusters, implying that there may be no significant differences in cell cycle progression between the cells in this dataset.
+
 # Concluding remarks
 
 ```{r}
 saveRDS(
   sce,
-  here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"),
+  here("data", "SCEs", "C094_Pellicci_annotate.SCE.rds"),
   compress = "xz")
 ```
 

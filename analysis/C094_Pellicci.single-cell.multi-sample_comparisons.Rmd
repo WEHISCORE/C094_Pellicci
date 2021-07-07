@@ -72,7 +72,6 @@ sce$tissue <- relevel(sce$tissue, "Thymus")
 ```{r}
 # Define what constitutes a sample (i.e. replicate) in this experiment.
 sce$rep <- paste0(sce$sample, ".", sce$stage)
-
 # Define groups that are to be compared
 sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
 ```
@@ -103,7 +102,6 @@ cluster_colours <- setNames(
   unique(sce$colours$cluster_colours),
   unique(names(sce$colours$cluster_colours)))
 cluster_colours <- cluster_colours[levels(sce$cluster)]
-
 # set group colour
 group_colours <- setNames(
   Polychrome::kelly.colors(nlevels(sce$group)+1)[-1],
@@ -116,7 +114,6 @@ sce$label <- factor(
 label_colours <- setNames(
   cluster_colours, 
   paste0("cluster_", names(cluster_colours)))
-
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -142,7 +139,6 @@ p1 <- ggcells(sce) +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = tissue_colours)
-
 p2 <- ggcells(sce) + 
   geom_bar(
     aes(x = plate_number, fill = sample),
@@ -151,7 +147,6 @@ p2 <- ggcells(sce) +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = sample_colours)
-
 p3 <- ggcells(sce) + 
   geom_bar(
     aes(x = plate_number, fill = stage),
@@ -160,7 +155,6 @@ p3 <- ggcells(sce) +
   ylab("Frequency") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = stage_colours)
-
 p4 <- ggcells(sce) + 
   geom_bar(
     aes(x = plate_number, fill = plate_number),
@@ -169,7 +163,6 @@ p4 <- ggcells(sce) +
   ylab("Number of samples") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = plate_number_colours)
-
 p5 <- ggcells(sce) + 
   geom_bar(
     aes(x = plate_number, fill = donor),
@@ -178,7 +171,6 @@ p5 <- ggcells(sce) +
   ylab("Number of samples") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = donor_colours)
-
 p6 <- ggcells(sce) + 
   geom_bar(
     aes(x = plate_number, fill = group),
@@ -187,7 +179,6 @@ p6 <- ggcells(sce) +
   ylab("Number of samples") +
   theme_cowplot(font_size = 9) +
   scale_fill_manual(values = group_colours)
-
 p1 + p2 + p3 + p4 + p5 + p6 +
   plot_layout(ncol = 2, guides = "collect")
 ```
@@ -210,7 +201,6 @@ p1 <- ggplot(as.data.frame(colData(sce))) +
   ylab("Frequency") +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
-
 p2 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
     aes(x = label, fill = tissue),
@@ -219,7 +209,6 @@ p2 <- ggplot(as.data.frame(colData(sce))) +
   ylab("Frequency") +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
-
 p3 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
     aes(x = label, fill = sample),
@@ -228,7 +217,6 @@ p3 <- ggplot(as.data.frame(colData(sce))) +
   ylab("Frequency") +
   scale_fill_manual(values = sample_colours) +
   theme_cowplot(font_size = 8)
-
 p4 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
     aes(x = label, fill = donor),
@@ -237,7 +225,6 @@ p4 <- ggplot(as.data.frame(colData(sce))) +
   ylab("Frequency") +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
-
 p5 <- ggplot(as.data.frame(colData(sce))) + 
   geom_bar(
     aes(x = label, fill = group),
@@ -246,7 +233,6 @@ p5 <- ggplot(as.data.frame(colData(sce))) +
   ylab("Frequency") +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
-
 p6 <- ggplot(as.data.frame(colData(sce))) +  
   geom_bar(aes(x = label, fill = label)) +
   coord_flip() +
@@ -254,7 +240,6 @@ p6 <- ggplot(as.data.frame(colData(sce))) +
   scale_fill_manual(values = label_colours) +
   theme_cowplot(font_size = 8) + 
   guides(fill = FALSE)
-
 p1 + p2 + p3 + p4 + p5 + p6 +
   plot_layout(ncol = 2, guides = "collect")
 ```
@@ -286,7 +271,6 @@ summed <- aggregateAcrossCells(
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-
 colnames(summed) <- paste0(summed$label, ".", summed$rep)
 # Construct values for plotting in heatmaps
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
@@ -364,7 +348,6 @@ As noted in [Setting up the data], we start by using the aggregated cluster labe
 # design <- model.matrix(~plate_number + tissue + donor + stage, targets)
 # colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate", "", colnames(design))
 # rownames(design) <- targets$sample
-
 # Pulling out a sample-level 'targets' data.frame.
 targets <- colData(summed)[!duplicated(summed$sample),]
 # Constructing the design matrix.
@@ -420,45 +403,29 @@ knitr::knit_exit()
 tmp <- sce[, sce$group=="Thymus.S1 (CD4+/CD161-)" | sce$group=="Thymus.S2 (CD4-/CD161-)"]
 colData(tmp) <- droplevels(colData(tmp))
 # tmp$group
-
 test <- findMarkers(
   tmp, 
   groups = tmp$group,
   block = tmp$plate_number,
   pval.type = "all",
   direction = "any")
-
 # > test
 # List of length 2
 # names(2): Thymus.S1 (CD4+/CD161-) Thymus.S2 (CD4-/CD161-)
-
 rownames(test$Thymus.S1 (CD4+/CD161-))[test$Thymus.S1 (CD4+/CD161-)$FDR <= 0.05]
 rownames(test$Thymus.S2 (CD4-/CD161-))[test$Thymus.S2 (CD4-/CD161-)$FDR <= 0.05]
-
-
-
-
-
 ###
-
 tmp <- sce[, sce$group=="Thymus.S2 (CD4-/CD161-)" | sce$group=="Thymus.S3 (CD4-/CD161+)"]
 colData(tmp) <- droplevels(colData(tmp))
 # tmp$group
-
 test <- findMarkers(
   tmp, 
   groups = tmp$group,
   block = tmp$plate_number,
   pval.type = "all",
   direction = "any")
-
-
 rownames(test$Thymus.S2 (CD4-/CD161-))[test$Thymus.S2 (CD4-/CD161-)$FDR <= 0.05]
 rownames(test$Thymus.S3 (CD4-/CD161+))[test$Thymus.S3 (CD4-/CD161+)$FDR <= 0.05]
-
-
-
-
 ```
 
 
@@ -516,10 +483,8 @@ summed <- aggregateAcrossCells(
   coldata.merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-
 sizeFactors(summed) <- NULL
 summed <- logNormCounts(summed)
-
 colLabels(summed) <- summed$group
 colnames(summed) <- paste0(summed$group, ".", summed$sample)
 ```
@@ -549,7 +514,6 @@ group <- c("groupThymus.S1 (CD4+/CD161-)", "groupThymus.S3 (CD4-/CD161+)")
 
 ```{r}
 summed_filt <- summed[, summed$ncells >= 10]
-
 de_results <- pseudoBulkDGE(
   summed_filt,
   label = summed_filt$sample,
@@ -605,10 +569,8 @@ summed <- aggregateAcrossCells(
   coldata.merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-
 sizeFactors(summed) <- NULL
 summed <- logNormCounts(summed)
-
 # unsure vvv
 colLabels(summed) <- summed$group
 colnames(summed) <- paste0(summed$group, ".", summed$sample)
@@ -658,10 +620,8 @@ summed <- aggregateAcrossCells(
   coldata.merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-
 sizeFactors(summed) <- NULL
 summed <- logNormCounts(summed)
-
 # unsure vvv
 # colLabels(summed) <- summed$group
 # colnames(summed) <- paste0(summed$group, ".", summed$sample)

@@ -2198,7 +2198,6 @@ Show code
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'>batchelor</span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/rstudio/rmarkdown'>rmarkdown</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/Bioconductor/BiocStyle'>BiocStyle</a></span><span class='op'>)</span>
-<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://ggplot2.tidyverse.org'>ggplot2</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://readxl.tidyverse.org'>readxl</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://dplyr.tidyverse.org'>dplyr</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://tidyr.tidyverse.org'>tidyr</a></span><span class='op'>)</span>
@@ -2277,14 +2276,13 @@ Show code
 </div>
 </details>
 </div>
+<p><strong>NOTE</strong>: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at <code>cell</code> level) could not further sub-classify the developmental stage/subtype of them (cluster <code>4</code>: <code>Th1 cell</code>-/<code>Naive CD8</code>/<code>CD4 T cell</code>-alike; all other clusters, i.e. <code>1</code>, <code>2</code>, <code>3</code>: <code>Vd2gd T cells</code>) [see EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.</p>
 <h1 id="marker-gene-detection">Marker gene detection</h1>
 <p>To interpret our clustering results, we identify the genes that drive separation between clusters. These marker genes allow us to assign biological meaning to each cluster based on their functional annotation. In the most obvious case, the marker genes for each cluster are <em>a priori</em> associated with particular cell types, allowing us to treat the clustering as a proxy for cell type identity. The same principle can be applied to more subtle differences in activation status or differentiation state.</p>
 <p>Identification of marker genes is usually based around the retrospective detection of differential expression between clusters<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Genes that are more strongly DE are more likely to have driven cluster separation in the first place. The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters.</p>
 <h2 id="using-pairwise-t-tests">Using pairwise <em>t</em>-tests</h2>
 <h3 id="standard-application">Standard application</h3>
 <p>The Welch <em>t</em>-test is an obvious choice of statistical method to test for differences in expression between clusters. It is quickly computed and has good statistical properties for large numbers of cells <span class="citation" data-cites="soneson2018bias">(<a href="#ref-soneson2018bias" role="doc-biblioref">Soneson and Robinson 2018</a>)</span>.</p>
-<p><strong>TODO</strong>: The below text is incorrect / out-of-date, likely because it was copied across from a previous report.</p>
-<p>We perform intra-<code>donor</code> comparisons by blocking on the <code>plate_number</code> of origin<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> to avoid confounding effects from library-to-library variability or differential expression between mice<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2296,7 +2294,7 @@ Show code
 </div>
 </details>
 </div>
-<p>For each cluster, the DE results of the relevant comparisons are consolidated into a single output table. This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters. Other statistics are also reported for each gene, including the adjusted p-values<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> and the log-fold changes relative to every other cluster.</p>
+<p>For each cluster, the DE results of the relevant comparisons are consolidated into a single output table. This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters. Other statistics are also reported for each gene, including the adjusted p-values<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> and the log-fold changes relative to every other cluster.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2489,7 +2487,7 @@ Show code
 </div>
 <p>Of particular interest is the <code>Top</code> field, which contains the highest rank for each gene across all pairwise comparisons involving cluster 4. The set of genes with <code>Top</code> values of 1 contains the gene with the lowest <span class="math inline">\(p\)</span>-value from each comparison. Similarly, the set of genes with <code>Top</code> values less than or equal to 10 contains the top 10 genes from each comparison.</p>
 <p>We use the <code>Top</code> value to identify a set of genes that is guaranteed to distinguish cluster 4 from any other cluster. Figure <a href="#fig:heat-logFC">1</a> plots the log-fold changes for the top 10 genes from each pairwise comparison.</p>
-<div class="layout-chunk" data-layout="l-body">
+<div class="layout-chunk" data-layout="l-body-outset">
 <details>
 <summary>
 Show code
@@ -2498,18 +2496,19 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>interesting</span><span class='op'>[</span><span class='va'>interesting</span><span class='op'>$</span><span class='va'>Top</span> <span class='op'>&lt;=</span> <span class='fl'>10</span>, <span class='op'>]</span>
 <span class='va'>logFCs</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='op'>-</span><span class='op'>(</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span><span class='op'>)</span><span class='op'>]</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>sub</a></span><span class='op'>(</span><span class='st'>"logFC."</span>, <span class='st'>""</span>, <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span>, fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
 <div class="figure"><span id="fig:heat-logFC"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-logFC-1.png" alt="Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-logFC-1.png" alt="Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -2 and 2 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 1: Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
+Figure 1: Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -2 and 2 to preserve dynamic range.
 </p>
 </div>
 </div>
 <p>Complementing Figure <a href="#fig:heat-logFC">1</a>, Figure <a href="#fig:heat-logExp">2</a> plots the log-expression values of each cells in each cluster for the top 5 genes</p>
+<p><em>NOTE</em>: based on this heatmap plot of top 10 gene differentially expressed from <em>any other</em> clusters, we can already spotted useful marker to tell apart cluster <code>4</code> from at least cluster <code>1</code> and <code>2</code>.</p>
 <div class="layout-chunk" data-layout="l-page">
 <details>
 <summary>
@@ -2536,7 +2535,7 @@ Show code
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
   show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -2552,9 +2551,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-logExp"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 2: Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
+Figure 2: Heatmap of log-expression values in each sample for the top 10 marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -2598,7 +2597,7 @@ Show code
     cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
     center <span class='op'>=</span> <span class='cn'>TRUE</span>,
     symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
     show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
     main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -2672,7 +2671,7 @@ Show code
 </div>
 </details>
 </div>
-<p>The <span class="math inline">\(t\)</span>-test also allows us to specify a non-zero log-fold change as the null hypothesis. This allows us to consider the magnitude of the log-fold change in our <span class="math inline">\(p\)</span>-value calculations, in a manner that is more rigorous than simply filtering directly on the log-fold changes<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>. For example, we can test for genes with log-fold changes that are significantly greater than 1.</p>
+<p>The <span class="math inline">\(t\)</span>-test also allows us to specify a non-zero log-fold change as the null hypothesis. This allows us to consider the magnitude of the log-fold change in our <span class="math inline">\(p\)</span>-value calculations, in a manner that is more rigorous than simply filtering directly on the log-fold changes<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. For example, we can test for genes with log-fold changes that are significantly greater than 1.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2737,14 +2736,14 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>interesting_up_lfc1</span><span class='op'>[</span><span class='va'>interesting_up_lfc1</span><span class='op'>$</span><span class='va'>Top</span> <span class='op'>&lt;=</span> <span class='fl'>10</span>,<span class='op'>]</span>
 <span class='va'>logFCs</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>,<span class='op'>-</span><span class='op'>(</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>4</span><span class='op'>)</span><span class='op'>]</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>sub</a></span><span class='op'>(</span><span class='st'>"logFC."</span>, <span class='st'>""</span>, <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span>, fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
 <div class="figure"><span id="fig:heat-focused-logFC"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 3: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.
+Figure 3: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -2774,7 +2773,7 @@ Show code
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
   show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -2790,9 +2789,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-focused-logExp"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change &gt; 1' marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change &gt; 1' marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 4: Heatmap of log-expression values in each sample for the top 10 ‘upregulated with a log-fold change &gt; 1’ marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
+Figure 4: Heatmap of log-expression values in each sample for the top 10 ‘upregulated with a log-fold change &gt; 1’ marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -2836,7 +2835,7 @@ Show code
     cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
     center <span class='op'>=</span> <span class='cn'>TRUE</span>,
     symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
     show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
     main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -2882,7 +2881,7 @@ Show code
     cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
     center <span class='op'>=</span> <span class='cn'>TRUE</span>,
     symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+    zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
     show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
     main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -2967,14 +2966,14 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>interesting_uniquely_up</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>20</span>, <span class='op'>]</span>
 <span class='va'>logFCs</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='op'>-</span><span class='op'>(</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>3</span><span class='op'>)</span><span class='op'>]</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>sub</a></span><span class='op'>(</span><span class='st'>"logFC."</span>, <span class='st'>""</span>, <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span>, fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logFC"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 5: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -5 and 5 to preserve dynamic range.
+Figure 5: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -3004,7 +3003,7 @@ Show code
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
   show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
   annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
@@ -3013,26 +3012,26 @@ Show code
     row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
      tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-     donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
-     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span><span class='op'>)</span>,
+     donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
-  fontsize <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-1.png" alt="Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 6: Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -5 and 5 to preserve dynamic range.
+Figure 6: Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster 4. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
-<p>Similar figures showing the top 100 uniquely upregulated marker genes for each cluster are available in <a href="../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf"><code>output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf</code></a>. Recall that the stringency of the ‘cluster-specific marker’ criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all. Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. <span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
+<p>Similar figures showing the top 50 uniquely upregulated marker genes for each cluster are available in <a href="../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf"><code>output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf</code></a>. Recall that the stringency of the ‘cluster-specific marker’ criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all. Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. <span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3050,7 +3049,7 @@ Show code
   height <span class='op'>=</span> <span class='fl'>12</span><span class='op'>)</span>
 <span class='kw'>for</span> <span class='op'>(</span><span class='va'>cluster</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
   <span class='va'>marker_set</span> <span class='op'>&lt;-</span> <span class='va'>markers_uniquely_up</span><span class='op'>[[</span><span class='va'>cluster</span><span class='op'>]</span><span class='op'>]</span>
-  <span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>marker_set</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>100</span>, <span class='op'>]</span>
+  <span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>marker_set</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>50</span>, <span class='op'>]</span>
   
 <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
   <span class='va'>sce</span>,
@@ -3072,7 +3071,7 @@ Show code
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>5</span>, <span class='fl'>5</span><span class='op'>)</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
   show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
   annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
@@ -3081,13 +3080,13 @@ Show code
     row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
      tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-     donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
-     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span><span class='op'>)</span>,
+     donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
   fontsize <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 <span class='op'>}</span>
@@ -3199,7 +3198,8 @@ Show code
 </details>
 </div>
 <p>The cyclins control progression through the cell cycle and have well-characterized patterns of expression across cell cycle phases. The cyclins available in this dataset are as follows: CCND3, CCNB1, CCNB2, CCNE2, CCNE1, CCNA2, CCND2, CCND1, CCNB3, and CCNA1. Cyclin D is expressed throughout but peaks at G1; cyclin E is expressed highest in the G1/S transition; cyclin A is expressed across S and G2; and cyclin B is expressed highest in late G2 and mitosis. Inspection of the relative expression of cyclins across the population can often be sufficient to determine the relative cell cycle activity in each cluster.</p>
-<p>Figure <a href="#fig:cyclin-heatmap">9</a> shows the expression of the cyclin genes in the dataset. Unfortunately, no obviously different expression of cyclins were observed in a particular cluster of this dataset, suggesting there could have no cell cycle-related difference between the clusters.</p>
+<p>Figure <a href="#fig:cyclin-heatmap">9</a> shows the expression of the cyclin genes in the dataset.</p>
+<p>Unfortunately, <em>no obviously different</em> expression of cyclins were observed in a particular cluster of this dataset, suggesting there could have no cell cycle-related difference between the clusters.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3245,7 +3245,7 @@ Show code
 </div>
 </details>
 </div>
-<p>Here we use pairwise Wilcoxon rank sum tests to compute differential expression of cyclin genes between each pair of clusters. The Wilcoxon test estimates effect sizes as the area under the curve (<code>AUC</code> in the tables below). Consider the distribution of expression values for gene <span class="math inline">\(X\)</span> within each of two groups <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span>. The <code>AUC</code> is the probability that a randomly selected cell in <span class="math inline">\(A\)</span> has a greater expression of <span class="math inline">\(X\)</span> than a randomly selected cell in <span class="math inline">\(B\)</span><a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a>. Concordance probabilities near 0 indicate that most observations in <span class="math inline">\(A\)</span> are lower than most observations in <span class="math inline">\(B\)</span>; conversely, probabilities near 1 indicate that most observations in <span class="math inline">\(A\)</span> are higher than those in <span class="math inline">\(B\)</span>. The Wilcoxon rank sum test effectively tests for significant deviations from an <code>AUC</code> of 0.5.</p>
+<p>Here we use pairwise Wilcoxon rank sum tests to compute differential expression of cyclin genes between each pair of clusters. The Wilcoxon test estimates effect sizes as the area under the curve (<code>AUC</code> in the tables below). Consider the distribution of expression values for gene <span class="math inline">\(X\)</span> within each of two groups <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span>. The <code>AUC</code> is the probability that a randomly selected cell in <span class="math inline">\(A\)</span> has a greater expression of <span class="math inline">\(X\)</span> than a randomly selected cell in <span class="math inline">\(B\)</span><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. Concordance probabilities near 0 indicate that most observations in <span class="math inline">\(A\)</span> are lower than most observations in <span class="math inline">\(B\)</span>; conversely, probabilities near 1 indicate that most observations in <span class="math inline">\(A\)</span> are higher than those in <span class="math inline">\(B\)</span>. The Wilcoxon rank sum test effectively tests for significant deviations from an <code>AUC</code> of 0.5.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3378,6 +3378,7 @@ Show code
 </table>
 </div>
 <p>Direct examination of cyclin expression is easily understood, interpreted and validated with other technologies. However, it is best suited for statements about relative cell cycle activity; for example, we would find it difficult to assign cell cycle phase in Figure <a href="#fig:cyclin-heatmap">9</a> without the presence of clusters spanning all phases to provide benchmarks for “high” and “low” expression of each cyclin. We also assume that cyclin expression is not affected by biological processes other than the cell cycle, which may be a strong assumption in some cases, e.g., malignant cells.</p>
+<p><em>NOTE</em>: Taken together, there is neither apparent differential nor significant up-regulation of cyclin genes in the 4 clusters, implying that there may be no significant differences in cell cycle progression between the cells in this dataset.</p>
 <h1 id="concluding-remarks">Concluding remarks</h1>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -3387,7 +3388,7 @@ Show code
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>sce</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"SCEs"</span>, <span class='st'>"C094_Pellicci.annotate.SCE.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"SCEs"</span>, <span class='st'>"C094_Pellicci_annotate.SCE.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 </code></pre>
 </div>
@@ -3435,7 +3436,7 @@ Show code
  P assertthat             0.2.1    2019-03-21 [?] CRAN (R 4.0.0)
  P batchelor            * 1.6.3    2021-04-16 [?] Bioconductor  
  P beachmat               2.6.4    2020-12-20 [?] Bioconductor  
- P beeswarm               0.3.1    2021-03-07 [?] CRAN (R 4.0.3)
+ P beeswarm               0.3.1    2021-03-07 [?] CRAN (R 4.0.2)
  P Biobase              * 2.50.0   2020-10-27 [?] Bioconductor  
  P BiocGenerics         * 0.36.0   2020-10-27 [?] Bioconductor  
  P BiocManager            1.30.12  2021-03-28 [?] CRAN (R 4.0.3)
@@ -3448,83 +3449,83 @@ Show code
  P bitops                 1.0-6    2013-08-17 [?] CRAN (R 4.0.0)
  P blob                   1.2.1    2020-01-20 [?] CRAN (R 4.0.0)
  P bluster                1.0.0    2020-10-27 [?] Bioconductor  
- P bslib                  0.2.4    2021-01-25 [?] CRAN (R 4.0.3)
- P cachem                 1.0.4    2021-02-13 [?] CRAN (R 4.0.3)
+ P bslib                  0.2.4    2021-01-25 [?] CRAN (R 4.0.2)
+ P cachem                 1.0.4    2021-02-13 [?] CRAN (R 4.0.2)
  P cellranger             1.1.0    2016-07-27 [?] CRAN (R 4.0.0)
  P cli                    2.4.0    2021-04-05 [?] CRAN (R 4.0.3)
- P colorspace             2.0-0    2020-11-11 [?] CRAN (R 4.0.3)
- P cowplot              * 1.1.1    2020-12-30 [?] CRAN (R 4.0.3)
+ P colorspace             2.0-0    2020-11-11 [?] CRAN (R 4.0.2)
+ P cowplot              * 1.1.1    2020-12-30 [?] CRAN (R 4.0.0)
  P crayon                 1.4.1    2021-02-08 [?] CRAN (R 4.0.3)
- P DBI                    1.1.1    2021-01-15 [?] CRAN (R 4.0.3)
+ P DBI                    1.1.1    2021-01-15 [?] CRAN (R 4.0.2)
  P DelayedArray           0.16.3   2021-03-24 [?] Bioconductor  
  P DelayedMatrixStats     1.12.3   2021-02-03 [?] Bioconductor  
  P DESeq2                 1.30.1   2021-02-19 [?] Bioconductor  
- P digest                 0.6.27   2020-10-24 [?] CRAN (R 4.0.2)
- P distill                1.2      2021-01-13 [?] CRAN (R 4.0.3)
- P downlit                0.2.1    2020-11-04 [?] CRAN (R 4.0.3)
- P dplyr                * 1.0.5    2021-03-05 [?] CRAN (R 4.0.3)
+ P digest                 0.6.27   2020-10-24 [?] CRAN (R 4.0.0)
+ P distill                1.2      2021-01-13 [?] CRAN (R 4.0.0)
+ P downlit                0.2.1    2020-11-04 [?] CRAN (R 4.0.0)
+ P dplyr                * 1.0.5    2021-03-05 [?] CRAN (R 4.0.2)
  P dqrng                  0.2.1    2019-05-17 [?] CRAN (R 4.0.0)
  P edgeR                * 3.32.1   2021-01-14 [?] Bioconductor  
  P ellipsis               0.3.1    2020-05-15 [?] CRAN (R 4.0.0)
  P evaluate               0.14     2019-05-28 [?] CRAN (R 4.0.0)
- P fansi                  0.4.2    2021-01-15 [?] CRAN (R 4.0.3)
- P farver                 2.1.0    2021-02-28 [?] CRAN (R 4.0.3)
- P fastmap                1.1.0    2021-01-25 [?] CRAN (R 4.0.3)
+ P fansi                  0.4.2    2021-01-15 [?] CRAN (R 4.0.2)
+ P farver                 2.1.0    2021-02-28 [?] CRAN (R 4.0.2)
+ P fastmap                1.1.0    2021-01-25 [?] CRAN (R 4.0.2)
  P genefilter             1.72.1   2021-01-21 [?] Bioconductor  
  P geneplotter            1.68.0   2020-10-27 [?] Bioconductor  
- P generics               0.1.0    2020-10-31 [?] CRAN (R 4.0.3)
+ P generics               0.1.0    2020-10-31 [?] CRAN (R 4.0.0)
  P GenomeInfoDb         * 1.26.4   2021-03-10 [?] Bioconductor  
- P GenomeInfoDbData       1.2.4    2020-10-20 [?] Bioconductor  
+ P GenomeInfoDbData       1.2.4    2020-12-07 [?] Bioconductor  
  P GenomicRanges        * 1.42.0   2020-10-27 [?] Bioconductor  
  P ggbeeswarm             0.6.0    2017-08-07 [?] CRAN (R 4.0.0)
- P ggplot2              * 3.3.3    2020-12-30 [?] CRAN (R 4.0.3)
+ P ggplot2              * 3.3.3    2020-12-30 [?] CRAN (R 4.0.2)
  P Glimma               * 2.0.0    2020-10-27 [?] Bioconductor  
  P glue                   1.4.2    2020-08-27 [?] CRAN (R 4.0.0)
  P gridExtra              2.3      2017-09-09 [?] CRAN (R 4.0.0)
  P gtable                 0.3.0    2019-03-25 [?] CRAN (R 4.0.0)
- P here                 * 1.0.1    2020-12-13 [?] CRAN (R 4.0.3)
+ P here                 * 1.0.1    2020-12-13 [?] CRAN (R 4.0.0)
  P highr                  0.8      2019-03-20 [?] CRAN (R 4.0.0)
- P htmltools              0.5.1.1  2021-01-22 [?] CRAN (R 4.0.3)
- P htmlwidgets            1.5.3    2020-12-10 [?] CRAN (R 4.0.3)
+ P htmltools              0.5.1.1  2021-01-22 [?] CRAN (R 4.0.2)
+ P htmlwidgets            1.5.3    2020-12-10 [?] CRAN (R 4.0.2)
  P httr                   1.4.2    2020-07-20 [?] CRAN (R 4.0.0)
- P igraph                 1.2.6    2020-10-06 [?] CRAN (R 4.0.2)
+ P igraph                 1.2.6    2020-10-06 [?] CRAN (R 4.0.0)
  P IRanges              * 2.24.1   2020-12-12 [?] Bioconductor  
  P irlba                  2.3.3    2019-02-05 [?] CRAN (R 4.0.0)
  P janitor              * 2.1.0    2021-01-05 [?] CRAN (R 4.0.3)
- P jquerylib              0.1.3    2020-12-17 [?] CRAN (R 4.0.3)
- P jsonlite               1.7.2    2020-12-09 [?] CRAN (R 4.0.3)
- P knitr                  1.31     2021-01-27 [?] CRAN (R 4.0.3)
+ P jquerylib              0.1.3    2020-12-17 [?] CRAN (R 4.0.2)
+ P jsonlite               1.7.2    2020-12-09 [?] CRAN (R 4.0.2)
+ P knitr                  1.31     2021-01-27 [?] CRAN (R 4.0.2)
  P labeling               0.4.2    2020-10-20 [?] CRAN (R 4.0.0)
  P lattice                0.20-41  2020-04-02 [3] CRAN (R 4.0.3)
- P lifecycle              1.0.0    2021-02-15 [?] CRAN (R 4.0.3)
+ P lifecycle              1.0.0    2021-02-15 [?] CRAN (R 4.0.2)
  P limma                * 3.46.0   2020-10-27 [?] Bioconductor  
  P locfit                 1.5-9.4  2020-03-25 [?] CRAN (R 4.0.0)
  P lubridate              1.7.10   2021-02-26 [?] CRAN (R 4.0.3)
- P magrittr               2.0.1    2020-11-17 [?] CRAN (R 4.0.3)
+ P magrittr               2.0.1    2020-11-17 [?] CRAN (R 4.0.2)
  P Matrix                 1.2-18   2019-11-27 [3] CRAN (R 4.0.3)
  P MatrixGenerics       * 1.2.1    2021-01-30 [?] Bioconductor  
- P matrixStats          * 0.58.0   2021-01-29 [?] CRAN (R 4.0.3)
- P memoise                2.0.0    2021-01-26 [?] CRAN (R 4.0.3)
- P msigdbr              * 7.2.1    2020-10-02 [?] CRAN (R 4.0.2)
+ P matrixStats          * 0.58.0   2021-01-29 [?] CRAN (R 4.0.2)
+ P memoise                2.0.0    2021-01-26 [?] CRAN (R 4.0.2)
+ P msigdbr              * 7.2.1    2020-10-02 [?] CRAN (R 4.0.0)
  P munsell                0.5.0    2018-06-12 [?] CRAN (R 4.0.0)
- P patchwork            * 1.1.1    2020-12-17 [?] CRAN (R 4.0.3)
+ P patchwork            * 1.1.1    2020-12-17 [?] CRAN (R 4.0.0)
  P pheatmap             * 1.0.12   2019-01-04 [?] CRAN (R 4.0.0)
- P pillar                 1.5.1    2021-03-05 [?] CRAN (R 4.0.3)
+ P pillar                 1.5.1    2021-03-05 [?] CRAN (R 4.0.2)
  P pkgconfig              2.0.3    2019-09-22 [?] CRAN (R 4.0.0)
  P purrr                  0.3.4    2020-04-17 [?] CRAN (R 4.0.0)
- P R6                     2.5.0    2020-10-28 [?] CRAN (R 4.0.2)
+ P R6                     2.5.0    2020-10-28 [?] CRAN (R 4.0.0)
  P RColorBrewer           1.1-2    2014-12-07 [?] CRAN (R 4.0.0)
- P Rcpp                   1.0.6    2021-01-15 [?] CRAN (R 4.0.3)
- P RCurl                  1.98-1.3 2021-03-16 [?] CRAN (R 4.0.3)
+ P Rcpp                   1.0.6    2021-01-15 [?] CRAN (R 4.0.2)
+ P RCurl                  1.98-1.3 2021-03-16 [?] CRAN (R 4.0.5)
  P readxl               * 1.3.1    2019-03-13 [?] CRAN (R 4.0.0)
  P ResidualMatrix         1.0.0    2020-10-27 [?] Bioconductor  
- P rlang                  0.4.10   2020-12-30 [?] CRAN (R 4.0.3)
- P rmarkdown            * 2.7      2021-02-19 [?] CRAN (R 4.0.3)
- P rprojroot              2.0.2    2020-11-15 [?] CRAN (R 4.0.3)
+ P rlang                  0.4.10   2020-12-30 [?] CRAN (R 4.0.2)
+ P rmarkdown            * 2.7      2021-02-19 [?] CRAN (R 4.0.2)
+ P rprojroot              2.0.2    2020-11-15 [?] CRAN (R 4.0.2)
  P RSQLite                2.2.5    2021-03-27 [?] CRAN (R 4.0.3)
  P rsvd                   1.0.3    2020-02-17 [?] CRAN (R 4.0.0)
  P S4Vectors            * 0.28.1   2020-12-09 [?] Bioconductor  
- P sass                   0.3.1    2021-01-24 [?] CRAN (R 4.0.3)
+ P sass                   0.3.1    2021-01-24 [?] CRAN (R 4.0.2)
  P scales                 1.1.1    2020-05-11 [?] CRAN (R 4.0.0)
  P scater               * 1.18.6   2021-02-26 [?] Bioconductor  
  P scran                * 1.18.5   2021-02-04 [?] Bioconductor  
@@ -3533,29 +3534,29 @@ Show code
  P SingleCellExperiment * 1.12.0   2020-10-27 [?] Bioconductor  
  P snakecase              0.11.0   2019-05-25 [?] CRAN (R 4.0.0)
  P sparseMatrixStats      1.2.1    2021-02-02 [?] Bioconductor  
- P statmod                1.4.35   2020-10-19 [?] CRAN (R 4.0.2)
+ P statmod                1.4.35   2020-10-19 [?] CRAN (R 4.0.0)
  P stringi                1.5.3    2020-09-09 [?] CRAN (R 4.0.0)
  P stringr                1.4.0    2019-02-10 [?] CRAN (R 4.0.0)
  P SummarizedExperiment * 1.20.0   2020-10-27 [?] Bioconductor  
  P survival               3.2-7    2020-09-28 [3] CRAN (R 4.0.3)
- P tibble                 3.1.0    2021-02-25 [?] CRAN (R 4.0.3)
+ P tibble                 3.1.0    2021-02-25 [?] CRAN (R 4.0.2)
  P tidyr                * 1.1.3    2021-03-03 [?] CRAN (R 4.0.3)
  P tidyselect             1.1.0    2020-05-11 [?] CRAN (R 4.0.0)
- P utf8                   1.2.1    2021-03-12 [?] CRAN (R 4.0.3)
+ P utf8                   1.2.1    2021-03-12 [?] CRAN (R 4.0.2)
  P vctrs                  0.3.7    2021-03-29 [?] CRAN (R 4.0.3)
  P vipor                  0.4.5    2017-03-22 [?] CRAN (R 4.0.0)
  P viridis                0.5.1    2018-03-29 [?] CRAN (R 4.0.0)
  P viridisLite            0.3.0    2018-02-01 [?] CRAN (R 4.0.0)
- P withr                  2.4.1    2021-01-26 [?] CRAN (R 4.0.3)
- P xfun                   0.22     2021-03-11 [?] CRAN (R 4.0.3)
- P XML                    3.99-0.6 2021-03-16 [?] CRAN (R 4.0.3)
+ P withr                  2.4.1    2021-01-26 [?] CRAN (R 4.0.2)
+ P xfun                   0.22     2021-03-11 [?] CRAN (R 4.0.2)
+ P XML                    3.99-0.6 2021-03-16 [?] CRAN (R 4.0.5)
  P xtable                 1.8-4    2019-04-21 [?] CRAN (R 4.0.0)
  P XVector                0.30.0   2020-10-27 [?] Bioconductor  
  P yaml                   2.2.1    2020-02-01 [?] CRAN (R 4.0.0)
  P zlibbioc               1.36.0   2020-10-27 [?] Bioconductor  
 
-[1] /stornext/Projects/score/Analyses/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
-[2] /tmp/RtmpEheZ4M/renv-system-library
+[1] /stornext/Home/data/allstaff/h/ho.w/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
+[2] /tmp/RtmptO3b2u/renv-system-library
 [3] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
 
  P ── Loaded and on-disk path mismatch.</code></pre>
@@ -3580,11 +3581,9 @@ Soneson, C., and M. D. Robinson. 2018. <span>“Bias, Robustness and Scalability
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>Differential expression analyses is performed on the original log-expression values. We do not use the MNN-corrected values here except to obtain the clusters to be characterized.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>Equivalent to blocking on the plate of origin in this data set.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3" role="doc-endnote"><p>Intra-<code>donor</code> comparisons are robust to differences between libraries but assume that each pair of clusters is present in at least one library. When this is not the case, we cannot commute a logFC for that pair of clusters.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4" role="doc-endnote"><p>It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance because the clusters have been empirically identified from the data. Nonetheless, they can still be used as way to rank ‘interesting’ genes.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn5" role="doc-endnote"><p>Specifically, a simple threshold does not consider the variance and can enrich for genes that have both large log-fold changes and large variances <span class="citation" data-cites="mccarthy2009treat">(<a href="#ref-mccarthy2009treat" role="doc-biblioref">McCarthy and Smyth 2009</a>)</span><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn6" role="doc-endnote"><p>Ties are assumed to be randomly broken<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance because the clusters have been empirically identified from the data. Nonetheless, they can still be used as way to rank ‘interesting’ genes.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>Specifically, a simple threshold does not consider the variance and can enrich for genes that have both large log-fold changes and large variances <span class="citation" data-cites="mccarthy2009treat">(<a href="#ref-mccarthy2009treat" role="doc-biblioref">McCarthy and Smyth 2009</a>)</span><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>Ties are assumed to be randomly broken<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 <!--radix_placeholder_article_footer-->
