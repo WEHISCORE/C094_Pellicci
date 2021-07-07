@@ -2508,7 +2508,7 @@ Figure 1: Heatmap of log-fold changes for the top 10 marker genes for cluster 4 
 </div>
 </div>
 <p>Complementing Figure <a href="#fig:heat-logFC">1</a>, Figure <a href="#fig:heat-logExp">2</a> plots the log-expression values of each cells in each cluster for the top 5 genes</p>
-<p><em>NOTE</em>: based on this heatmap plot of top 10 gene differentially expressed from <em>any other</em> clusters, we can already spotted useful marker to tell apart cluster <code>4</code> from at least cluster <code>1</code> and <code>2</code>.</p>
+<p><em>NOTE</em>: based on this heatmap plot of top 10 gene differentially expressed from <em>any other</em> clusters, we can already spotted useful markers to tell apart cluster <code>4</code> from at least cluster <code>1</code> and <code>2</code>.</p>
 <div class="layout-chunk" data-layout="l-page">
 <details>
 <summary>
@@ -2522,29 +2522,29 @@ Show code
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
-    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
-    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
-    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
     <span class='st'>"cluster"</span>,
     <span class='st'>"sample"</span>,
     <span class='st'>"stage"</span>,
-    <span class='st'>"plate_number"</span>,
-    <span class='st'>"tissue"</span>,
-    <span class='st'>"donor"</span><span class='op'>)</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
   zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
   show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+  Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
+      <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
+  row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
-     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
-     tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-     donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
   fontsize <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span>
 </code></pre>
@@ -2599,8 +2599,16 @@ Show code
     symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
     zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
     show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+    annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
+      <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
     main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+      
+         Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
+      
          cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
          sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
          stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
@@ -2760,29 +2768,29 @@ Show code
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
-    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
-    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
-    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
     <span class='st'>"cluster"</span>,
     <span class='st'>"sample"</span>,
     <span class='st'>"stage"</span>,
-    <span class='st'>"plate_number"</span>,
-    <span class='st'>"tissue"</span>,
-    <span class='st'>"donor"</span><span class='op'>)</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
   zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
   show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+  Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
+    <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
+    levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
+  row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
-     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
-     tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-     donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
   fontsize <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span>
 </code></pre>
@@ -2822,29 +2830,29 @@ Show code
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
-        <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
-        <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
-        <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
+        <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
     colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
         <span class='st'>"cluster"</span>,
         <span class='st'>"sample"</span>,
         <span class='st'>"stage"</span>,
-        <span class='st'>"plate_number"</span>,
-        <span class='st'>"tissue"</span>,
-        <span class='st'>"donor"</span><span class='op'>)</span>,
+        <span class='st'>"plate_number"</span><span class='op'>)</span>,
     cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
     center <span class='op'>=</span> <span class='cn'>TRUE</span>,
     symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
     zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
     show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+    annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
+      <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
     main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+       Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
        cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
        sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
        stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
-       plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
-       tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-       donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+       plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
     color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
     fontsize <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 <span class='op'>}</span>
@@ -2868,29 +2876,29 @@ Show code
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
-        <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
-        <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
-        <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
+        <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
     colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
         <span class='st'>"cluster"</span>,
         <span class='st'>"sample"</span>,
         <span class='st'>"stage"</span>,
-        <span class='st'>"plate_number"</span>,
-        <span class='st'>"tissue"</span>,
-        <span class='st'>"donor"</span><span class='op'>)</span>,
+        <span class='st'>"plate_number"</span><span class='op'>)</span>,
     cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
     center <span class='op'>=</span> <span class='cn'>TRUE</span>,
     symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
     zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
     show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+    annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
+      <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
     main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+       Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
        cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
        sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
        stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
-       plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
-       tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-       donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+       plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
     color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
     fontsize <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 <span class='op'>}</span>
@@ -2990,16 +2998,12 @@ Show code
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
-      <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
-      <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
-      <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
+      <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
       <span class='st'>"cluster"</span>,
       <span class='st'>"sample"</span>,
       <span class='st'>"stage"</span>,
-      <span class='st'>"plate_number"</span>,
-      <span class='st'>"tissue"</span>,
-      <span class='st'>"donor"</span><span class='op'>)</span>,
+      <span class='st'>"plate_number"</span><span class='op'>)</span>,
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -3008,7 +3012,7 @@ Show code
   annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
       <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
-      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"No"</span>, <span class='st'>"Yes"</span><span class='op'>)</span><span class='op'>)</span>,
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
     row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -3016,9 +3020,7 @@ Show code
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
-     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
-     tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-     donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
   fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
 </code></pre>
@@ -3058,16 +3060,12 @@ Show code
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
-      <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
-      <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
-      <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
+      <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
       <span class='st'>"cluster"</span>,
       <span class='st'>"sample"</span>,
       <span class='st'>"stage"</span>,
-      <span class='st'>"plate_number"</span>,
-      <span class='st'>"tissue"</span>,
-      <span class='st'>"donor"</span><span class='op'>)</span>,
+      <span class='st'>"plate_number"</span><span class='op'>)</span>,
   cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>, 
   center <span class='op'>=</span> <span class='cn'>TRUE</span>,
   symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -3076,7 +3074,7 @@ Show code
   annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
     Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
       <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
-      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"No"</span>, <span class='st'>"Yes"</span><span class='op'>)</span><span class='op'>)</span>,
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span><span class='op'>)</span>,
     row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
   main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>cluster</span><span class='op'>)</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
@@ -3084,9 +3082,7 @@ Show code
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
-     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
-     tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
-     donor <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span>,
+     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
   fontsize <span class='op'>=</span> <span class='fl'>8</span><span class='op'>)</span>
 <span class='op'>}</span>

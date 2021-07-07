@@ -201,29 +201,29 @@ plotHeatmap(
     sce$cluster,
     sce$sample,
     sce$stage,
-    sce$plate_number,
-    sce$tissue,
-    sce$donor),
+    sce$plate_number),
   order_columns_by = c(
     "cluster",
     "sample",
     "stage",
-    "plate_number",
-    "tissue",
-    "donor"),
+    "plate_number"),
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
+  annotation_row = data.frame(
+  Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("Yes", "No")),
+  row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen),
   column_annotation_colors = list(
+     Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
      sample = sample_colours,
      stage = stage_colours,
-     plate_number = plate_number_colours,    
-     tissue = tissue_colours,
-     donor = donor_colours),
+     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 6)
 ```
@@ -266,8 +266,16 @@ for (cluster in levels(sce$cluster)) {
     symmetric = TRUE,
     zlim = c(-3, 3),
     show_colnames = FALSE,
+    annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("Yes", "No")),
+    row.names = rownames(best_set)),
     main = paste0("Cluster: ", cluster),
     column_annotation_colors = list(
+      
+         Sig = c("Yes" = "red", "No" = "lightgrey"),
+      
          cluster = cluster_colours,
          sample = sample_colours,
          stage = stage_colours,
@@ -391,29 +399,29 @@ plotHeatmap(
     sce$cluster,
     sce$sample,
     sce$stage,
-    sce$plate_number,
-    sce$tissue,
-    sce$donor),
+    sce$plate_number),
   order_columns_by = c(
     "cluster",
     "sample",
     "stage",
-    "plate_number",
-    "tissue",
-    "donor"),
+    "plate_number"),
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
+  annotation_row = data.frame(
+  Sig = factor(
+    ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+    levels = c("Yes", "No")),
+  row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen),
   column_annotation_colors = list(
+     Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
      sample = sample_colours,
      stage = stage_colours,
-     plate_number = plate_number_colours,    
-     tissue = tissue_colours,
-     donor = donor_colours),
+     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 6)
 ```
@@ -441,29 +449,29 @@ for (cluster in levels(sce$cluster)) {
         sce$cluster,
         sce$sample,
         sce$stage,
-        sce$plate_number,
-        sce$tissue,
-        sce$donor),
+        sce$plate_number),
     colour_columns_by = c(
         "cluster",
         "sample",
         "stage",
-        "plate_number",
-        "tissue",
-        "donor"),
+        "plate_number"),
     cluster_cols = FALSE, 
     center = TRUE,
     symmetric = TRUE,
     zlim = c(-3, 3),
     show_colnames = FALSE,
+    annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("Yes", "No")),
+    row.names = rownames(best_set)),
     main = paste0("Cluster: ", cluster),
     column_annotation_colors = list(
+       Sig = c("Yes" = "red", "No" = "lightgrey"),
        cluster = cluster_colours,
        sample = sample_colours,
        stage = stage_colours,
-       plate_number = plate_number_colours,    
-       tissue = tissue_colours,
-       donor = donor_colours),
+       plate_number = plate_number_colours),
     color = hcl.colors(101, "Blue-Red 3"),
     fontsize = 8)
 }
@@ -487,29 +495,29 @@ for (cluster in levels(sce$cluster)) {
         sce$cluster,
         sce$sample,
         sce$stage,
-        sce$plate_number,
-        sce$tissue,
-        sce$donor),
+        sce$plate_number),
     colour_columns_by = c(
         "cluster",
         "sample",
         "stage",
-        "plate_number",
-        "tissue",
-        "donor"),
+        "plate_number"),
     cluster_cols = FALSE, 
     center = TRUE,
     symmetric = TRUE,
     zlim = c(-3, 3),
     show_colnames = FALSE,
+    annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("Yes", "No")),
+    row.names = rownames(best_set)),
     main = paste0("Cluster: ", cluster),
     column_annotation_colors = list(
+       Sig = c("Yes" = "red", "No" = "lightgrey"),
        cluster = cluster_colours,
        sample = sample_colours,
        stage = stage_colours,
-       plate_number = plate_number_colours,    
-       tissue = tissue_colours,
-       donor = donor_colours),
+       plate_number = plate_number_colours),
     color = hcl.colors(101, "Blue-Red 3"),
     fontsize = 8)
 }
@@ -594,16 +602,12 @@ plotHeatmap(
       sce$cluster,
       sce$sample,
       sce$stage,
-      sce$plate_number,
-      sce$tissue,
-      sce$donor),
+      sce$plate_number),
   colour_columns_by = c(
       "cluster",
       "sample",
       "stage",
-      "plate_number",
-      "tissue",
-      "donor"),
+      "plate_number"),
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
@@ -612,7 +616,7 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("No", "Yes")),
+      levels = c("Yes", "No")),
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen),
   column_annotation_colors = list(
@@ -620,9 +624,7 @@ plotHeatmap(
      cluster = cluster_colours,
      sample = sample_colours,
      stage = stage_colours,
-     plate_number = plate_number_colours,    
-     tissue = tissue_colours,
-     donor = donor_colours),
+     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 ```
@@ -652,16 +654,12 @@ plotHeatmap(
       sce$cluster,
       sce$sample,
       sce$stage,
-      sce$plate_number,
-      sce$tissue,
-      sce$donor),
+      sce$plate_number),
   colour_columns_by = c(
       "cluster",
       "sample",
       "stage",
-      "plate_number",
-      "tissue",
-      "donor"),
+      "plate_number"),
   cluster_cols = FALSE, 
   center = TRUE,
   symmetric = TRUE,
@@ -670,7 +668,7 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("No", "Yes")),
+      levels = c("Yes", "No")),
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", cluster),
   column_annotation_colors = list(
@@ -678,9 +676,7 @@ plotHeatmap(
      cluster = cluster_colours,
      sample = sample_colours,
      stage = stage_colours,
-     plate_number = plate_number_colours,    
-     tissue = tissue_colours,
-     donor = donor_colours),
+     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 8)
 }
