@@ -1,5 +1,5 @@
 
-#### `Thymus.S2` vs `Blood.S3`
+#### `Thymus.S3` vs `Thymus.S2`
 
 
 # read in SCE
@@ -10,14 +10,13 @@ sce <- sce[,sce$stage !="Unknown"]
 colData(sce) <- droplevels(colData(sce))
 
 # simplify `stage` labels
-abbre <- factor(
+sce$stage <- factor(
   dplyr::case_when(
     sce$stage == "S1 (CD4+/CD161-)" ~ "S1",
     sce$stage == "S2 (CD4-/CD161-)" ~ "S2",
     sce$stage == "S3 (CD4-/CD161+)" ~ "S3"))
-sce$stage <- abbre
 
-# Re-level to set the baseline.
+# Re-level to set the baseline/ref
 sce$stage <- relevel(sce$stage, "S1")
 sce$tissue <- relevel(sce$tissue, "Thymus")
 sce$donor <- relevel(sce$donor, "1")
@@ -34,54 +33,55 @@ tmp <- sce
 # focus on subset
 tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S2") |
              (tmp$tissue == "Thymus" & tmp$stage == "S3")]
+# abundance
+table(tmp$tissue, tmp$stage)
+
 
 
 
 # aggregate replicates
-tmp <- aggregateAcrossCells(
+summed <- aggregateAcrossCells(
   tmp,
   id = colData(tmp)[, c("group", "tissue", "stage", "donor", "plate_number", "rep")],
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-colnames(tmp) <- paste0(tmp$rep)
-
 # logNormCounts
-sizeFactors(tmp) <- NULL
-tmp <- logNormCounts(tmp)
-colLabels(tmp) <- tmp$group
-colnames(tmp) <- tmp$rep
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
+# vvv not sure
+colnames(summed) <- summed$rep
+# colLabels(summed) <- summed$group
 
 
 
 
 # # MDS (difference in `tissue`)
 # library(edgeR)
-# plotMDS(tmp, col = as.integer(factor(tmp$tissue)))
-# legend("topleft", legend = levels(factor(tmp$tissue)), col = 1:nlevels(factor(tmp$tissue)), pch = 16)
+# plotMDS(summed, col = as.integer(factor(summed$tissue)))
+# legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
 # # MDS (difference in `stage`)
-# plotMDS(tmp, col = as.integer(factor(tmp$stage)))
-# legend("topleft", legend = levels(factor(tmp$stage)), col = 1:nlevels(factor(tmp$stage)), pch = 16)
+# plotMDS(summed, col = as.integer(factor(summed$stage)))
+# legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
 
 
 
 # focus on large enough aggregates (>10 cells)
-tmp <- tmp[, tmp$ncells >= 10]
+summed_filt <- summed[, summed$ncells >= 10]
 
 
 
 
 
-group <- c("Thymus.S2", "Thymus.S3")
 
 
 
 de_results <- pseudoBulkDGE(
   tmp,
-  label = tmp$group,
+  label = summed_filt$group,
   design = ~plate_number + group + donor,
-  coef = group[1],
-  condition = tmp$group)
+  coef = "groupThymus.S3",
+  condition = summed_filt$group)
 
 metadata(de_results)
 
