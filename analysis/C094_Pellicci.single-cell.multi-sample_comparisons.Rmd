@@ -38,8 +38,6 @@ This provides more biological insight than conventional scRNA-seq experiments in
 Differential analyses of multi-condition scRNA-seq experiments can be broadly split into two categories - differential expression (DE) and differential abundance (DA) analyses.
 The former tests for changes in expression between conditions for cells of the same type that are present in both conditions, while the latter tests for changes in the composition of cell types (or states, etc.) between conditions.
 
-**TODO: double check if I understand the comparisons above correctly ^^^ **
-
 For this experiment, we are interested in identifying differences between:
 1) `thymus` cells sorted from different `stage` (`S1 (CD4+/CD161-)`, `S2 (CD4-/CD161-)`, `S3 (CD4-/CD161+)`);
 2) `thymus` cells in `S3 (CD4-/CD161+)` vs `blood` cells in `S3 (CD4-/CD161+)`
@@ -61,13 +59,6 @@ colData(sce) <- droplevels(colData(sce))
 sce$stage <- relevel(sce$stage, "S1 (CD4+/CD161-)")
 sce$tissue <- relevel(sce$tissue, "Thymus")
 ```
-
-**TODO: check if `sample` below was set correctly? **
-**but based on Dan's description, we should not be interested in the difference between `donor`, thus, set like this :**
-**sce$sample <- factor(paste0(sce$plate_number, ".", sce$tissue, ".", sce$stage))**
-
-
-**or based on Dan's target, I should group `tissue` and `stage` to get `sample` like `Thymus.S1 (CD4+/CD161-)`**
 
 ```{r}
 # Define what constitutes a sample (i.e. replicate) in this experiment.
@@ -114,6 +105,7 @@ sce$label <- factor(
 label_colours <- setNames(
   cluster_colours, 
   paste0("cluster_", names(cluster_colours)))
+
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -129,6 +121,17 @@ sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
 pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r barplot-by-plate, fig.cap = "Breakdown of experiment by plate.", fig.asp = 1}
 p1 <- ggcells(sce) + 
@@ -348,6 +351,7 @@ As noted in [Setting up the data], we start by using the aggregated cluster labe
 # design <- model.matrix(~plate_number + tissue + donor + stage, targets)
 # colnames(design) <- sub("plate\\_number|tissue|donor|post\\hoc\\sample\\gate", "", colnames(design))
 # rownames(design) <- targets$sample
+
 # Pulling out a sample-level 'targets' data.frame.
 targets <- colData(summed)[!duplicated(summed$sample),]
 # Constructing the design matrix.
@@ -498,14 +502,14 @@ colnames(summed) <- paste0(summed$group, ".", summed$sample)
 #   point_size = 3,
 #   point_alpha = 2) +
 #   scale_colour_manual(values = treatment_colours, name = "Treatment")
-# p2 <- plotMDS(
-#   summed,
-#   colour_by = "sample",  
-#   shape_by = "group",
-#   point_size = 3,
-#   point_alpha = 2) +
-#   scale_colour_manual(values = sample_colours, name = "Donor")
-# p1 + p2 + plot_layout(guides = "collect")
+p2 <- plotMDS(
+  summed,
+  colour_by = "sample",
+  shape_by = "group",
+  point_size = 3,
+  point_alpha = 2) +
+  scale_colour_manual(values = sample_colours, name = "Donor")
+p1 + p2 + plot_layout(guides = "collect")
 ```
 
 ```{r}
