@@ -1,4 +1,9 @@
 
+library(SingleCellExperiment)
+library(here)
+library(scater)
+library(scran)
+
 
 
 # read in SCE
@@ -107,10 +112,6 @@ for (j in colnames(contr)) {
 
 
 
-
-
-
-
 ### DE between blood (S3) and thymus (S3)
 
 # checkpoint + subset
@@ -120,92 +121,61 @@ tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S3") |
 # abundance
 table(tmp$tissue, tmp$stage)
 
-x$samples$group <- paste0(x$samples$tissue, ".", x$samples$sample_gate)
+# aggregate replicates
+summed <- aggregateAcrossCells(
+  tmp,
+  id = colData(tmp)[, c("group", "tissue", "stage", "donor", "plate_number", "rep")],
+  coldata_merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+# logNormCounts
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
+# vvv not sure
+colnames(summed) <- summed$rep
+# colLabels(summed) <- summed$group
 
+# MDS plots
+plotMDS(summed, col = as.integer(factor(summed$tissue)))
+legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
+plotMDS(summed, col = as.integer(factor(summed$stage)))
+legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
 
+# design
+# TODO: need to block by `plate_number` (need to workaround: all ref levels hide if block)
+design <- model.matrix(~0 + group + donor, colData(summed))
 
+# TODO: (need to workaround: unmatch ./. nrow(design) and ncol(summed_filt))
+# # focus on large enough aggregates (>10 cells)
+# summed_filt <- summed[, summed$ncells >= 10]
 
+# model fit
+summed <- calcNormFactors(summed)
+summed <- estimateDisp(summed, design)
+fit <- glmQLFit(summed, design)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-x <- sumTechReps(
-  x,
-  paste0(x$samples$tissue, ".", x$sample$sample_gate, ".", x$sample$replicate))
-
-#+ fig.asp = 1, fig.cap = "Coloured by tissue"
-plotMDS(x, col = as.integer(factor(x$samples$tissue)))
-legend("topleft", legend = levels(factor(x$samples$tissue)), col = 1:nlevels(factor(x$samples$tissue)), pch = 16)
-#+ fig.asp = 1, fig.cap = "Coloured by sample_gate"
-plotMDS(x, col = as.integer(factor(x$samples$sample_gate)))
-legend("topleft", legend = levels(factor(x$samples$sample_gate)), col = 1:nlevels(factor(x$samples$sample_gate)), pch = 16)
-
-design <- model.matrix(~0 + group + replicate, x$samples)
-# NOTE: Decreasing `min.count` in order to test a few more genes.
-keep <- filterByExpr(x, min.count = 2)
-x <- x[keep, , keep.lib.sizes = FALSE]
-x <- calcNormFactors(x)
-x <- estimateDisp(x, design)
-fit <- glmQLFit(x, design)
+# define contrast
 contr <- makeContrasts(
-  Thymus.P8_vs_Blood.P6 = groupThymus.P8 - groupBlood.P5,
+  Thymus.S3_vs_Blood.S3 = groupThymus.S3 - groupBlood.S3,
   levels = design)
 
+# sumup table
 for (j in colnames(contr)) {
   qlf <- glmQLFTest(fit, contrast = contr[, j])
   print(summary(decideTests(qlf)))
   glMDPlot(
     qlf,
-    counts = x$counts,
-    groups = x$samples$group,
+    counts = summed$counts,
+    groups = summed$group,
     status = decideTests(qlf),
     transform = TRUE,
     path = here("output"),
     html = j,
     main = j,
     launch = FALSE)
-  print(camera(x, idx, design, contrast = contr[, j]))
-  barcodeplot(qlf$table$logFC, index = idx$marker_proteins, main = j)
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# -1*groupBlood.S3 1*groupThymus.S3
+# Down                                  14
+# NotSig                             27845
+# Up                                   140
