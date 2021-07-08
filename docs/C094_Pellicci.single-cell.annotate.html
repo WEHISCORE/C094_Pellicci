@@ -2501,9 +2501,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-logFC"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-logFC-1.png" alt="Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -2 and 2 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-logFC-1.png" alt="Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 1: Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -2 and 2 to preserve dynamic range.
+Figure 1: Heatmap of log-fold changes for the top 10 marker genes for cluster 4 over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -2749,9 +2749,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-focused-logFC"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-focused-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 3: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range.
+Figure 3: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -2971,7 +2971,7 @@ Show code
 Show code
 </summary>
 <div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>interesting_uniquely_up</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>20</span>, <span class='op'>]</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>interesting_uniquely_up</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 <span class='va'>logFCs</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='op'>-</span><span class='op'>(</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>3</span><span class='op'>)</span><span class='op'>]</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>sub</a></span><span class='op'>(</span><span class='st'>"logFC."</span>, <span class='st'>""</span>, <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>logFCs</span><span class='op'>)</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/pkg/pheatmap/man/pheatmap.html'>pheatmap</a></span><span class='op'>(</span><span class='va'>logFCs</span>, breaks <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span>, length.out <span class='op'>=</span> <span class='fl'>101</span><span class='op'>)</span>, fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
@@ -2979,9 +2979,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logFC"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logFC-1.png" alt="Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 5: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -2 and 2 to preserve dynamic range.
+Figure 5: Heatmap of log-fold changes for cluster 4 over all other clusters. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -3033,7 +3033,7 @@ Figure 6: Heatmap of log-expression values in each sample for the top 10 uniquel
 </p>
 </div>
 </div>
-<p>Similar figures showing the top 50 uniquely upregulated marker genes for each cluster are available in <a href="../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf"><code>output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf</code></a>. Recall that the stringency of the ‘cluster-specific marker’ criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all. Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. <span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
+<p>Similar figures showing the top 25 uniquely upregulated marker genes for each cluster are available in <a href="../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf"><code>output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf</code></a>. Recall that the stringency of the ‘cluster-specific marker’ criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all. Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. <span class="math inline">\(FDR &lt; 0.05\)</span>).</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -3051,7 +3051,7 @@ Show code
   height <span class='op'>=</span> <span class='fl'>12</span><span class='op'>)</span>
 <span class='kw'>for</span> <span class='op'>(</span><span class='va'>cluster</span> <span class='kw'>in</span> <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>{</span>
   <span class='va'>marker_set</span> <span class='op'>&lt;-</span> <span class='va'>markers_uniquely_up</span><span class='op'>[[</span><span class='va'>cluster</span><span class='op'>]</span><span class='op'>]</span>
-  <span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>marker_set</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>50</span>, <span class='op'>]</span>
+  <span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>marker_set</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
   
 <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
   <span class='va'>sce</span>,

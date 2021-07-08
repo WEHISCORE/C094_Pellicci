@@ -2,8 +2,7 @@ library(SingleCellExperiment)
 library(here)
 library(scater)
 library(scran)
-
-#### `Thymus.S3` vs `Thymus.S2`
+library(pheatmap)
 
 # read in SCE
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"))
@@ -19,20 +18,60 @@ sce$stage <- factor(
     sce$stage == "S2 (CD4-/CD161-)" ~ "S2",
     sce$stage == "S3 (CD4-/CD161+)" ~ "S3"))
 
+# define group and replicates
+# NOTE: `group` should not be factorized, or error at `pseudoBulkDGE`
+sce$group <- paste0(sce$tissue, ".", sce$stage)
+sce$rep <- paste0(sce$group, ".", sce$donor, ".", sce$plate_number)
+
+# Some useful colours
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))
+plate_number_colours <- plate_number_colours[levels(sce$plate_number)]
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))
+tissue_colours <- tissue_colours[levels(sce$tissue)]
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))
+donor_colours <- donor_colours[levels(sce$donor)]
+sample_colours <- setNames(
+  unique(sce$colours$sample_colours),
+  unique(names(sce$colours$sample_colours)))
+sample_colours <- sample_colours[levels(sce$sample)]
+stage_colours <- setNames(
+  unique(sce$colours$stage_colours),
+  unique(names(sce$colours$stage_colours)))
+stage_colours <- stage_colours[levels(sce$stage)]
+cluster_colours <- setNames(
+  unique(sce$colours$cluster_colours),
+  unique(names(sce$colours$cluster_colours)))
+cluster_colours <- cluster_colours[levels(sce$cluster)]
+# define group colours (without factorizing `group`)
+group_colours <- setNames(
+  Polychrome::kelly.colors(nlevels(factor(sce$group))+1)[-1],
+  levels(factor(sce$group)))
+
 # Re-level to set the baseline/ref
 sce$stage <- relevel(sce$stage, "S1")
 sce$tissue <- relevel(sce$tissue, "Thymus")
 sce$donor <- relevel(sce$donor, "1")
 
-# define group and replicates
-sce$group <- paste0(sce$tissue, ".", sce$stage)
-sce$rep <- paste0(sce$group, ".", sce$donor, ".", sce$plate_number)
+# define cutoff
+min_ncells <- 10
+fdr <- 0.05
+
+
+############################
+# `Thymus.S2` vs `Thymus.S1`
 
 # checkpoint
 tmp <- sce
 # focus on subset
-tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S2") |
-             (tmp$tissue == "Thymus" & tmp$stage == "S3")]
+tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S2" |
+                tmp$tissue == "Thymus" & tmp$stage == "S1")]
+
 # abundance
 table(tmp$tissue, tmp$stage)
 
@@ -43,12 +82,12 @@ summed <- aggregateAcrossCells(
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-# logNormCounts
-sizeFactors(summed) <- NULL
-summed <- logNormCounts(summed)
-# vvv not sure
-colnames(summed) <- summed$rep
-# colLabels(summed) <- summed$group
+# Construct values for plotting in heatmaps
+assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
+assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
+  assay(summed, "logCPM"),
+  batch = summed$plate_number,
+  design = model.matrix(~group, colData(summed)))
 
 # MDS (difference in `tissue`)
 library(edgeR)
@@ -58,15 +97,313 @@ legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor
 plotMDS(summed, col = as.integer(factor(summed$stage)))
 legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
 
-# focus on large enough aggregates (>10 cells)
-summed_filt <- summed[, summed$ncells >= 10]
+# focus on large enough aggregates
+summed_filt <- summed[, summed$ncells >= min_ncells]
 
-# DE
+
+groups <- c("groupThymus.S2", "groupThymus.S1")
 de_results <- pseudoBulkDGE(
   tmp,
   label = summed_filt$group,
   design = ~plate_number + group + donor,
-  coef = "groupThymus.S3",
+  coef = groups[1],
   condition = summed_filt$group)
 
-metadata(de_results)
+all_features <- lapply(
+  de_results,
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+# Need at least 2 features to make a heatmap.
+stopifnot(length(features) < 2)
+
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+
+
+
+############################
+# `Thymus.S3` vs `Thymus.S1`
+
+# checkpoint
+tmp <- sce
+# focus on subset
+tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S3" |
+                tmp$tissue == "Thymus" & tmp$stage == "S1")]
+
+# abundance
+table(tmp$tissue, tmp$stage)
+
+# aggregate replicates
+summed <- aggregateAcrossCells(
+  tmp,
+  id = colData(tmp)[, c("group", "tissue", "stage", "donor", "plate_number", "rep")],
+  coldata_merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+# Construct values for plotting in heatmaps
+assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
+assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
+  assay(summed, "logCPM"),
+  batch = summed$plate_number,
+  design = model.matrix(~group, colData(summed)))
+
+
+# MDS (difference in `tissue`)
+library(edgeR)
+plotMDS(summed, col = as.integer(factor(summed$tissue)))
+legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
+# MDS (difference in `stage`)
+plotMDS(summed, col = as.integer(factor(summed$stage)))
+legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
+
+# focus on large enough aggregates
+summed_filt <- summed[, summed$ncells >= min_ncells]
+
+
+groups <- c("groupThymus.S3", "groupThymus.S1")
+de_results <- pseudoBulkDGE(
+  tmp,
+  label = summed_filt$group,
+  design = ~plate_number + group + donor,
+  coef = groups[1],
+  condition = summed_filt$group)
+
+all_features <- lapply(
+  de_results,
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+# Need at least 2 features to make a heatmap.
+stopifnot(length(features) < 2)
+
+
+
+
+# remove character inevitably generate by `design`
+vs <- gsub("group", "", groups)
+j <- summed_filt$group %in% vs
+o <- order(
+  summed_filt$group[j],
+  summed_filt$plate_number[j],
+  summed_filt$tissue[j],
+  summed_filt$stage[j],
+  summed_filt$donor[j])
+all_features <- lapply(
+  de_results,
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+mat <- assay(summed_filt, "correctedLogCPM")[features, j]
+mat <- mat - rowMeans(mat)
+zlim <- c(-3, 3)
+mat[mat < zlim[1]] <- zlim[1]
+mat[mat > zlim[2]] <- zlim[2]
+pheatmap(
+  mat = mat[, o],
+  color = hcl.colors(101, "Blue-Red 3"),
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Thymus.S1 = ifelse(features %in% all_features$Thymus.S1, "DE", "not DE"),
+    Thymus.S3 = ifelse(features %in% all_features$Thymus.S3, "DE", "not DE"),
+    row.names = features),
+  annotation_col = data.frame(
+    group = summed_filt$group[j][o],
+    plate_number = summed_filt$plate_number[j][o],
+    tissue = summed_filt$tissue[j][o],
+    stage = summed_filt$stage[j][o],
+    donor = summed_filt$donor[j][o],
+    row.names = colnames(summed_filt)[j][o]),
+  annotation_colors = list(
+    group = group_colours[levels(factor(summed_filt$group[j]))],
+    plate_number = plate_number_colours,
+    tissue = tissue_colours,
+    stage = stage_colours,
+    donor = donor_colours,
+    Thymus.S1 = c("not DE" = "white", "DE" = group_colours[["Thymus.S1"]]),
+    Thymus.S3 = c("not DE" = "white", "DE" = group_colours[["Thymus.S3"]])),
+  breaks = seq(-max(abs(mat)), max(abs(mat)), length.out = 101),
+  gaps_col = cumsum(runLength(Rle(summed_filt$group[j][o]))),
+  fontsize = 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+
+
+
+############################
+# `Thymus.S3` vs `Thymus.S2`
+
+# checkpoint
+tmp <- sce
+# focus on subset
+tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S3" |
+                tmp$tissue == "Thymus" & tmp$stage == "S2")]
+
+# abundance
+table(tmp$tissue, tmp$stage)
+
+# aggregate replicates
+summed <- aggregateAcrossCells(
+  tmp,
+  id = colData(tmp)[, c("group", "tissue", "stage", "donor", "plate_number", "rep")],
+  coldata_merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+# Construct values for plotting in heatmaps
+assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
+assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
+  assay(summed, "logCPM"),
+  batch = summed$plate_number,
+  design = model.matrix(~group, colData(summed)))
+
+# MDS (difference in `tissue`)
+library(edgeR)
+plotMDS(summed, col = as.integer(factor(summed$tissue)))
+legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
+# MDS (difference in `stage`)
+plotMDS(summed, col = as.integer(factor(summed$stage)))
+legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
+
+# focus on large enough aggregates
+summed_filt <- summed[, summed$ncells >= min_ncells]
+
+
+groups <- c("groupThymus.S3", "groupThymus.S2")
+de_results <- pseudoBulkDGE(
+  tmp,
+  label = summed_filt$group,
+  design = ~plate_number + group + donor,
+  coef = groups[1],
+  condition = summed_filt$group)
+
+all_features <- lapply(
+  de_results,
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+# Need at least 2 features to make a heatmap.
+stopifnot(length(features) < 2)
+
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+
+
+
+############################
+# `Thymus.S3` vs `Blood.S3`
+
+# checkpoint
+tmp <- sce
+# focus on subset
+tmp <- tmp[, (tmp$tissue == "Blood" & tmp$stage == "S3" |
+                tmp$tissue == "Thymus" & tmp$stage == "S3")]
+
+# abundance
+table(tmp$tissue, tmp$stage)
+
+# aggregate replicates
+summed <- aggregateAcrossCells(
+  tmp,
+  id = colData(tmp)[, c("group", "tissue", "stage", "donor", "plate_number", "rep")],
+  coldata_merge = FALSE,
+  use.dimred = FALSE,
+  use.altexps = FALSE)
+# Construct values for plotting in heatmaps
+assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
+assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
+  assay(summed, "logCPM"),
+  batch = summed$plate_number,
+  design = model.matrix(~group, colData(summed)))
+
+# MDS (difference in `tissue`)
+library(edgeR)
+plotMDS(summed, col = as.integer(factor(summed$tissue)))
+legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
+# MDS (difference in `stage`)
+plotMDS(summed, col = as.integer(factor(summed$stage)))
+legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
+
+# focus on large enough aggregates
+summed_filt <- summed[, summed$ncells >= min_ncells]
+
+
+groups <- c("groupThymus.S3", "groupBlood.S3")
+de_results <- pseudoBulkDGE(
+  tmp,
+  label = summed_filt$group,
+  design = ~plate_number + group + donor,
+  coef = groups[1],
+  condition = summed_filt$group)
+
+all_features <- lapply(
+  de_results,
+  function(x) rownames(x[which(x$FDR < fdr), ]))
+features <- unique(unlist(all_features))
+# Need at least 2 features to make a heatmap.
+stopifnot(length(features) < 2)
+
+is_de <- decideTestsPerLabel(de_results, threshold = fdr)
+summarizeTestsPerLabel(is_de) %>%
+  knitr::kable(
+    caption = "Number of DEGs per label. Each row corresponds to a label and each column corresponds to the number of downregulated genes (`-1`), the number of non-differentially expressed genes (`0`), the number of upregulated genes (`1`), and the number of genes not tested (`NA`).")
+
+
+
+
+
+
+
+
+
+
+
