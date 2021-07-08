@@ -1,6 +1,9 @@
+library(SingleCellExperiment)
+library(here)
+library(scater)
+library(scran)
 
 #### `Thymus.S3` vs `Thymus.S2`
-
 
 # read in SCE
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"))
@@ -25,9 +28,6 @@ sce$donor <- relevel(sce$donor, "1")
 sce$group <- paste0(sce$tissue, ".", sce$stage)
 sce$rep <- paste0(sce$group, ".", sce$donor, ".", sce$plate_number)
 
-
-
-
 # checkpoint
 tmp <- sce
 # focus on subset
@@ -35,9 +35,6 @@ tmp <- tmp[, (tmp$tissue == "Thymus" & tmp$stage == "S2") |
              (tmp$tissue == "Thymus" & tmp$stage == "S3")]
 # abundance
 table(tmp$tissue, tmp$stage)
-
-
-
 
 # aggregate replicates
 summed <- aggregateAcrossCells(
@@ -53,29 +50,18 @@ summed <- logNormCounts(summed)
 colnames(summed) <- summed$rep
 # colLabels(summed) <- summed$group
 
-
-
-
-# # MDS (difference in `tissue`)
-# library(edgeR)
-# plotMDS(summed, col = as.integer(factor(summed$tissue)))
-# legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
-# # MDS (difference in `stage`)
-# plotMDS(summed, col = as.integer(factor(summed$stage)))
-# legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
-
-
+# MDS (difference in `tissue`)
+library(edgeR)
+plotMDS(summed, col = as.integer(factor(summed$tissue)))
+legend("topleft", legend = levels(factor(summed$tissue)), col = 1:nlevels(factor(summed$tissue)), pch = 16)
+# MDS (difference in `stage`)
+plotMDS(summed, col = as.integer(factor(summed$stage)))
+legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(summed$stage)), pch = 16)
 
 # focus on large enough aggregates (>10 cells)
 summed_filt <- summed[, summed$ncells >= 10]
 
-
-
-
-
-
-
-
+# DE
 de_results <- pseudoBulkDGE(
   tmp,
   label = summed_filt$group,
@@ -84,4 +70,3 @@ de_results <- pseudoBulkDGE(
   condition = summed_filt$group)
 
 metadata(de_results)
-

@@ -388,7 +388,21 @@ If it is necessary to extract statistics in the absence of replicates, several s
 group <- c("Thymus.S1 (CD4+/CD161-)", "Thymus.S3 (CD4-/CD161+)")
 ```
 
+```{r}
+# NOTE: to prevent `Error in .pseudo_bulk_old; rownames(design) != levels(summed_filt$sample)`, design needed to be specified (not: design = design)
+de_results <- pseudoBulkDGE(
+  summed_filt, 
+  label = summed_filt$group,
+  design = ~plate_number + group + donor,
+  coef = group[1],
+  condition = summed_filt$group)
+```
 
+```{r}
+metadata(de_results)
+# $failed
+# [1] "cluster_1" "cluster_2" "cluster_3" "cluster_4"
+```
 
 
 
@@ -480,6 +494,26 @@ metadata(de_results)
 # try with C088 latest version of scripts
 
 ```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"))
+```
+
+```{r}
+# remove cells labelled as `Unknown` (as Dan suggested) to facilitate DE analysis
+sce <- sce[,sce$stage !="Unknown"]
+colData(sce) <- droplevels(colData(sce))
+# Re-level to set the baseline.
+sce$stage <- relevel(sce$stage, "S1 (CD4+/CD161-)")
+sce$tissue <- relevel(sce$tissue, "Thymus")
+```
+
+```{r}
+# Define what constitutes a sample (i.e. replicate) in this experiment.
+sce$rep <- paste0(sce$sample, ".", sce$stage)
+# Define groups that are to be compared
+sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
+```
+
+```{r}
 summed <- aggregateAcrossCells(
   sce,
   # columns_to_keep
@@ -494,7 +528,7 @@ colnames(summed) <- paste0(summed$group, ".", summed$sample)
 ```
 
 ```{r}
-# summed <- runMDS(summed)
+summed <- runMDS(summed)
 # p1 <- plotMDS(
 #   summed,
 #   colour_by = "inferred_treatment",
@@ -508,8 +542,8 @@ p2 <- plotMDS(
   shape_by = "group",
   point_size = 3,
   point_alpha = 2) +
-  scale_colour_manual(values = sample_colours, name = "Donor")
-p1 + p2 + plot_layout(guides = "collect")
+  scale_colour_manual(values = sample_colours, name = "sample")
+# p1 + p2 + plot_layout(guides = "collect")
 ```
 
 ```{r}
