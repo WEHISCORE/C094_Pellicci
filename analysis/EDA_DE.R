@@ -3,6 +3,7 @@ library(here)
 library(scater)
 library(scran)
 library(pheatmap)
+# source(here("code", "helper_functions.R"))
 
 # read in SCE
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.annotate.SCE.rds"))
@@ -82,7 +83,10 @@ summed <- aggregateAcrossCells(
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-# Construct values for plotting in heatmaps
+# # Construct values for plotting in heatmaps (new)
+# sizeFactors(summed) <- NULL
+# summed <- logNormCounts(summed)
+# Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
   assay(summed, "logCPM"),
@@ -99,7 +103,6 @@ legend("topleft", legend = levels(factor(summed$stage)), col = 1:nlevels(factor(
 
 # focus on large enough aggregates
 summed_filt <- summed[, summed$ncells >= min_ncells]
-
 
 groups <- c("groupThymus.S2", "groupThymus.S1")
 de_results <- pseudoBulkDGE(
@@ -142,7 +145,10 @@ summed <- aggregateAcrossCells(
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-# Construct values for plotting in heatmaps
+# # Construct values for plotting in heatmaps (new)
+# sizeFactors(summed) <- NULL
+# summed <- logNormCounts(summed)
+# Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
   assay(summed, "logCPM"),
@@ -179,6 +185,13 @@ stopifnot(length(features) < 2)
 
 
 
+
+
+
+
+
+
+# TODO: fix error of  `gaps_col` below
 
 # remove character inevitably generate by `design`
 vs <- gsub("group", "", groups)
@@ -238,40 +251,6 @@ pheatmap(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 is_de <- decideTestsPerLabel(de_results, threshold = fdr)
 summarizeTestsPerLabel(is_de) %>%
   knitr::kable(
@@ -298,7 +277,10 @@ summed <- aggregateAcrossCells(
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-# Construct values for plotting in heatmaps
+# # Construct values for plotting in heatmaps (new)
+# sizeFactors(summed) <- NULL
+# summed <- logNormCounts(summed)
+# Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
   assay(summed, "logCPM"),
@@ -332,6 +314,8 @@ features <- unique(unlist(all_features))
 # Need at least 2 features to make a heatmap.
 stopifnot(length(features) < 2)
 
+
+
 is_de <- decideTestsPerLabel(de_results, threshold = fdr)
 summarizeTestsPerLabel(is_de) %>%
   knitr::kable(
@@ -358,7 +342,10 @@ summed <- aggregateAcrossCells(
   coldata_merge = FALSE,
   use.dimred = FALSE,
   use.altexps = FALSE)
-# Construct values for plotting in heatmaps
+# # Construct values for plotting in heatmaps (new)
+# sizeFactors(summed) <- NULL
+# summed <- logNormCounts(summed)
+# Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
   assay(summed, "logCPM"),

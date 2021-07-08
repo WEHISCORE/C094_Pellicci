@@ -156,4 +156,3 @@ plotScoreReducedDim <- function(results, sce, dimred = "TSNE",
   })
   cowplot::plot_grid(plotlist = p, ncol = ncol)
 }
-
