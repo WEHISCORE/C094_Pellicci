@@ -41,13 +41,14 @@ sample_colours <- setNames(
   unique(sce$colours$sample_colours),
   unique(names(sce$colours$sample_colours)))
 sample_colours <- sample_colours[levels(sce$sample)]
+# need to reset stage colour after simplification above
 stage_colours <- setNames(
-  unique(sce$colours$stage_colours),
-  unique(names(sce$colours$stage_colours)))
-stage_colours <- stage_colours[levels(sce$stage)]
+  palette.colors(nlevels(sce$stage), "Dark 2"),
+  levels(sce$stage))
+sce$colours$stage_colours <- stage_colours[sce$stage]
 cluster_colours <- setNames(
   unique(sce$colours$cluster_colours),
-  unique(names(sce$colours$cluster_colours)))
+  unique(sce$stage))
 cluster_colours <- cluster_colours[levels(sce$cluster)]
 # define group colours (without factorizing `group`)
 group_colours <- setNames(
@@ -84,8 +85,8 @@ summed <- aggregateAcrossCells(
   use.dimred = FALSE,
   use.altexps = FALSE)
 # # Construct values for plotting in heatmaps (new)
-# sizeFactors(summed) <- NULL
-# summed <- logNormCounts(summed)
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
 # Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
@@ -146,8 +147,8 @@ summed <- aggregateAcrossCells(
   use.dimred = FALSE,
   use.altexps = FALSE)
 # # Construct values for plotting in heatmaps (new)
-# sizeFactors(summed) <- NULL
-# summed <- logNormCounts(summed)
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
 # Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
@@ -183,73 +184,47 @@ features <- unique(unlist(all_features))
 # Need at least 2 features to make a heatmap.
 stopifnot(length(features) < 2)
 
-
-
-
-
-
-
-
-
-# TODO: fix error of  `gaps_col` below
-
-# remove character inevitably generate by `design`
-vs <- gsub("group", "", groups)
-j <- summed_filt$group %in% vs
-o <- order(
-  summed_filt$group[j],
-  summed_filt$plate_number[j],
-  summed_filt$tissue[j],
-  summed_filt$stage[j],
-  summed_filt$donor[j])
+# heatmap
 all_features <- lapply(
   de_results,
   function(x) rownames(x[which(x$FDR < fdr), ]))
 features <- unique(unlist(all_features))
-mat <- assay(summed_filt, "correctedLogCPM")[features, j]
-mat <- mat - rowMeans(mat)
-zlim <- c(-3, 3)
-mat[mat < zlim[1]] <- zlim[1]
-mat[mat > zlim[2]] <- zlim[2]
-pheatmap(
-  mat = mat[, o],
-  color = hcl.colors(101, "Blue-Red 3"),
+plotHeatmap(
+  summed_filt,
+  features = features,
+  columns = order(
+    factor(summed_filt$group),
+    summed_filt$plate_number,
+    summed_filt$tissue,
+    summed_filt$stage,
+    summed_filt$donor),
+  colour_columns_by = c(
+    "group",
+    "plate_number",
+    "tissue",
+    "stage",
+    "donor"),
   cluster_rows = TRUE,
   cluster_cols = FALSE,
   show_colnames = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
   annotation_row = data.frame(
     Thymus.S1 = ifelse(features %in% all_features$Thymus.S1, "DE", "not DE"),
     Thymus.S3 = ifelse(features %in% all_features$Thymus.S3, "DE", "not DE"),
     row.names = features),
-  annotation_col = data.frame(
-    group = summed_filt$group[j][o],
-    plate_number = summed_filt$plate_number[j][o],
-    tissue = summed_filt$tissue[j][o],
-    stage = summed_filt$stage[j][o],
-    donor = summed_filt$donor[j][o],
-    row.names = colnames(summed_filt)[j][o]),
-  annotation_colors = list(
-    group = group_colours[levels(factor(summed_filt$group[j]))],
+  main = paste0(names(all_features)[1], "_vs_", names(all_features)[2]),
+  column_annotation_colors = list(
+    Thymus.S1 = c("not DE" = "white", "DE" = group_colours[["Thymus.S1"]]),
+    Thymus.S3 = c("not DE" = "white", "DE" = group_colours[["Thymus.S3"]]),
+    group = group_colours[levels(factor(summed_filt$group))],
     plate_number = plate_number_colours,
     tissue = tissue_colours,
     stage = stage_colours,
-    donor = donor_colours,
-    Thymus.S1 = c("not DE" = "white", "DE" = group_colours[["Thymus.S1"]]),
-    Thymus.S3 = c("not DE" = "white", "DE" = group_colours[["Thymus.S3"]])),
-  breaks = seq(-max(abs(mat)), max(abs(mat)), length.out = 101),
-  gaps_col = cumsum(runLength(Rle(summed_filt$group[j][o]))),
-  fontsize = 8)
-
-
-
-
-
-
-
-
-
-
-
+    donor = donor_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
 
 is_de <- decideTestsPerLabel(de_results, threshold = fdr)
 summarizeTestsPerLabel(is_de) %>%
@@ -278,8 +253,8 @@ summed <- aggregateAcrossCells(
   use.dimred = FALSE,
   use.altexps = FALSE)
 # # Construct values for plotting in heatmaps (new)
-# sizeFactors(summed) <- NULL
-# summed <- logNormCounts(summed)
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
 # Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
@@ -343,8 +318,8 @@ summed <- aggregateAcrossCells(
   use.dimred = FALSE,
   use.altexps = FALSE)
 # # Construct values for plotting in heatmaps (new)
-# sizeFactors(summed) <- NULL
-# summed <- logNormCounts(summed)
+sizeFactors(summed) <- NULL
+summed <- logNormCounts(summed)
 # Construct values for plotting in heatmaps (old)
 assay(summed, "logCPM") <- edgeR::cpm(counts(summed), log = TRUE)
 assay(summed, "correctedLogCPM") <- limma::removeBatchEffect(
