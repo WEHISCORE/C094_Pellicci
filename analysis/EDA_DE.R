@@ -1,7 +1,7 @@
 
-# NOTE: Pete: no fixed workflow for "multi-sample comparison"; highly customized and vary from project to project
+# NOTE: no fixed workflow for "multi-sample comparison"; highly customized and vary from project to project
 # NOTE: for this project, DE analysis may not be necessary as ncell per aggregate could be too little
-# client will have to determine DE from minibulk, then apply same set og DE to singlecell to confirm only
+# client will have to determine DE from minibulk, then apply same set of DE to singlecell to confirm only
 
 library(SingleCellExperiment)
 library(here)
@@ -29,7 +29,7 @@ sce$stage <- factor(
 # NOTE: I: `group` should not be factorized, or error at `pseudoBulkDGE`
 sce$group <- paste0(sce$tissue, ".", sce$stage)
 # NOTE: I: `rep` = finest possible sample
-# NOTE: Pete: as ncells per aggregate would be too little (<<100); have to skip `plate_number` when defining `rep` for this case only
+# NOTE: as ncells per aggregate would be too little (<<100); have to skip `plate_number` when defining `rep` for this case only
 sce$rep <- paste0(sce$group, ".", sce$donor)
 
 # Some useful colours
@@ -220,6 +220,10 @@ features <- unique(unlist(all_features))
 stopifnot(length(features) < 2)
 
 # heatmap
+# NOTE: I: order by `group` then `cluster/label`
+# then one can see if there are different cell type/status under each group
+# e.g. Thymus.S3 has cluster.1,2,3, whilst Blood.S3 only got cluster.3
+# where both cluster.3 should have similar expression/transcriptome
 all_features <- lapply(
   de_results,
   function(x) rownames(x[which(x$FDR < fdr), ]))
