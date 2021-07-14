@@ -222,7 +222,6 @@ t(assay(altExp(sce, "FACS"), "pseudolog")) %>%
   skimr::skim()
 ```
 
-
 ## Incorporating gene-based annotation
 
 I used the `r BiocStyle::Biocpkg("Homo.sapiens")` package and the `EnsDb.Hsapiens.v98` resource, which respectively cover the NCBI/RefSeq and Ensembl databases, to obtain gene-based annotations, such as the chromosome and gene symbol.

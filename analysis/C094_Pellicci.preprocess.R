@@ -11,10 +11,6 @@ library(dplyr)
 library(readxl)
 library(janitor)
 
-# Setting up the data ----------------------------------------------------------
-
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.scPipe.SCE.rds"))
-
 # Incorporating cell-based annotation ------------------------------------------
 
 # NOTE: Some `sample_name` include `sample_gate`; remove this redundancy.
@@ -62,9 +58,10 @@ sce$sample_type <- factor(
     sce$sample_type == "99 cell" ~ "99 cells",
     TRUE ~ sce$sample_type),
   c("Single cell", "50 cells", "99 cells", "100 cells"))
-sce$sample_name <- factor(
-  sce$sample_name,
-  levels = c(paste("Blood", 1:5), paste("Thymus", 1:5), "Cell line"))
+# TODO: Is this still required?
+# sce$sample_name <- factor(
+#   sce$sample_name,
+#   levels = c(paste("Blood", 1:5), paste("Thymus", 1:5), "Cell line"))
 colData(sce) <- DataFrame(
   endoapply(colData(sce), function(x) {
     if (is.character(x)) {
@@ -207,10 +204,10 @@ donor_colours <- setNames(
   levels(sce$donor))
 sce$colours$donor_colours <- donor_colours[sce$donor]
 stage_colours <- c(
+  "Unknown" = "black",
   "S1 (CD4+/CD161-)" = unname(sample_gate_colours["P6"]),
   "S2 (CD4-/CD161-)" = unname(sample_gate_colours["P7"]),
   "S3 (CD4-/CD161+)" = unname(sample_gate_colours["P8"]),
-  "Unknown" = "black",
   "NA" = unname(sample_gate_colours["NA"]))
 sce$colours$stage_colours <- stage_colours[sce$stage]
 
