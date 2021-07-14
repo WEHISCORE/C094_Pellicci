@@ -851,7 +851,7 @@ sce$colours$cluster_colours <- cluster_colours[sce$cluster]
 
 Figure \@ref(fig:batch-correction-test-cell-selected) shows an overview of comparisons between the unmerged and merged data  (*manual merge*) broken down by different experimental factors.
 
-```{r batch-correction-test-cell-selected, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (leftmost column) and -corrected data by auto merge (2nd column) and two different manual merge orders (3rd and rightmost columns, respectively)."}
+```{r batch-correction-test-cell-selected, fig.asp = 1.5, fig.cap = "Comparison between batch-uncorrected data (left column) and -corrected data by manual merge orders (right column)."}
 
 p1 <- plotReducedDim(sce, "UMAP", colour_by = "plate_number") + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")

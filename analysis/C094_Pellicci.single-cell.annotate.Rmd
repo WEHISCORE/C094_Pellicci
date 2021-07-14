@@ -594,7 +594,7 @@ colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
 pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
 ```
 
-```{r heat-uniquely-up-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 uniquely upregulated marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.9, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 25 uniquely upregulated marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.9, layout="l-body-outset"}
 plotHeatmap(
   sce,
   features = rownames(best_set),
