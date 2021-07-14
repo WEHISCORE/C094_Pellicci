@@ -1,6 +1,6 @@
 # Process C118 (NN215 and NN227) with scPipe
 # Peter Hickey
-# 2021-06-16
+# 2021-07-13
 
 # Setup ------------------------------------------------------------------------
 
@@ -350,7 +350,7 @@ mclapply(seq_along(exon_bam), function(i) {
     has_UMI = has_UMI)
 })
 
-# Gene counting ----------------------------------------------------------------
+# Gene counting deduped data ---------------------------------------------------
 
 UMI_cor <- 1
 gene_fl <- FALSE
@@ -363,7 +363,7 @@ mclapply(seq_along(bc_anno), function(i) {
     gene_fl = gene_fl)
 })
 
-# Create and save SingleCellExperiment -----------------------------------------
+# Create and save deduped SingleCellExperiment ---------------------------------
 
 list_of_sce <- lapply(rpis, function(rpi) {
   create_sce_by_dir(
@@ -390,7 +390,7 @@ saveRDS(
   file.path(outdir, "C094_Pellicci.scPipe.SCE.rds"),
   compress = "xz")
 
-# Create QC report -------------------------------------------------------------
+# Create QC report of deduped data----------------------------------------------
 
 library(readr)
 library(plotly)
@@ -445,3 +445,44 @@ lapply(rpis, function(rpi) {
       paste0(rpi, ".scPipe_QC_report.nb.html")),
     overwrite = TRUE)
 })
+
+# Gene counting non-deduped data -----------------------------------------------
+
+sapply(paste0(extdir, "_no_dedup"), dir.create)
+lapply(names(bc_anno), function(n) {
+  message(n)
+  geneCountingNoUMIDedup(
+    outdir = extdir[[n]],
+    bc_anno = bc_anno[[n]])
+})
+
+# Create and save non-deduped SingleCellExperiment -----------------------------
+
+list_of_no_dedup_sce <- lapply(rpis, function(rpi) {
+  x <- data.table::fread(
+    file.path(paste0(extdir[[rpi]], "_no_dedup"), "gene_count.csv"))
+  counts <- as.matrix(x[, -1])
+  sce <- SingleCellExperiment(
+    list(counts = counts),
+    colData = sample_sheet[colnames(counts), ])
+  rownames(sce) <- x$gene_id
+  sce
+})
+
+no_dedup_sce <- Reduce(
+  function(x, y) .combine(x, y, rowData_by = NULL),
+  list_of_no_dedup_sce)
+no_dedup_sce$UMI_deduped <- FALSE
+colnames(no_dedup_sce) <- paste0(colnames(no_dedup_sce), ".not_UMI_deduped")
+assay(no_dedup_sce, withDimnames = FALSE) <- unname(
+  as(assay(no_dedup_sce, withDimnames = FALSE), "dgCMatrix"))
+no_dedup_sce <- splitAltExps(
+  no_dedup_sce,
+  ifelse(grepl("^ERCC", rownames(no_dedup_sce)), "ERCC", "Endogenous"))
+# NOTE: Order genes and samples as in `sce`.
+no_dedup_sce <- no_dedup_sce[rownames(sce),
+                             paste0(colnames(sce), ".not_UMI_deduped")]
+saveRDS(
+  no_dedup_sce,
+  file.path(outdir, "C094_Pellicci.not_UMI_deduped.scPipe.SCE.rds"),
+  compress = "xz")

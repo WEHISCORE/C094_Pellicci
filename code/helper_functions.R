@@ -156,3 +156,32 @@ plotScoreReducedDim <- function(results, sce, dimred = "TSNE",
   })
   cowplot::plot_grid(plotlist = p, ncol = ncol)
 }
+
+# NOTE: Need to use my own gene counting function because not using UMI
+#       deduplication.
+geneCountingNoUMIDedup <- function(outdir, bc_anno) {
+  files <- list.files(file.path(outdir, "count"), full.names = TRUE)
+  names(files) <- sub("\\.csv", "", basename(files))
+  counts <- lapply(files, function(file) {
+    message(basename(file))
+    data.table::fread(file, select = 1)[, table(gene_id)]
+  })
+  genes <- Reduce(union, lapply(counts, names))
+  x <- matrix(
+    0L,
+    nrow = length(genes),
+    ncol = length(files),
+    dimnames = list(genes, names(counts)))
+  for (j in names(counts)) {
+    xx <- counts[[j]]
+    x[names(xx), j] <- xx
+  }
+  z <- cbind(
+    data.frame(gene_id = rownames(x)),
+    as.data.frame(x))
+  data.table::fwrite(
+    x = z,
+    file = file.path(paste0(outdir, "_no_dedup"), "gene_count.csv"),
+    row.names = FALSE,
+    nThread = 1)
+}
