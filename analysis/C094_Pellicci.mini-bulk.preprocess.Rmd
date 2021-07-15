@@ -1111,6 +1111,9 @@ sessioninfo::session_info()
 
 # TODOs
 
-- [ ] How many reads/sample were we aiming for?
-- [ ] Why are `Blood.1` - `Blood.3` `P5` whereas `Blood.4` - `Blood.8` `P8`?
+- [x] How many reads/sample were we aiming for?
+  - Doesn't matter. We got what we got and we aren't resequencing because samples are already pooled in a way that means we can't only sequence e.g., `Blood.1` - `Blood.3`.
+- [x] Why are `Blood.1` - `Blood.3` `P5` whereas `Blood.4` - `Blood.8` `P8`?
+  - This was a deliberate change and while not ideal Dan says that ~90% of `Blood.P5` cells are likely `Blood.P8` (remembering that (P6, P7, P8) ⊆ P5)
 - [ ] Sex of donors?
+  - Dan to provide so that I can cross-check.

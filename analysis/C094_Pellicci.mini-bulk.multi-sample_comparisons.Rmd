@@ -842,3 +842,11 @@ for (j in colnames(y_contrast)) {
 # TODOs
 
 - [ ] DE between blood (P5 or is it P8) and thymus (P8)? "Thymus vs Blood: comparing Stage 3 (P8 CD4- CD161+) with Blood (P5)"
+  - This comparison is really Thymus.P8 vs. Blood.P8.
+  - We will effectively only use donors 4-8 for this comparison as we are discarding `Blood.1` - `Blood.3`.
+  - `Blood.1` - `Blood.3` are really `P5` but Dan says that ~90% of `Blood.P5` cells are likely `Blood.P8` (remembering that (P6, P7, P8) ⊆ P5)
+- [ ] Compare/aggregate 50-cells with 50-cells and 100-cells with 100-cells.
+  - Look at number of technical reps if adding `sample_type` to things we aggregate over
+    - Donors 1-3 are all 50 cells whereas donors 4-8 have 50 cell and 99/100 cell samples
+  - Will probably have to add the 50-cell summed tech reps and 100-cell summed tech reps in order to have 1 sample per biological replicate
+- [ ] Discard `Blood.1` - `Blood.3` (all `P5`) but keep `Thymus.1` - `Thymus.3` for the purposes of DE analyses
