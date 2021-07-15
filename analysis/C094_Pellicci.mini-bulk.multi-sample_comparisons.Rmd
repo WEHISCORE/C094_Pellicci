@@ -44,7 +44,7 @@ source(here("code/helper_functions.R"))
 sce <- readRDS(
   here("data", "SCEs", "C094_Pellicci.mini-bulk.preprocessed.SCE.rds"))
 # NOTE: Reorder samples for plots (e.g., RLE plots).
-# TODO: Order by sex once available
+# TODO: Order by sex once available?
 sce <- sce[, order(sce$tissue, sce$stage, sce$donor)]
 
 # NOTE: Abbreviate stage
@@ -78,11 +78,10 @@ sce <- sce[any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE)), ]
 
 ## Sample filtering
 
-We exclude samples with < 100,000 reads.
+At this stage, no sample filtering.
 
 ```{r}
-# TODO: Any other filters
-sce <- sce[, sce$nreads >= 100000]
+# TODO: Any replicate filtering? E.g., some samples have < 100,000 reads.
 ```
 
 ```{r}
@@ -130,9 +129,6 @@ x <- x[rowSums(x$counts) > 0, ]
 y <- sumTechReps(
   x, 
   interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE))
-# TODO: When supplied sex info
-# ym <- y[, y$samples$sex == "M"]
-# yf <- y[, y$samples$sex == "F"]
 ```
 
 ### Gene filtering
@@ -369,7 +365,6 @@ knitr::kable(marker_proteins)
 
 ```{r}
 y$samples$donor <- paste0("D", y$samples$donor)
-# TODO: Blood on donor or plate_number? Think the former
 y_design <- model.matrix(
   ~0 + group + donor,
   y$samples)
@@ -486,7 +481,6 @@ y_contrast <- makeContrasts(
   Thymus.S3_vs_Thymus.S2 = Thymus.S3 - Thymus.S2,
   levels = y_design)
 
-# for (j in colnames(y_contrast)) {
 y_dt <- lapply(colnames(y_contrast), function(j) {
   dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
   decideTests(dgelrt)
@@ -496,13 +490,96 @@ do.call(cbind, lapply(y_dt, summary)) %>%
     knitr::kable(caption = "Number of DEGs (FDR < 0.05)")
 ```
 
-```{r, fig.cap = "MD plots highlighting DEGs (red).", fig.asp = 1, results = "hide"}
-par(mfrow = c(2, 2))
-lapply(colnames(y_contrast), function(j) {
-  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
-  plotMD(dgelrt)
-})
+### MD plots
+
+Figure \@ref(fig:md-y-1) - \@ref(fig:md-y-3) are MD plots in each comparison.
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
 ```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
+
+```{r md-y-1, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", , fig.asp = 2 / 3}
+j <- "Thymus.S3_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
+
+```{r md-y-2, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", fig.asp = 2 / 3}
+j <- "Thymus.S2_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+
+```{r md-y-3, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", fig.asp = 2 / 3}
+j <- "Thymus.S3_vs_Thymus.S2"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+:::::
 
 Interactive `r BiocStyle::Biocpkg("Glimma")` MD plots of the differential expression results are available from [`output/DEGs/reads/glimma-plots/`](../output/DEGs/reads/glimma-plots/).
 
@@ -526,6 +603,8 @@ lapply(colnames(y_contrast), function(j) {
 })
 ```
 
+### Tables
+
 The following tables give the DEGs in each comparison.
 
 ```{r, echo = FALSE}
@@ -540,7 +619,7 @@ xaringanExtra::use_panelset()
 
 ::: {.panel}
 
-### `Thymus.S3_vs_Thymus.S1` {.panel-name}
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
 
 ```{r}
 dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, "Thymus.S3_vs_Thymus.S1"])
@@ -558,7 +637,7 @@ if (nrow(tt)) {
 
 ::: {.panel}
 
-### `Thymus.S2_vs_Thymus.S1` {.panel-name}
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
 
 ```{r}
 dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, "Thymus.S2_vs_Thymus.S1"])
@@ -576,7 +655,7 @@ if (nrow(tt)) {
 
 ::: {.panel}
 
-### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
 
 ```{r}
 dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, "Thymus.S3_vs_Thymus.S2"])
@@ -614,7 +693,9 @@ lapply(colnames(y_contrast), function(j) {
 })
 ```
 
-Figure \@ref(fig:heatmap-y-1) - \@ref(fig:heatmap-y-3) are heatmaps showing the expression of the DEGs.
+### Heatmaps
+
+Figure \@ref(fig:heatmap-y-1) - \@ref(fig:heatmap-y-3) are heatmaps showing the expression of the DEGs in each comparison.
 
 ```{r, echo = FALSE}
 # NOTE: The following is a workaround to the lack of support for tabsets in 
@@ -628,7 +709,7 @@ xaringanExtra::use_panelset()
 
 ::: {.panel}
 
-### `Thymus.S3_vs_Thymus.S1` {.panel-name}
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
 
 ```{r heatmap-y-1, fig.asp = 1.5, fig.cap = "Heatmap of upper-quartile-normalized logCPM values for the top-50 DEGs."}
 j <- "Thymus.S3_vs_Thymus.S1"
@@ -656,7 +737,7 @@ pheatmap(
 
 ::: {.panel}
 
-### `Thymus.S2_vs_Thymus.S1` {.panel-name}
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
 
 ```{r heatmap-y-2, fig.asp = 1.5, fig.cap = "Heatmap of upper-quartile-normalized logCPM values for the top-50 DEGs."}
 j <- "Thymus.S2_vs_Thymus.S1"
@@ -684,7 +765,7 @@ pheatmap(
 
 ::: {.panel}
 
-### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
 
 ```{r heatmap-y-3, fig.asp = 1.5, fig.cap = "Heatmap of upper-quartile-normalized logCPM values for the top-50 DEGs."}
 j <- "Thymus.S3_vs_Thymus.S2"
