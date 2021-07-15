@@ -507,49 +507,6 @@ plotHeatmap(
 
 
 
-# cluster 2
-chosen <- "2"
-interesting_uniquely_up <- markers_uniquely_up[[chosen]]
-
-best_set <- interesting_uniquely_up[1:25, ]
-
-plotHeatmap(
-  sce,
-  features = rownames(best_set),
-  columns = order(
-    sce$cluster,
-    sce$sample,
-    sce$stage,
-    sce$plate_number),
-  colour_columns_by = c(
-    "cluster",
-    "sample",
-    "stage",
-    "plate_number"),
-  cluster_cols = FALSE,
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  annotation_row = data.frame(
-    Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
-    row.names = rownames(best_set)),
-  main = paste0("Cluster: ", chosen),
-  column_annotation_colors = list(
-    Sig = c("Yes" = "red", "No" = "lightgrey"),
-    cluster = cluster_colours,
-    sample = sample_colours,
-    stage = stage_colours,
-    plate_number = plate_number_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 7)
-
-
-
-
-
 # cluster 3
 chosen <- "3"
 interesting_uniquely_up <- markers_uniquely_up[[chosen]]
@@ -591,18 +548,100 @@ plotHeatmap(
 
 
 
+# cluster 2
+chosen <- "2"
+interesting_uniquely_up <- markers_uniquely_up[[chosen]]
 
+best_set <- interesting_uniquely_up[1:25, ]
 
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$sample,
+    sce$stage,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "sample",
+    "stage",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("Yes", "No")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    sample = sample_colours,
+    stage = stage_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+# NOTE: seems to be all insignificant marker (tried even top100, but still, all insignificant)
 
+# cluster 2 (union any)
 
+markers_union_any <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "any",
+  direction = "any")
 
+chosen <- "2"
+interesting <- markers_union_any[[chosen]]
 
+.adf(head(interesting, 10)) %>%
+  tibble::rownames_to_column("Gene") %>%
+  knitr::kable(
+    caption = paste0(
+      "First 10 marker genes for cluster ",
+      chosen,
+      " across comparisons."))
 
+best_set <- interesting[interesting$Top <= 10, ]
 
-
-
-
-
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$sample,
+    sce$stage,
+    sce$plate_number),
+  order_columns_by = c(
+    "cluster",
+    "sample",
+    "stage",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      levels = c("Yes", "No")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    sample = sample_colours,
+    stage = stage_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 6)
 
 
 
