@@ -794,6 +794,13 @@
       "Repository": "CRAN",
       "Hash": "3eb6477d01eb5bbdc03f7d5f70f2733e"
     },
+    "ggrepel": {
+      "Package": "ggrepel",
+      "Version": "0.9.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "08ab869f37e6a7741a64ab9069bcb67d"
+    },
     "glue": {
       "Package": "glue",
       "Version": "1.4.2",
@@ -1495,6 +1502,13 @@
       "Repository": "CRAN",
       "Hash": "c3ad47dc6da0751f18ed53c4613e3ac7"
     },
+    "uuid": {
+      "Package": "uuid",
+      "Version": "0.1-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "e4169eb989a5d03ccb6b628cad1b1b50"
+    },
     "uwot": {
       "Package": "uwot",
       "Version": "0.1.10",
@@ -1550,6 +1564,18 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "caf4781c674ffa549a4676d2d77b13cc"
+    },
+    "xaringanExtra": {
+      "Package": "xaringanExtra",
+      "Version": "0.5.4",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "gadenbuie",
+      "RemoteRepo": "xaringanExtra",
+      "RemoteRef": "master",
+      "RemoteSha": "5e2d80bd0c53065cf1c3e55c3f21efb28c44ab5d",
+      "Hash": "f1b63f81a9dedddd43929543a847a739"
     },
     "xfun": {
       "Package": "xfun",
