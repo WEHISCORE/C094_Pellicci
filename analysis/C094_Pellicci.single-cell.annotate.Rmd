@@ -70,6 +70,10 @@ stage_colours <- setNames(
   unique(sce$colours$stage_colours),
   unique(names(sce$colours$stage_colours)))
 stage_colours <- stage_colours[levels(sce$stage)]
+group_colours <- setNames(
+  unique(sce$colours$group_colours),
+  unique(names(sce$colours$group_colours)))
+group_colours <- group_colours[levels(sce$group)]
 cluster_colours <- setNames(
   unique(sce$colours$cluster_colours),
   unique(names(sce$colours$cluster_colours)))
@@ -89,6 +93,9 @@ ribo_set <- intersect(ribo_set, rownames(sce))
 sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
 pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+# NOTE: get rid of psuedogene seems not to be good enough for HVG determination of this dataset
+protein_coding_gene_set <- rownames(sce)[
+  any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
 **NOTE**: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at `cell` level) could not further sub-classify the developmental stage/subtype of them (cluster `4`: `Th1 cell`-/`Naive CD8`/`CD4 T cell`-alike; all other clusters, i.e. `1`, `2`, `3`: `Vd2gd T cells`) [see EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.
@@ -199,11 +206,13 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
+    sce$group,
     sce$sample,
     sce$stage,
     sce$plate_number),
   order_columns_by = c(
     "cluster",
+    "group",
     "sample",
     "stage",
     "plate_number"),
@@ -221,6 +230,7 @@ plotHeatmap(
   column_annotation_colors = list(
      Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
+     group = group_colours,
      sample = sample_colours,
      stage = stage_colours,
      plate_number = plate_number_colours),
@@ -249,6 +259,7 @@ for (cluster in levels(sce$cluster)) {
     features = rownames(best_set),
     columns = order(
       sce$cluster,
+      sce$group,
       sce$sample,
       sce$stage,
       sce$plate_number,
@@ -256,6 +267,7 @@ for (cluster in levels(sce$cluster)) {
       sce$donor),
     colour_columns_by = c(
         "cluster",
+        "group",
         "sample",
         "stage",
         "plate_number",
@@ -277,6 +289,7 @@ for (cluster in levels(sce$cluster)) {
          Sig = c("Yes" = "red", "No" = "lightgrey"),
       
          cluster = cluster_colours,
+         group = group_colours,
          sample = sample_colours,
          stage = stage_colours,
          plate_number = plate_number_colours,    
@@ -397,11 +410,13 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
+    sce$group,
     sce$sample,
     sce$stage,
     sce$plate_number),
   order_columns_by = c(
     "cluster",
+    "group",
     "sample",
     "stage",
     "plate_number"),
@@ -419,6 +434,7 @@ plotHeatmap(
   column_annotation_colors = list(
      Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
+     group = group_colours,
      sample = sample_colours,
      stage = stage_colours,
      plate_number = plate_number_colours),
@@ -447,11 +463,13 @@ for (cluster in levels(sce$cluster)) {
     features = rownames(best_set),
     columns = order(
         sce$cluster,
+        sce$group,
         sce$sample,
         sce$stage,
         sce$plate_number),
     colour_columns_by = c(
         "cluster",
+        "group",
         "sample",
         "stage",
         "plate_number"),
@@ -469,6 +487,7 @@ for (cluster in levels(sce$cluster)) {
     column_annotation_colors = list(
        Sig = c("Yes" = "red", "No" = "lightgrey"),
        cluster = cluster_colours,
+       group = group_colours,
        sample = sample_colours,
        stage = stage_colours,
        plate_number = plate_number_colours),
@@ -493,11 +512,13 @@ for (cluster in levels(sce$cluster)) {
     features = rownames(best_set),
     columns = order(
         sce$cluster,
+        sce$group,
         sce$sample,
         sce$stage,
         sce$plate_number),
     colour_columns_by = c(
         "cluster",
+        "group",
         "sample",
         "stage",
         "plate_number"),
@@ -515,6 +536,7 @@ for (cluster in levels(sce$cluster)) {
     column_annotation_colors = list(
        Sig = c("Yes" = "red", "No" = "lightgrey"),
        cluster = cluster_colours,
+       group = group_colours,
        sample = sample_colours,
        stage = stage_colours,
        plate_number = plate_number_colours),
@@ -600,11 +622,13 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
       sce$cluster,
+      sce$group,
       sce$sample,
       sce$stage,
       sce$plate_number),
   colour_columns_by = c(
       "cluster",
+      "group",
       "sample",
       "stage",
       "plate_number"),
@@ -622,6 +646,7 @@ plotHeatmap(
   column_annotation_colors = list(
      Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
+     group = group_colours,
      sample = sample_colours,
      stage = stage_colours,
      plate_number = plate_number_colours),
@@ -652,11 +677,13 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
       sce$cluster,
+      sce$group,
       sce$sample,
       sce$stage,
       sce$plate_number),
   colour_columns_by = c(
       "cluster",
+      "group",
       "sample",
       "stage",
       "plate_number"),
@@ -674,6 +701,7 @@ plotHeatmap(
   column_annotation_colors = list(
      Sig = c("Yes" = "red", "No" = "lightgrey"),
      cluster = cluster_colours,
+     group = group_colours,
      sample = sample_colours,
      stage = stage_colours,
      plate_number = plate_number_colours),
