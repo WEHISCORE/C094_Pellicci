@@ -1,6 +1,8 @@
 
 # NOTE: not suggest to narrow down into protein coding genes (pcg) as it remove all significant candidate in most of the comparison !!!
-
+# TODO: is there any way to change the Sig colour using but still using plotHeatmap
+# TODO: cluster 1, 2, 4 on their own don't show any unique marker at all !
+# TODO: cluster 1,2 as a group, then compare cluster 1+2 (i.e. mostly Blood.S3) vs 3 (i.e. mostly Thymus.S1+.S2) vs 4 (i.e. mostly Thymus.S3)
 
 library(here)
 library(SingleCellExperiment)
@@ -138,6 +140,315 @@ sce$block <- paste0(sce$plate_number)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+###################################
+# cluster 1 (i.e. S3 more Blood) vs 2 (i.e. S3 more Thymus) vs 3 (i.e. mostly Thymus.S1 + .S2) vs 4 (i.e. mostly Thymus.S3)
+
+# find unique DE ./. clusters
+uniquely_up <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "all",
+  direction = "up")
+
+##########################################
+# look at cluster 1 (i.e. S3 more Blood)
+chosen <- "1"
+cluster1_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(S3 more Blood)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster1_uniquely_up <- cluster1_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster1_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito) that collaborator not interested in
+cluster1_uniquely_up_noiseR <- cluster1_uniquely_up[setdiff(rownames(cluster1_uniquely_up), c(pseudogene_set, mito_set, ribo_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"),
+       cluster_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top50 only
+best_set <- cluster1_uniquely_up_noiseR[1:50, ]
+
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$group,
+    sce$sample,
+    sce$stage,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "group",
+    "sample",
+    "stage",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - ",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    group = group_colours,
+    sample = sample_colours,
+    stage = stage_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+
+
+
+##########################################
+# look at cluster 2 (i.e. S3 more Thymus)
+chosen <- "2"
+cluster2_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(S3 more Thymus)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster2_uniquely_up <- cluster2_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster2_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito) that collaborator not interested in
+cluster2_uniquely_up_noiseR <- cluster2_uniquely_up[setdiff(rownames(cluster2_uniquely_up), c(pseudogene_set, mito_set, ribo_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster2_uniquely_up_noiseR) %in% "CD4"),
+       cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top50 only
+best_set <- cluster2_uniquely_up_noiseR[1:50, ]
+
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$group,
+    sce$sample,
+    sce$stage,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "group",
+    "sample",
+    "stage",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("No")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - ",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    group = group_colours,
+    sample = sample_colours,
+    stage = stage_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+
+
+
+##########################################
+# look at cluster 3 (i.e. mostly Thymus.S1 + .S2)
+chosen <- "3"
+cluster3_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S1 + .S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster3_uniquely_up <- cluster3_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster3_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito) that collaborator not interested in
+cluster3_uniquely_up_noiseR <- cluster3_uniquely_up[setdiff(rownames(cluster3_uniquely_up), c(pseudogene_set, mito_set, ribo_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster3_uniquely_up_noiseR) %in% "CD4"),
+       cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top50 only
+best_set <- cluster3_uniquely_up_noiseR[1:50, ]
+
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$group,
+    sce$sample,
+    sce$stage,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "group",
+    "sample",
+    "stage",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - ",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    group = group_colours,
+    sample = sample_colours,
+    stage = stage_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+
+
+
+##########################################
+# look at cluster 4 (i.e. mostly Thymus.S3)
+chosen <- "4"
+cluster4_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster4_uniquely_up <- cluster4_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster4_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito) that collaborator not interested in
+cluster4_uniquely_up_noiseR <- cluster4_uniquely_up[setdiff(rownames(cluster4_uniquely_up), c(pseudogene_set, mito_set, ribo_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"),
+       cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top50 only
+best_set <- cluster4_uniquely_up_noiseR[1:50, ]
+
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$group,
+    sce$sample,
+    sce$stage,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "group",
+    "sample",
+    "stage",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - ",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    group = group_colours,
+    sample = sample_colours,
+    stage = stage_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+
+
+
+
+
+
+
+
+
+
+
+
 ##########################################################################
 # cluster 1 + 2 + 4 (i.e. mostly S3) vs cluster 3 (i.e. mostly S1 and S2)
 
@@ -150,8 +461,8 @@ vs1_colours <- setNames(
   levels(sce$vs1))
 sce$colours$vs1_colours <- vs1_colours[sce$vs1]
 
-# find unique DE ./. cluster-group
-vs1_unique <- findMarkers(
+# find unique DE ./. cluster-groups
+vs1_uniquely_up <- findMarkers(
   sce,
   groups = sce$vs1,
   block = sce$block,
@@ -162,7 +473,7 @@ vs1_unique <- findMarkers(
 ##########################################
 # look at cluster-group A (i.e. mostly S3)
 chosen <- "A"
-A_uniquely_up <- vs1_unique[[chosen]]
+A_uniquely_up <- vs1_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
 x <- "(mostly S3)"
@@ -231,7 +542,7 @@ plotHeatmap(
 ###############################################
 # look at cluster-group B (i.e. mostly S1 + S2)
 chosen <- "B"
-B_uniquely_up <- vs1_unique[[chosen]]
+B_uniquely_up <- vs1_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
 x <- "(mostly S1 and S2)"
@@ -298,7 +609,7 @@ plotHeatmap(
 
 
 ##########################################################################
-# cluster 1 + 2 (i.e. mostly Blood.S3) vs cluster 3 (i.e. mostly S1 and S2)
+# cluster 1 + 2 (i.e. mostly Blood.S3) vs cluster 3 (i.e. mostly Thymus.S1 and Thymus.S2)
 
 # classify cluster-group for comparison
 # NOTE: NI = not interested
@@ -311,8 +622,8 @@ vs2_colours <- setNames(
   levels(sce$vs2))
 sce$colours$vs2_colours <- vs2_colours[sce$vs2]
 
-# find unique DE ./. cluster-group
-vs2_unique <- findMarkers(
+# find unique DE ./. cluster-groups
+vs2_uniquely_up <- findMarkers(
   sce,
   groups = sce$vs2,
   block = sce$block,
@@ -323,7 +634,7 @@ vs2_unique <- findMarkers(
 #################################################
 # look at cluster-group C  (i.e. mostly Blood.S3)
 chosen <- "C"
-C_uniquely_up <- vs2_unique[[chosen]]
+C_uniquely_up <- vs2_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
 x <- "(mostly Blood.S3)"
@@ -389,12 +700,12 @@ plotHeatmap(
 
 
 ##################################################
-# look at cluster-group D  (i.e. mostly S1 and S2)
+# look at cluster-group D  (i.e. mostly Thymus.S1 and Thymus.S2)
 chosen <- "D"
-D_uniquely_up <- vs2_unique[[chosen]]
+D_uniquely_up <- vs2_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(mostly S1 and S2)"
+x <- "(mostly Thymus.S1 and Thymus.S2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -471,8 +782,8 @@ vs3_colours <- setNames(
   levels(sce$vs3))
 sce$colours$vs3_colours <- vs3_colours[sce$vs3]
 
-# find unique DE ./. cluster-group
-vs3_unique <- findMarkers(
+# find unique DE ./. cluster-groups
+vs3_uniquely_up <- findMarkers(
   sce,
   groups = sce$vs3,
   block = sce$block,
@@ -483,7 +794,7 @@ vs3_unique <- findMarkers(
 #################################################
 # look at cluster-group E  (i.e. mostly Blood.S3)
 chosen <- "E"
-E_uniquely_up <- vs3_unique[[chosen]]
+E_uniquely_up <- vs3_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
 x <- "(mostly Blood.S3)"
@@ -551,7 +862,7 @@ plotHeatmap(
 ##################################################
 # look at cluster-group F  (i.e. mostly Thymus.S3)
 chosen <- "F"
-F_uniquely_up <- vs3_unique[[chosen]]
+F_uniquely_up <- vs3_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S3)"
