@@ -75,7 +75,6 @@ See [`analysis/C094_Pellicci.preprocess.R`](../analysis/C094_Pellicci.preprocess
 
 ```{r}
 source(here("analysis", "C094_Pellicci.preprocess.R"))
-# TODO: Losing some samples (e.g., `P8 (stage 3)` in `Blood.1` - `Blood.3`)
 ```
 
 **We then filter the data to only include the mini-bulk samples**.
@@ -188,7 +187,8 @@ p8 <- ggcells(sce) +
 p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + plot_layout(ncol = 3)
 ```
 
-Figure \@ref(fig:blood-stage) highlights that the `Blood.1`, `Blood.2`, and `Blood.3` samples collected on plate `LCE515` were from FACS gate `P5` (corresponding to a mixture of stages 1-3) whereas all subsequent `Blood` samples were from FACS gate `P8` (correspond to stage 3).
+Figure \@ref(fig:blood-stage) highlights that the `Blood.1`, `Blood.2`, and `Blood.3` samples collected on plate `LCE515` were from FACS gate `P5` (corresponding to a mixture of stages 1-3) whereas all subsequent `Blood` samples were from FACS gate `P8` (corresponding to stage 3).
+However, Dan tells me that ~90% of `Blood.P5` cells are essentially `Blood.P8` (corresponding to stage 3).
 
 ```{r blood-stage, fig.cap = "Breakdown of experiment by donor.", fig.asp = 1 / 4}
 p1 <- ggcells(sce) + 
@@ -279,7 +279,7 @@ pseudogene_set <- rownames(sce)[
 
 ## Motivation
 
-We aimed to sequence **TODO** HOW MANY? million reads/sample and hoped that the majority of these reads would be exonic.
+We aimed to sequence roughly 2 million reads/sample and for the majority of these reads would be exonic.
 
 ## Analysis
 
@@ -294,8 +294,9 @@ Figure \@ref(fig:nreads) shows that we generated a median of `r number(median(sc
 p1 <- plotColData(
   sce, "nreads", 
   x = "sample", 
-  other_fields = "plate_number", 
-  colour_by = "sample") +
+  shape_by = "plate_number", 
+  colour_by = "sample",
+  point_alpha = 1) +
   scale_y_log10() +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = sample_colours, name = "sample") +
@@ -310,8 +311,9 @@ p2 <- plotColData(
   sce, 
   I(sce$mapped_to_exon / sce$nreads), 
   x = "sample", 
-  other_fields = "plate_number",
-  colour_by = "sample") + 
+  shape_by = "plate_number", 
+  colour_by = "sample",
+  point_alpha = 1) + 
   ylim(0, 1) +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = sample_colours, name = "sample") +
@@ -322,8 +324,9 @@ p3 <- plotColData(
   sce, 
   I(sce$mapped_to_intron / sce$nreads), 
   x = "sample", 
-  other_fields = "plate_number",
-  colour_by = "sample") + 
+  shape_by = "plate_number", 
+  colour_by = "sample",
+  point_alpha = 1) + 
   ylim(0, 1) +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = sample_colours, name = "sample") +
@@ -335,13 +338,12 @@ p3 <- plotColData(
 ```
 
 We observe that the `Blood.1`, `Blood.2`, and `Blood.3` have notably fewer reads than other samples
-**These 3 samples are all on plate `LCE515` and are being resequenced to obtain more data.**
 
 ## Summary
 
-**TODO** Re-write once we know what the target was. Also, update according to additional analysis presented in meeting with Dan (2021-07-15).
+We roughly achieved our aim of sequencing 2 million reads/sample, although less than 50% of reads are exonic.
+There is notable plate-specific and sample-specific variation, however, in the number of reads generated.
 
-We largely achieved our aim of sequencing **TODO** How many million reads/sample and with the majority of reads being exonic.
 **Henceforth, we only use the exonic reads.**
 Although the intronic reads are potentially useful, to do so would require substantial changes to the data analysis workflow and additional analysis.
 
@@ -757,7 +759,7 @@ sce <- addPerCellQC(
 
 ## Visualizing the QC metrics
 
-Figure \@ref(fig:qcplot) compares the QC metrics of the single-cell samples across the different `sample` (combination of `tissue` and `donor`) and Figure \@ref(fig:qcplot-by-plate-number) further stratifies by `plate_number`.
+Figure \@ref(fig:qcplot) compares the QC metrics of the single-cell samples across the different `sample` (combination of `tissue` and `donor`).
 The number of UMIs, number of gene detected, and percentage of UMIs that are mapped to ERCC spike-ins are all higher in the 'experimental' samples than in the 'control' samples
 This likely reflects that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells (rather than this result being due to technical factors, although we cannot rule this out entirely).
 Together, these figures show that the vast majority of single-cell samples are good-quality^[Bearing in mind that the 'experimental' cells, which are γδ T cells, have a 'smaller' transcriptome than the 'control' cells.]:
@@ -775,9 +777,10 @@ p1 <- plotColData(
   sce,
   "sum",
   x = "donor",
-  other_fields = "tissue",
+  shape_by = "tissue",
   point_size = 0.5,
-  colour_by = "donor") +
+  colour_by = "donor",
+  shape_by = "plate_number") +
   scale_y_log10() +
   annotation_logticks(
     sides = "l",
@@ -795,7 +798,8 @@ p2 <- plotColData(
   x = "donor",
   other_fields = "tissue",
   point_size = 0.5,
-  colour_by = "donor") +
+  colour_by = "donor",
+  shape_by = "plate_number") +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = donor_colours, name = "donor") +
   xlab("") +
@@ -807,7 +811,8 @@ p3 <- plotColData(
   x = "donor",
   other_fields = "tissue",
   point_size = 0.5,
-  colour_by = "donor") +
+  colour_by = "donor",
+  shape_by = "plate_number") +
   ylim(0, NA) +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = donor_colours, name = "donor") +
@@ -820,7 +825,8 @@ p4 <- plotColData(
   x = "donor",
   other_fields = "tissue",
   point_size = 0.5,
-  colour_by = "donor") +
+  colour_by = "donor",
+  shape_by = "plate_number") +
   ylim(0, NA) +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = donor_colours, name = "donor") +
@@ -833,7 +839,8 @@ p5 <- plotColData(
   x = "donor",
   other_fields = "tissue",
   point_size = 0.5,
-  colour_by = "donor") +
+  colour_by = "donor",
+  shape_by = "plate_number") +
   ylim(0, NA) +
   theme(axis.text.x = element_blank()) + 
   scale_colour_manual(values = donor_colours, name = "donor") +
@@ -964,37 +971,24 @@ plotHighestExprs(
 
 ### Using *XIST* expression
 
+```{r}
+assay(sce, "logCPM_reads") <- edgeR::cpm(assay(sce, "read_counts"), log = TRUE)
+stopifnot(
+  identical(
+    names(which.min(sce$nreads)), 
+    names(which.min(assay(sce, "logCPM_reads")["XIST", ]))))
+```
+
 Figure \@ref(fig:xist-expression) visualises the expression of *XIST*, a female-specific gene.
 This can be used to confirm the reported sex of the sample and to detect sample mix-ups.
 
-**TODO** Re-write: Results are clear for `Thymus` but less so for `Blood` (SKW3 has similar to male `Thymus` samples (data not shown)).
+The results are fairly clear for the `Thymus` samples with donors 3, 4, and 6 having lower *XIST* expression (i.e. male).
+There is also one donor 5 replicate with low *XIST* expression (`r names(which.min(assay(sce, "logCPM_reads")["XIST", ]))`), but this is also the technical replicate with the fewest reads ($n_{reads} =$ `r number(min(sce$nreads), big.mark = ",")`).
 
-Figure \@ref(fig:xist-expression) shows that female samples have much higher average expression of *XIST* than male samples, as we would expect.
-
-**TODO** Re-write
-
-There is one replicate, `Del.1282.2`, that has is nominally male but has $logCPM(UMI_{counts})$ for *XIST* that is comparable to the female samples.
-However, we have already seen that this replicate has an unusually small library size (by reads and UMIs) and number of genes detected compared to the other samples, so it already suspect.
+The results are less clear for the `Blood` samples with some of the `Blood.3` technical replicates having comparable *XIST* expression to replicates from nominally female donors 1 and 2.
 
 ```{r xist-expression, fig.cap = "Expression of *XIST* by donor and tissue on a 'raw counts' and 'logCPM' scale using the read or UMI counts."}
-assay(sce, "logCPM_reads") <- edgeR::cpm(assay(sce, "read_counts"), log = TRUE)
-assay(sce, "logCPM_umis") <- edgeR::cpm(assay(sce, "UMI_counts"), log = TRUE)
-
-p1 <- plotExpression(
-  sce,
-  "XIST",
-  x = "donor",
-  exprs_values = "read_counts",
-  colour_by = "donor",
-  other_fields = "tissue") + 
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  guides(fill = FALSE) +
-  ylab("Read counts")  +
-  ylim(0, NA) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_blank()) + 
-  xlab("")
-p2 <- plotExpression(
+plotExpression(
   sce,
   "XIST",
   x = "donor",
@@ -1007,58 +1001,26 @@ p2 <- plotExpression(
   ylim(0, NA) +
   facet_grid(~tissue) +
   theme(axis.text.x = element_blank()) + 
-  xlab("")
-p3 <-plotExpression(
-  sce,
-  "XIST",
-  x = "donor",
-  exprs_values = "UMI_counts",
-  colour_by = "donor",
-  other_fields = "tissue") + 
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  guides(fill = FALSE) +
-  ylab("UMI counts")  +
-  ylim(0, NA) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_blank()) + 
-  xlab("")
-p4 <- plotExpression(
-  sce,
-  "XIST",
-  x = "donor",
-  exprs_values = "logCPM_umis",
-  colour_by = "donor",
-  other_fields = "tissue") + 
-  scale_colour_manual(values = donor_colours, name = "donor") +
-  guides(fill = FALSE) +
-  ylab("logCPM(UMI counts)") +
-  ylim(0, NA) +
-  facet_grid(~tissue) +
-  theme(axis.text.x = element_blank()) + 
-  xlab("")
-
-p1 + p2 + p3 + p4 + 
-  plot_layout(guides = "collect", ncol = 2) +
-  plot_annotation(title = "XIST")
+  xlab("") +
+  ggtitle("XIST")
 ```
 
 ### Using Y chromosome gene expression
 
-Figure \@ref(fig:chr-Y-expression) visualises the proportion of read counts coming from Y chromosome genes.
-This can be used to confirm the reported sex of the sample and to detect sample mix-ups.
-
-**TODO** Re-write: Results are clear for `Thymus` but less so for `Blood` (SKW3 has similar to male `Thymus` samples (data not shown)).
-
-Figure \@ref(fig:chr-Y-expression) shows that male samples have higher average proportion of read counts of Y chromosome genes than female samples, as we would expect.
-
-```{r chr-Y-expression, fig.cap = "Proportion of read counts coming from Y chromosome genes by donor and tissue."}
+```{r}
 is_Y <- any(rowData(sce)$ENSEMBL.SEQNAME == "Y")
 z <- addPerCellQC(
   sce, 
   subsets = list(Y = which(is_Y)),
   use.altexps = "ERCC",
   assay.type = "UMI_counts")
+```
 
+Figure \@ref(fig:chr-Y-expression) visualises the proportion of read counts coming from Y chromosome genes.
+This can be used to confirm the reported sex of the sample and to detect sample mix-ups.
+The results in Figure \@ref(fig:chr-Y-expression) are consistent with those in Figure \@ref(fig:xist-expression).
+
+```{r chr-Y-expression, fig.cap = "Proportion of read counts coming from Y chromosome genes by donor and tissue."}
 plotColData(
   z,
   "subsets_Y_percent",
@@ -1079,7 +1041,6 @@ plotColData(
 ```{r}
 # Remove some unneeded assays
 assay(sce, "logCPM_reads") <- NULL
-assay(sce, "logCPM_umis") <- NULL
 
 # Save
 saveRDS(
@@ -1108,12 +1069,3 @@ sessioninfo::session_info()
 ```
 
 </details>
-
-# TODOs
-
-- [x] How many reads/sample were we aiming for?
-  - Doesn't matter. We got what we got and we aren't resequencing because samples are already pooled in a way that means we can't only sequence e.g., `Blood.1` - `Blood.3`.
-- [x] Why are `Blood.1` - `Blood.3` `P5` whereas `Blood.4` - `Blood.8` `P8`?
-  - This was a deliberate change and while not ideal Dan says that ~90% of `Blood.P5` cells are likely `Blood.P8` (remembering that (P6, P7, P8) ⊆ P5)
-- [ ] Sex of donors?
-  - Dan to provide so that I can cross-check.
