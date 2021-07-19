@@ -607,7 +607,7 @@ abline(h = 0, lty = 2, col = "dodgerBlue")
 
 :::::
 
-Interactive `r BiocStyle::Biocpkg("Glimma")` MD plots of the differential expression results are available from [`output/DEGs/reads/glimma-plots/`](../output/DEGs/reads/glimma-plots/).
+Interactive `r BiocStyle::Biocpkg("Glimma")` MD plots of the differential expression results are available from [`output/DEGs/excluding_blood_1-3/glimma-plots/`](../output/DEGs/excluding_blood_1-3/glimma-plots/).
 
 ```{r, results = "hide"}
 lapply(colnames(y_contrast), function(j) {
@@ -721,7 +721,7 @@ if (nrow(tt)) {
 
 :::::
 
-CSV file of results available from [`output/DEGs/reads/aggregated_tech_reps.DEGs.csv.gz`](../output/DEGs/reads/aggregated_tech_reps.DEGs.csv.gz).
+CSV file of results available from [`output/DEGs/excluding_blood_1-3/aggregated_tech_reps.DEGs.csv.gz`](../output/DEGs/excluding_blood_1-3/aggregated_tech_reps.DEGs.csv.gz).
 
 ```{r, results = "hide"}
 lapply(colnames(y_contrast), function(j) {
