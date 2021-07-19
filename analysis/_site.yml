@@ -19,12 +19,14 @@ navbar:
       menu:
         - text: "Single cell"
           href: C094_Pellicci.single-cell.annotate.html
-    - text: "Differential analyses"
+    - text: "Mini-bulk differential analyses"
       menu:
-        - text: "Single cell"
-          href: C094_Pellicci.single-cell.multi-sample_comparisons.html
-        - text: "Mini bulk"
-          href: C094_Pellicci.mini-bulk.multi-sample_comparisons.html
+        - text: "All samples"
+          href: C094_Pellicci.mini-bulk.multi-sample_comparisons.all_samples.html
+        - text: "Excluding Blood.1 - Blood.3"
+          href: C094_Pellicci.mini-bulk.multi-sample_comparisons.excluding_blood_1-3.html
+        - text: "Excluding donors 1-3"
+          href: C094_Pellicci.mini-bulk.multi-sample_comparisons.excluding_donors_1-3.html
     - text: "Supplementary files"
       menu:
         - text: "scPipe reports"

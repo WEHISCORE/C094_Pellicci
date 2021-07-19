@@ -1,0 +1,893 @@
+---
+title: "Multi-sample comparisons of the Pellicci gamma-delta T-cell mini-bulk data set"
+description: "Read-based analysis excluding `Blood.1` - `Blood.3`"
+author:
+  - name: Peter Hickey
+    url: https://peterhickey.org
+    affiliation: WEHI SCORE
+    affiliation_url: https://www.wehi.edu.au/people/shalin-naik/3310/score
+date: "`r Sys.Date()`"
+editor_options:
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+# Summary
+
+**This report excludes samples coming from `Blood.1`, `Blood.2`, and `Blood.3`.**
+
+The report begins with some general [Setup] and is followed by various analyses denoted by a prefix (`y`):
+
+  - `y`: [Analysis of aggregated technical replicates]
+
+# Setup
+
+```{r}
+library(SingleCellExperiment)
+library(here)
+library(edgeR)
+library(ggplot2)
+library(cowplot)
+library(patchwork)
+library(ggrepel)
+library(magrittr)
+library(Glimma)
+library(pheatmap)
+
+source(here("code/helper_functions.R"))
+```
+
+## Load data
+
+```{r}
+sce <- readRDS(
+  here("data", "SCEs", "C094_Pellicci.mini-bulk.preprocessed.SCE.rds"))
+# NOTE: Reorder samples for plots (e.g., heatmaps).
+sce <- sce[, order(sce$tissue, sce$stage, sce$donor)]
+
+# NOTE: Abbreviate stage
+levels(sce$stage) <- c("S1", "S2", "S3", "Unknown")
+names(sce$colours$stage_colours) <- ifelse(
+  grepl("Unknown", names(sce$colours$stage_colours)),
+  "Unknown",
+  substr(names(sce$colours$stage_colours), 1, 2))
+
+# Convoluted way to add tech rep ID
+sce$rep <- dplyr::group_by(
+  as.data.frame(colData(sce)), 
+  tissue, stage, donor) %>% 
+  dplyr::mutate(rep = dplyr::row_number()) %>%
+  dplyr::pull(rep)
+colnames(sce) <- interaction(
+  sce$sample, 
+  sce$stage,
+  sce$rep, 
+  drop = TRUE, 
+  lex.order = TRUE)
+
+# Restrict analysis to read counts
+assays(sce) <- list(counts = assay(sce, "read_counts"))
+outdir <- here("output", "DEGs", "excluding_blood_1-3")
+dir.create(outdir, recursive = TRUE)
+```
+
+## Gene filtering
+
+We filter the genes to only retain protein coding genes.
+
+```{r}
+sce <- sce[any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE)), ]
+```
+
+## Sample filtering
+
+We exclude the `Blood.1`, `Blood.2`, and `Blood.3` samples.
+Replicates from these samples have fewer reads on average than other replicates.
+Furthermore, these samples used the `P5` gate rather than the `P8` gate.
+And although most `Blood.P5` samples will effectively be `Blood.P8` it may be more coherent to remove these samples entirely.
+
+```{r}
+sce <- sce[, !sce$sample %in% paste0("Blood.", 1:3)]
+
+colData(sce) <- droplevels(colData(sce))
+```
+
+```{r}
+# Some useful colours
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))[levels(sce$plate_number)]
+sample_type_colours <- setNames(
+  unique(sce$colours$sample_type_colours),
+  unique(names(sce$colours$sample_type_colours)))[levels(sce$sample_type)]
+sample_gate_colours <- setNames(
+  unique(sce$colours$sample_gate_colours),
+  unique(names(sce$colours$sample_gate_colours)))[levels(sce$sample_gate)]
+stage_colours <- setNames(
+  unique(sce$colours$stage_colours),
+  unique(names(sce$colours$stage_colours)))[levels(sce$stage)]
+sequencing_run_colours <- setNames(
+  unique(sce$colours$sequencing_run_colours),
+  unique(names(sce$colours$sequencing_run_colours)))[levels(sce$sequencing_run)]
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))[levels(sce$tissue)]
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))[levels(sce$donor)]
+sample_colours <- setNames(
+  unique(sce$colours$sample_colours),
+  unique(names(sce$colours$sample_colours)))[levels(sce$sample)]
+```
+
+## Create DGEList objects
+
+```{r}
+x <- DGEList(
+  counts = as.matrix(counts(sce)),
+  samples = colData(sce),
+  group = interaction(sce$tissue, sce$stage, drop = TRUE, lex.order = TRUE),
+  genes = flattenDF(rowData(sce)))
+# Remove genes with zero counts.
+x <- x[rowSums(x$counts) > 0, ]
+```
+
+```{r}
+y <- sumTechReps(
+  x, 
+  interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE))
+```
+
+### Gene filtering
+
+For each analysis, shown are the number of genes that have sufficient counts to test for DE (`TRUE`) or not (`FALSE`).
+
+#### `y`
+
+```{r}
+y_keep_exprs <- filterByExpr(y, group = y$samples$group, min.count = 5)
+y <- y[y_keep_exprs, , keep.lib.sizes = FALSE]
+table(y_keep_exprs)
+```
+
+### Normalization
+
+Normalization with upper-quartile (UQ) normalization.
+
+```{r}
+# NOTE: Prefer to use upper-quartile (on basis of analysis in C086_Kinkel) but 
+#       this cannot be applied to `x` for this dataset.
+x <- calcNormFactors(x, method = "TMM")
+y <- calcNormFactors(y, method = "upperquartile")
+```
+
+## Aggregation of technical replicates
+
+We have `r min(table(interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE)))` - `r max(table(interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE)))` technical replicates from each biological replicate.
+Ideally, the technical replicates are very similar to one another when view on an MDS plot.
+However, Figure \@ref(fig:mds) shows that:
+
+- Samples roughly cluster somewhat by `stage` and `tissue`
+- Some of the technical replicates are more variable than we would like
+- Those 'outlier' samples have smaller library sizes
+
+```{r mds, fig.cap = "MDS plots of individual technical replicates coloured by various experimental factors."}
+x_mds <- plotMDS(x, plot = FALSE)
+x_df <- cbind(data.frame(x = x_mds$x, y = x_mds$y), x$samples)
+rownames(x_df) <- colnames(x)
+
+p1 <- ggplot(
+  aes(x = x, y = y, colour = tissue, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = tissue_colours)
+p2 <- ggplot(
+  aes(x = x, y = y, colour = donor, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = donor_colours) +
+  guides(col = guide_legend(ncol = 2))
+p3 <- ggplot(
+  aes(x = x, y = y, colour = plate_number, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = plate_number_colours)
+p4 <- ggplot(
+  aes(x = x, y = y, colour = sample, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_colours) +
+  guides(col = guide_legend(ncol = 2))
+p5 <- ggplot(
+  aes(x = x, y = y, colour = sample_type, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_type_colours)
+p6 <- ggplot(
+  aes(x = x, y = y, colour = sequencing_run, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sequencing_run_colours)
+p7 <- ggplot(
+  aes(x = x, y = y, colour = stage, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = stage_colours)
+p8 <- ggplot(
+  aes(x = x, y = y, colour = sample_gate, label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_gate_colours)
+p9 <- ggplot(
+  aes(x = x, y = y, colour = log10(lib.size), label = rownames(x_df)),
+  data = x_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  scale_colour_viridis_c() +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2")
+
+p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + plot_layout(ncol = 3)
+```
+
+Although we could analyse the data at the level of technical replicates, this is more complicated.
+It will make our life easier by aggregating these technical replicates so that we have 1 sample per biological replicate.
+To aggregate technical replicates we simply sum their counts.
+
+<aside>
+In aggregating the data we ignore the `sample_type` of the replicate (i.e. whether it came from 50, 99, or 100 cells)
+</aside>
+
+Figure \@ref(fig:mds-y) shows the MDS plot after aggregating the technical replicates.
+We observe that:
+
+- Much of the variation is associated with library size
+- There is a `donor`/`sequencing_run`/`plate_number` batch effect
+
+```{r mds-y, fig.cap = "MDS plots of aggregated technical replicates coloured by various experimental factors."}
+y_mds <- plotMDS(y, plot = FALSE)
+y_df <- cbind(data.frame(x = y_mds$x, y = y_mds$y), y$samples)
+rownames(y_df) <- colnames(y)
+
+p1 <- ggplot(
+  aes(x = x, y = y, colour = tissue, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = tissue_colours)
+p2 <- ggplot(
+  aes(x = x, y = y, colour = donor, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = donor_colours) +
+  guides(col = guide_legend(ncol = 2))
+p3 <- ggplot(
+  aes(x = x, y = y, colour = plate_number, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = plate_number_colours)
+p4 <- ggplot(
+  aes(x = x, y = y, colour = sample, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_colours) +
+  guides(col = guide_legend(ncol = 2))
+# NOTE: Not showing sample_type because we ignored it when aggregating the 
+#       tech reps.
+# p5 <- ggplot(
+#   aes(x = x, y = y, colour = sample_type, label = rownames(y_df)),
+#   data = y_df) +
+#   geom_point() +
+#   geom_text_repel(size = 2) +
+#   theme_cowplot(font_size = 6) +
+#   xlab("Leading logFC dim 1") +
+#   ylab("Leading logFC dim 2") +
+#   scale_colour_manual(values = sample_type_colours)
+p6 <- ggplot(
+  aes(x = x, y = y, colour = sequencing_run, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sequencing_run_colours)
+p7 <- ggplot(
+  aes(x = x, y = y, colour = stage, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = stage_colours)
+p8 <- ggplot(
+  aes(x = x, y = y, colour = sample_gate, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_gate_colours)
+p9 <- ggplot(
+  aes(x = x, y = y, colour = log10(lib.size), label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  scale_colour_viridis_c() +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2")
+
+p1 + p2 + p3 + p4 + p6 + p7 + p8 + p9 + plot_layout(ncol = 3)
+```
+
+Fortunately, the plates were designed such that the comparisons of interest can be made within each, which protects us to an extent from plate-to-plate variation.
+Figure \@ref(fig:mds-rbe) is an MDS plot after removing the batch effect due to `donor`^[And therefore `plate_number`/`sequencing_run` since `donor` is nested within these factors.].
+We can more clearly observe the `stage`- and `tissue`-specific variation, along with the larger variation of samples on plate `LCE515`.
+
+```{r mds-rbe, fig.cap = "MDS plots of aggregated technical replicates coloured by various experimental factors."}
+y_mds <- plotMDS(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor, 
+    design = model.matrix(~group, y$samples)),
+  plot = FALSE)
+y_df <- cbind(data.frame(x = y_mds$x, y = y_mds$y), y$samples)
+rownames(y_df) <- colnames(y)
+
+p1 <- ggplot(
+  aes(x = x, y = y, colour = tissue, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = tissue_colours)
+p2 <- ggplot(
+  aes(x = x, y = y, colour = donor, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = donor_colours) +
+  guides(col = guide_legend(ncol = 2))
+p3 <- ggplot(
+  aes(x = x, y = y, colour = plate_number, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = plate_number_colours)
+p4 <- ggplot(
+  aes(x = x, y = y, colour = sample, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_colours) +
+  guides(col = guide_legend(ncol = 2))
+# NOTE: Not showing sample_type because we ignored it when aggregating the 
+#       tech reps.
+# p5 <- ggplot(
+#   aes(x = x, y = y, colour = sample_type, label = rownames(y_df)),
+#   data = y_df) +
+#   geom_point() +
+#   geom_text_repel(size = 2) +
+#   theme_cowplot(font_size = 6) +
+#   xlab("Leading logFC dim 1") +
+#   ylab("Leading logFC dim 2") +
+#   scale_colour_manual(values = sample_type_colours)
+p6 <- ggplot(
+  aes(x = x, y = y, colour = sequencing_run, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sequencing_run_colours)
+p7 <- ggplot(
+  aes(x = x, y = y, colour = stage, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = stage_colours)
+p8 <- ggplot(
+  aes(x = x, y = y, colour = sample_gate, label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2") +
+  scale_colour_manual(values = sample_gate_colours)
+p9 <- ggplot(
+  aes(x = x, y = y, colour = log10(lib.size), label = rownames(y_df)),
+  data = y_df) +
+  geom_point() +
+  theme_cowplot(font_size = 6) +
+  scale_colour_viridis_c() +
+  xlab("Leading logFC dim 1") +
+  ylab("Leading logFC dim 2")
+
+p1 + p2 + p3 + p4 + p6 + p7 + p8 + p9 + plot_layout(ncol = 3)
+```
+
+# Analysis of aggregated technical replicates
+
+```{r}
+y$samples$donor <- paste0("D", y$samples$donor)
+names(donor_colours) <- paste0("D", names(donor_colours))
+y_design <- model.matrix(
+  ~0 + group + donor,
+  y$samples)
+colnames(y_design) <- sub(
+  "group|donor",
+  "",
+  colnames(y_design))
+```
+
+## DE analysis
+
+Fit a model using `r BiocStyle::Biocpkg("edgeR")` with a term for `group` and `donor`.
+
+```{r, fig.show = "hide"}
+y <- estimateDisp(y, y_design)
+par(mfrow = c(1, 1))
+plotBCV(y)
+```
+
+```{r, fig.asp = 1}
+y_dgeglm <- glmFit(y, y_design)
+y_contrast <- makeContrasts(
+  Thymus.S3_vs_Thymus.S1 = Thymus.S3 - Thymus.S1,
+  Thymus.S2_vs_Thymus.S1 = Thymus.S2 - Thymus.S1,
+  Thymus.S3_vs_Thymus.S2 = Thymus.S3 - Thymus.S2,
+  Thymus.S3_vs_Blood.S3 = Thymus.S3 - Blood.S3,
+  levels = y_design)
+
+y_dt <- lapply(colnames(y_contrast), function(j) {
+  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+  decideTests(dgelrt)
+})
+names(y_dt) <- colnames(y_contrast)
+do.call(cbind, lapply(y_dt, summary)) %>%
+    knitr::kable(caption = "Number of DEGs (FDR < 0.05)")
+```
+
+### MD plots
+
+Figure \@ref(fig:md-y-1) - \@ref(fig:md-y-4) are MD plots in each comparison.
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
+
+```{r md-y-1, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", , fig.asp = 2 / 3}
+j <- "Thymus.S3_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
+
+```{r md-y-2, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", fig.asp = 2 / 3}
+j <- "Thymus.S2_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+
+```{r md-y-3, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", fig.asp = 2 / 3}
+j <- "Thymus.S3_vs_Thymus.S2"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r md-y-4, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", fig.asp = 2 / 3}
+j <- "Thymus.S3_vs_Blood.S3"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
+:::::
+
+Interactive `r BiocStyle::Biocpkg("Glimma")` MD plots of the differential expression results are available from [`output/DEGs/reads/glimma-plots/`](../output/DEGs/reads/glimma-plots/).
+
+```{r, results = "hide"}
+lapply(colnames(y_contrast), function(j) {
+  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+  glMDPlot(
+    x = dgelrt,
+    counts = y,
+    anno = y$genes,
+    display.columns = c("ENSEMBL.SYMBOL"),
+    groups = y$samples$group,
+    samples = colnames(y),
+    status = y_dt[[j]],
+    transform = TRUE,
+    sample.cols = y$samples$colours.stage_colours,
+    path = outdir,
+    html = paste0(j, ".aggregated_tech_reps.md-plot"),
+    main = j,
+    launch = FALSE)
+})
+```
+
+### Tables
+
+The following tables give the DEGs in each comparison.
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
+
+```{r}
+j <- "Thymus.S3_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+if (nrow(tt)) {
+  tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
+    DT::datatable(caption = "DEGs (FDR < 0.05)") %>%
+    DT::formatSignif(
+      c("logFC", "logCPM", "LR", "PValue", "FDR"),
+      digits = 3)
+}
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
+
+```{r}
+j <- "Thymus.S2_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+if (nrow(tt)) {
+  tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
+    DT::datatable(caption = "DEGs (FDR < 0.05)") %>%
+    DT::formatSignif(
+      c("logFC", "logCPM", "LR", "PValue", "FDR"),
+      digits = 3)
+}
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+
+```{r}
+j <- "Thymus.S3_vs_Thymus.S2"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+if (nrow(tt)) {
+  tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
+    DT::datatable(caption = "DEGs (FDR < 0.05)") %>%
+    DT::formatSignif(
+      c("logFC", "logCPM", "LR", "PValue", "FDR"),
+      digits = 3)
+}
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r}
+j <- "Thymus.S3_vs_Blood.S3"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+if (nrow(tt)) {
+  tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
+    DT::datatable(caption = "DEGs (FDR < 0.05)") %>%
+    DT::formatSignif(
+      c("logFC", "logCPM", "LR", "PValue", "FDR"),
+      digits = 3)
+}
+```
+
+:::
+
+:::::
+
+CSV file of results available from [`output/DEGs/reads/aggregated_tech_reps.DEGs.csv.gz`](../output/DEGs/reads/aggregated_tech_reps.DEGs.csv.gz).
+
+```{r, results = "hide"}
+lapply(colnames(y_contrast), function(j) {
+  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+  gzout <- gzfile(
+    description = file.path(
+      outdir,
+      paste0(j, ".aggregated_tech_reps.DEGs.csv.gz")),
+    open = "wb")
+  write.csv(
+    topTags(dgelrt, n = Inf),
+  gzout,
+  # NOTE: quote = TRUE needed because some fields contain commas.
+  quote = TRUE,
+  row.names = FALSE)
+  close(gzout)
+})
+```
+
+### Heatmaps
+
+Figure \@ref(fig:heatmap-y-1) - \@ref(fig:heatmap-y-4) are heatmaps showing the expression of the DEGs in each comparison.
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
+
+```{r heatmap-y-1, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
+j <- "Thymus.S3_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+pheatmap(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  color = hcl.colors(101, "Blue-Red 3"),
+  breaks = seq(-3, 3, length.out = 101),
+  scale = "row",
+  annotation_col = data.frame(
+    tissue = y$samples$tissue,
+    stage = y$samples$stage,
+    row.names = colnames(y)),
+  annotation_colors = list(
+    tissue = tissue_colours,
+    stage = stage_colours),
+  main = j,
+  fontsize = 6)
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
+
+```{r heatmap-y-2, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
+j <- "Thymus.S2_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+pheatmap(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  color = hcl.colors(101, "Blue-Red 3"),
+  breaks = seq(-3, 3, length.out = 101),
+  scale = "row",
+  annotation_col = data.frame(
+    tissue = y$samples$tissue,
+    stage = y$samples$stage,
+    row.names = colnames(y)),
+  annotation_colors = list(
+    tissue = tissue_colours,
+    stage = stage_colours),
+  main = j,
+  fontsize = 6)
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+
+```{r heatmap-y-3, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
+j <- "Thymus.S3_vs_Thymus.S2"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+pheatmap(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  color = hcl.colors(101, "Blue-Red 3"),
+  breaks = seq(-3, 3, length.out = 101),
+  scale = "row",
+  annotation_col = data.frame(
+    tissue = y$samples$tissue,
+    stage = y$samples$stage,
+    row.names = colnames(y)),
+  annotation_colors = list(
+    tissue = tissue_colours,
+    stage = stage_colours),
+  main = j,
+  fontsize = 6)
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r heatmap-y-4, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
+j <- "Thymus.S3_vs_Blood.S3"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+pheatmap(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  color = hcl.colors(101, "Blue-Red 3"),
+  breaks = seq(-3, 3, length.out = 101),
+  scale = "row",
+  annotation_col = data.frame(
+    tissue = y$samples$tissue,
+    stage = y$samples$stage,
+    row.names = colnames(y)),
+  annotation_colors = list(
+    tissue = tissue_colours,
+    stage = stage_colours),
+  main = j,
+  fontsize = 6)
+```
+
+:::
+
+:::::
+
+# Session info {.appendix}
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
+
+```{r}
+sessioninfo::session_info()
+```
+
+</details>

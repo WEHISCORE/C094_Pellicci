@@ -1,6 +1,6 @@
 ---
 title: "Multi-sample comparisons of the Pellicci gamma-delta T-cell mini-bulk data set"
-description: "Read-based analysis"
+description: "Read-based analysis excluding donors 1-3"
 author:
   - name: Peter Hickey
     url: https://peterhickey.org
@@ -14,10 +14,9 @@ bibliography: ref.bib
 
 # Summary
 
-This report analyses the read counts of the `Blood` and `Thymus` samples only.
-The report begins with some general [Setup] and is followed by various analyses denoted by a prefix (`y`):
+**This report excludes samples coming from donors 1-3.**
 
-**TODO** Add any additional subset analyses
+The report begins with some general [Setup] and is followed by various analyses denoted by a prefix (`y`):
 
   - `y`: [Analysis of aggregated technical replicates]
 
@@ -43,8 +42,7 @@ source(here("code/helper_functions.R"))
 ```{r}
 sce <- readRDS(
   here("data", "SCEs", "C094_Pellicci.mini-bulk.preprocessed.SCE.rds"))
-# NOTE: Reorder samples for plots (e.g., RLE plots).
-# TODO: Order by sex once available?
+# NOTE: Reorder samples for plots (e.g., heatmaps).
 sce <- sce[, order(sce$tissue, sce$stage, sce$donor)]
 
 # NOTE: Abbreviate stage
@@ -60,11 +58,16 @@ sce$rep <- dplyr::group_by(
   tissue, stage, donor) %>% 
   dplyr::mutate(rep = dplyr::row_number()) %>%
   dplyr::pull(rep)
-colnames(sce) <- interaction(sce$sample, sce$stage, sce$rep, drop = TRUE, lex.order = TRUE)
+colnames(sce) <- interaction(
+  sce$sample, 
+  sce$stage,
+  sce$rep, 
+  drop = TRUE, 
+  lex.order = TRUE)
 
 # Restrict analysis to read counts
 assays(sce) <- list(counts = assay(sce, "read_counts"))
-outdir <- here("output", "DEGs", "reads")
+outdir <- here("output", "DEGs", "excluding_donors_1-3")
 dir.create(outdir, recursive = TRUE)
 ```
 
@@ -78,15 +81,15 @@ sce <- sce[any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE)), ]
 
 ## Sample filtering
 
-At this stage, no sample filtering.
+We exclude all samples from donors 1-3.
 
 ```{r}
-# TODO: Any replicate filtering? E.g., some samples have < 100,000 reads.
+sce <- sce[, !sce$donor %in% 1:3]
+
+colData(sce) <- droplevels(colData(sce))
 ```
 
 ```{r}
-colData(sce) <- droplevels(colData(sce))
-
 # Some useful colours
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
@@ -122,6 +125,7 @@ x <- DGEList(
   samples = colData(sce),
   group = interaction(sce$tissue, sce$stage, drop = TRUE, lex.order = TRUE),
   genes = flattenDF(rowData(sce)))
+# Remove genes with zero counts.
 x <- x[rowSums(x$counts) > 0, ]
 ```
 
@@ -156,7 +160,7 @@ y <- calcNormFactors(y, method = "upperquartile")
 
 ## Aggregation of technical replicates
 
-We have up to `r min(table(interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE)))` - `r max(table(interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE)))` technical replicates from each biological replicate.
+We have `r min(table(interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE)))` - `r max(table(interaction(sce$sample, sce$stage, drop = TRUE, lex.order = TRUE)))` technical replicates from each biological replicate.
 Ideally, the technical replicates are very similar to one another when view on an MDS plot.
 However, Figure \@ref(fig:mds) shows that:
 
@@ -256,14 +260,10 @@ In aggregating the data we ignore the `sample_type` of the replicate (i.e. wheth
 </aside>
 
 Figure \@ref(fig:mds-y) shows the MDS plot after aggregating the technical replicates.
-**TODO** Re-write
 We observe that:
 
 - Much of the variation is associated with library size
-- There is an obvious `sequencing_run`/`plate_number` batch effect
-- Samples cluster more strongly by sex than by genotype
-
-These observations (and others) prompt us to consider further normalization of the data.
+- There is no strong `donor`/`plate_number` batch effect
 
 ```{r mds-y, fig.cap = "MDS plots of aggregated technical replicates coloured by various experimental factors."}
 y_mds <- plotMDS(y, plot = FALSE)
@@ -351,33 +351,17 @@ p9 <- ggplot(
 p1 + p2 + p3 + p4 + p6 + p7 + p8 + p9 + plot_layout(ncol = 3)
 ```
 
-## Gene sets
+Fortunately, the plates were designed such that the comparisons of interest can be made within each, which protects us to an extent from plate-to-plate variation.
+Figure \@ref(fig:mds-rbe) is an MDS plot after removing the batch effect due to `donor`^[And therefore `plate_number` since `donor` is nested within this factor.].
+We can more clearly observe the `stage`- and `tissue`-specific variation.
 
-Dan is interested in the following genes on the basis of their protein expression in different `tissue` and `stage`.
-
-```{r}
-marker_proteins <- read.csv(
-  here("data/marker_proteins/C094_Pellicci.marker_proteins.csv"))
-knitr::kable(marker_proteins)
-```
-
-# Analysis of aggregated technical replicates
-
-```{r}
-y$samples$donor <- paste0("D", y$samples$donor)
-y_design <- model.matrix(
-  ~0 + group + donor,
-  y$samples)
-colnames(y_design) <- sub(
-  "group|donor",
-  "",
-  colnames(y_design))
-```
-
-## MDS
-
-```{r, fig.cap = "MDS plots of aggregated technical replicates coloured by various experimental factors."}
-y_mds <- plotMDS(y, plot = FALSE)
+```{r mds-rbe, fig.cap = "MDS plots of aggregated technical replicates coloured by various experimental factors."}
+y_mds <- plotMDS(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor, 
+    design = model.matrix(~group, y$samples)),
+  plot = FALSE)
 y_df <- cbind(data.frame(x = y_mds$x, y = y_mds$y), y$samples)
 rownames(y_df) <- colnames(y)
 
@@ -422,7 +406,7 @@ p4 <- ggplot(
 #   data = y_df) +
 #   geom_point() +
 #   geom_text_repel(size = 2) +
-#   theme_cowplot(font_size = 8) +
+#   theme_cowplot(font_size = 6) +
 #   xlab("Leading logFC dim 1") +
 #   ylab("Leading logFC dim 2") +
 #   scale_colour_manual(values = sample_type_colours)
@@ -438,7 +422,6 @@ p7 <- ggplot(
   aes(x = x, y = y, colour = stage, label = rownames(y_df)),
   data = y_df) +
   geom_point() +
-  geom_text_repel(size = 2) +
   theme_cowplot(font_size = 6) +
   xlab("Leading logFC dim 1") +
   ylab("Leading logFC dim 2") +
@@ -463,6 +446,20 @@ p9 <- ggplot(
 p1 + p2 + p3 + p4 + p6 + p7 + p8 + p9 + plot_layout(ncol = 3)
 ```
 
+# Analysis of aggregated technical replicates
+
+```{r}
+y$samples$donor <- paste0("D", y$samples$donor)
+names(donor_colours) <- paste0("D", names(donor_colours))
+y_design <- model.matrix(
+  ~0 + group + donor,
+  y$samples)
+colnames(y_design) <- sub(
+  "group|donor",
+  "",
+  colnames(y_design))
+```
+
 ## DE analysis
 
 Fit a model using `r BiocStyle::Biocpkg("edgeR")` with a term for `group` and `donor`.
@@ -479,6 +476,7 @@ y_contrast <- makeContrasts(
   Thymus.S3_vs_Thymus.S1 = Thymus.S3 - Thymus.S1,
   Thymus.S2_vs_Thymus.S1 = Thymus.S2 - Thymus.S1,
   Thymus.S3_vs_Thymus.S2 = Thymus.S3 - Thymus.S2,
+  Thymus.S3_vs_Blood.S3 = Thymus.S3 - Blood.S3,
   levels = y_design)
 
 y_dt <- lapply(colnames(y_contrast), function(j) {
@@ -492,7 +490,7 @@ do.call(cbind, lapply(y_dt, summary)) %>%
 
 ### MD plots
 
-Figure \@ref(fig:md-y-1) - \@ref(fig:md-y-3) are MD plots in each comparison.
+Figure \@ref(fig:md-y-1) - \@ref(fig:md-y-4) are MD plots in each comparison.
 
 ```{r, echo = FALSE}
 # NOTE: The following is a workaround to the lack of support for tabsets in 
@@ -579,6 +577,31 @@ abline(h = 0, lty = 2, col = "dodgerBlue")
 
 :::
 
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r md-y-4, fig.cap = "MD plots highlighting DEGs and `stage` marker genes *CD4* and *KLRB1* (*CD161*)", results = "hide", fig.asp = 2 / 3}
+j <- "Thymus.S3_vs_Blood.S3"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+par(mfrow = c(1, 2))
+plotMD(dgelrt, legend = "bottomright")
+abline(h = 0, lty = 2, col = "dodgerBlue")
+plotMD(
+  dgelrt,
+  status = ifelse(
+    rownames(dgelrt) == "CD4", 
+    "CD4", 
+    ifelse(rownames(dgelrt) == "KLRB1", "KLRB1", "other")),
+  hl.col = c("orange", "dodgerBlue"),
+  legend = "bottomright",
+  hl.cex = 2)
+abline(h = 0, lty = 2, col = "dodgerBlue")
+```
+
+:::
+
 :::::
 
 Interactive `r BiocStyle::Biocpkg("Glimma")` MD plots of the differential expression results are available from [`output/DEGs/reads/glimma-plots/`](../output/DEGs/reads/glimma-plots/).
@@ -622,7 +645,8 @@ xaringanExtra::use_panelset()
 #### `Thymus.S3_vs_Thymus.S1` {.panel-name}
 
 ```{r}
-dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, "Thymus.S3_vs_Thymus.S1"])
+j <- "Thymus.S3_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
 tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
 if (nrow(tt)) {
   tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
@@ -640,7 +664,8 @@ if (nrow(tt)) {
 #### `Thymus.S2_vs_Thymus.S1` {.panel-name}
 
 ```{r}
-dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, "Thymus.S2_vs_Thymus.S1"])
+j <- "Thymus.S2_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
 tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
 if (nrow(tt)) {
   tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
@@ -658,7 +683,27 @@ if (nrow(tt)) {
 #### `Thymus.S3_vs_Thymus.S2` {.panel-name}
 
 ```{r}
-dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, "Thymus.S3_vs_Thymus.S2"])
+j <- "Thymus.S3_vs_Thymus.S2"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+if (nrow(tt)) {
+  tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
+    DT::datatable(caption = "DEGs (FDR < 0.05)") %>%
+    DT::formatSignif(
+      c("logFC", "logCPM", "LR", "PValue", "FDR"),
+      digits = 3)
+}
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r}
+j <- "Thymus.S3_vs_Blood.S3"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
 tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
 if (nrow(tt)) {
   tt$table[, c("logFC", "logCPM", "LR", "PValue", "FDR")] %>%
@@ -695,7 +740,7 @@ lapply(colnames(y_contrast), function(j) {
 
 ### Heatmaps
 
-Figure \@ref(fig:heatmap-y-1) - \@ref(fig:heatmap-y-3) are heatmaps showing the expression of the DEGs in each comparison.
+Figure \@ref(fig:heatmap-y-1) - \@ref(fig:heatmap-y-4) are heatmaps showing the expression of the DEGs in each comparison.
 
 ```{r, echo = FALSE}
 # NOTE: The following is a workaround to the lack of support for tabsets in 
@@ -711,12 +756,15 @@ xaringanExtra::use_panelset()
 
 #### `Thymus.S3_vs_Thymus.S1` {.panel-name}
 
-```{r heatmap-y-1, fig.asp = 1.5, fig.cap = "Heatmap of upper-quartile-normalized logCPM values for the top-50 DEGs."}
+```{r heatmap-y-1, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
 j <- "Thymus.S3_vs_Thymus.S1"
 dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
 tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
 pheatmap(
-  cpm(y, log = TRUE)[head(rownames(tt), 50), ],
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
   cluster_rows = TRUE,
   cluster_cols = FALSE,
   color = hcl.colors(101, "Blue-Red 3"),
@@ -739,12 +787,15 @@ pheatmap(
 
 #### `Thymus.S2_vs_Thymus.S1` {.panel-name}
 
-```{r heatmap-y-2, fig.asp = 1.5, fig.cap = "Heatmap of upper-quartile-normalized logCPM values for the top-50 DEGs."}
+```{r heatmap-y-2, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
 j <- "Thymus.S2_vs_Thymus.S1"
 dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
 tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
 pheatmap(
-  cpm(y, log = TRUE)[head(rownames(tt), 50), ],
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
   cluster_rows = TRUE,
   cluster_cols = FALSE,
   color = hcl.colors(101, "Blue-Red 3"),
@@ -767,12 +818,46 @@ pheatmap(
 
 #### `Thymus.S3_vs_Thymus.S2` {.panel-name}
 
-```{r heatmap-y-3, fig.asp = 1.5, fig.cap = "Heatmap of upper-quartile-normalized logCPM values for the top-50 DEGs."}
+```{r heatmap-y-3, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
 j <- "Thymus.S3_vs_Thymus.S2"
 dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
 tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
 pheatmap(
-  cpm(y, log = TRUE)[head(rownames(tt), 50), ],
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  color = hcl.colors(101, "Blue-Red 3"),
+  breaks = seq(-3, 3, length.out = 101),
+  scale = "row",
+  annotation_col = data.frame(
+    tissue = y$samples$tissue,
+    stage = y$samples$stage,
+    row.names = colnames(y)),
+  annotation_colors = list(
+    tissue = tissue_colours,
+    stage = stage_colours),
+  main = j,
+  fontsize = 6)
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r heatmap-y-4, fig.asp = 1.5, fig.cap = "Heatmap of batch-corrected logCPM values for the top-50 DEGs."}
+j <- "Thymus.S3_vs_Blood.S3"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+tt <- topTags(dgelrt, p.value = 0.05, n = Inf)
+pheatmap(
+  removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))[head(rownames(tt), 50), ],
   cluster_rows = TRUE,
   cluster_cols = FALSE,
   color = hcl.colors(101, "Blue-Red 3"),
@@ -793,60 +878,13 @@ pheatmap(
 
 :::::
 
-## Gene set tests
+# Session info {.appendix}
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
 
 ```{r}
-# TODO: Really need to split up gene list according to the comparison.
-y_index <- ids2indices(
-  list(marker_proteins = marker_proteins$Gene), 
-  rownames(y))
+sessioninfo::session_info()
 ```
 
-```{r}
-y_fry <- lapply(colnames(y_contrast), function(j) {
-  fry(
-    y,
-    index = y_index,
-    design = y_design,
-    contrast = y_contrast[, j], 
-    sort = "none")
-})
-tmp <- do.call(rbind, y_fry)
-rownames(tmp) <- colnames(y_contrast)
-tmp %>%
-  knitr::kable(
-    caption = "Results of applying `fry()` to the RNA-seq differential expression results using the supplied gene sets. A significant 'Up' P-value means that the differential expression results found in the RNA-seq data are positively correlated with the expression signature from the corresponding gene set. Conversely, a significant 'Down' P-value means that the differential expression log-fold-changes are negatively correlated with the expression signature from the corresponding gene set. A significant 'Mixed' P-value means that the genes in the set tend to be differentially expressed without regard for direction.")
-```
-
-```{r, fig.asp = 3 / 2, fig.cap = "MD-plot and barcode plot of DEGs in supplied gene sets. Directional gene sets have (1) MD plot points coloured according to the statistical significance of the gene **in the gene set** (2) barcode plot 'weights' given by the logFC of the gene **in the gene set**. For the barcode plot, genes are represented by bars and are ranked from left to right by increasing log-fold change. This forms the barcode-like pattern. The line (or *worm*) above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The dotted horizontal line indicates neutral enrichment; the worm above the dotted line shows enrichment while the worm below the dotted line shows depletion."}
-par(mfrow = c(ncol(y_contrast), 2))
-for (j in colnames(y_contrast)) {
-  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
-  y_status <- rep("Other", nrow(dgelrt))
-  y_status[y_index[[1]]] <- "Dan's markers"
-  plotMD(
-    dgelrt,
-    status = y_status,
-    values = "Dan's markers",
-    hl.col = "red",
-    legend = "bottomright",
-    main = j)
-  abline(h = 0, col = "darkgrey")
-  
-  barcodeplot(
-    dgelrt$table$logFC,
-    y_index[[1]])
-}
-```
-
-# TODOs
-
-- [ ] DE between blood (P5 or is it P8) and thymus (P8)? "Thymus vs Blood: comparing Stage 3 (P8 CD4- CD161+) with Blood (P5)"
-  - This comparison is really Thymus.P8 vs. Blood.P8.
-  - We will effectively only use donors 4-8 for this comparison as we are discarding `Blood.1` - `Blood.3`.
-  - `Blood.1` - `Blood.3` are really `P5` but Dan says that ~90% of `Blood.P5` cells are likely `Blood.P8` (remembering that (P6, P7, P8) ⊆ P5)
-- [ ] Compare/aggregate 50-cells with 50-cells and 100-cells with 100-cells.
-  - Look at number of technical reps if adding `sample_type` to things we aggregate over
-    - Donors 1-3 are all 50 cells whereas donors 4-8 have 50 cell and 99/100 cell samples
-  - Will probably have to add the 50-cell summed tech reps and 100-cell summed tech reps in order to have 1 sample per biological replicate
-- [ ] Discard `Blood.1` - `Blood.3` (all `P5`) but keep `Thymus.1` - `Thymus.3` for the purposes of DE analyses
+</details>
