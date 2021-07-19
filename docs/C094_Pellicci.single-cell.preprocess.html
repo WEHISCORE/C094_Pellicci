@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-07-07"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-07-07"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-07-19"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-07-19"/>
   <meta name="article:author" content="Peter Hickey"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -117,7 +117,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Preprocessing the Pellicci gamma-delta T-cell single-cell data set"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["Peter Hickey"]},{"type":"character","attributes":{},"value":["https://peterhickey.org"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-07-07"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Preprocessing the Pellicci gamma-delta T-cell single-cell data set"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["Peter Hickey"]},{"type":"character","attributes":{},"value":["https://peterhickey.org"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-07-19"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2062,7 +2062,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Preprocessing the Pellicci gamma-delta T-cell single-cell data set","authors":[{"author":"Peter Hickey","authorURL":"https://peterhickey.org","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-07-07T00:00:00.000+10:00","citationText":"Hickey, 2021"}
+{"title":"Preprocessing the Pellicci gamma-delta T-cell single-cell data set","authors":[{"author":"Peter Hickey","authorURL":"https://peterhickey.org","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-07-19T00:00:00.000+10:00","citationText":"Hickey, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2105,13 +2105,14 @@ Annotating cells
 </div>
 <div class="nav-dropdown">
 <button class="nav-dropbtn">
-Differential analyses
+Mini-bulk differential analyses
  
 <span class="down-arrow">&#x25BE;</span>
 </button>
 <div class="nav-dropdown-content">
-<a href="C094_Pellicci.single-cell.multi-sample_comparisons.html">Single cell</a>
-<a href="C094_Pellicci.mini-bulk.multi-sample_comparisons.html">Mini bulk</a>
+<a href="C094_Pellicci.mini-bulk.multi-sample_comparisons.all_samples.html">All samples</a>
+<a href="C094_Pellicci.mini-bulk.multi-sample_comparisons.excluding_blood_1-3.html">Excluding Blood.1 - Blood.3</a>
+<a href="C094_Pellicci.mini-bulk.multi-sample_comparisons.excluding_donors_1-3.html">Excluding donors 1-3</a>
 </div>
 </div>
 <div class="nav-dropdown">
@@ -2149,7 +2150,7 @@ Supplementary files
 <div class="d-byline">
   Peter Hickey <a href="https://peterhickey.org" class="uri">https://peterhickey.org</a> (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-07-07
+<br/>2021-07-19
 </div>
 
 <div class="d-article">
@@ -2303,12 +2304,7 @@ Show code
 Show code
 </summary>
 <div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># Some useful colours</span>
-<span class='va'>stage_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>stage_colours</span><span class='op'>)</span>,
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>stage_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-
-<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'>makePerCellDF</span><span class='op'>(</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'>makePerCellDF</span><span class='op'>(</span>
   <span class='va'>sce</span>, 
   features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"V525_50_A_CD4_BV510"</span>, <span class='st'>"B530_30_A_CD161_FITC"</span><span class='op'>)</span>,
   assay.type <span class='op'>=</span> <span class='st'>"pseudolog"</span><span class='op'>)</span>
@@ -2365,34 +2361,6 @@ Figure 2: Expression of <em>CD4</em> and <em>CD161</em>, as measured by FACS, fo
 </div>
 </div>
 <h2 id="incorporating-cell-based-annotations">Incorporating cell-based annotations</h2>
-<div class="layout-chunk" data-layout="l-body">
-<details>
-<summary>
-Show code
-</summary>
-<div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># Some more useful colours</span>
-<span class='va'>plate_number_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>plate_number_colours</span><span class='op'>)</span>,
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>plate_number_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>plate_number_colours</span> <span class='op'>&lt;-</span> <span class='va'>plate_number_colours</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span><span class='op'>]</span>
-<span class='va'>tissue_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>tissue_colours</span><span class='op'>)</span>,
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>tissue_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>tissue_colours</span> <span class='op'>&lt;-</span> <span class='va'>tissue_colours</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span><span class='op'>)</span><span class='op'>]</span>
-<span class='va'>donor_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>donor_colours</span><span class='op'>)</span>,
-  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>donor_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>donor_colours</span> <span class='op'>&lt;-</span> <span class='va'>donor_colours</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span><span class='op'>]</span>
-
-<span class='va'>sample_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
-  <span class='fu'>scater</span><span class='fu'>:::</span><span class='fu'>.get_palette</span><span class='op'>(</span><span class='st'>"tableau10medium"</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span><span class='op'>)</span><span class='op'>)</span><span class='op'>]</span>,
-  <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>sample_colours</span> <span class='op'>&lt;-</span> <span class='va'>sample_colours</span><span class='op'>[</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span><span class='op'>]</span>
-</code></pre>
-</div>
-</details>
-</div>
 <p>Cell-based annotations are included in the <em>colData</em> of the <em>SingleCellExperiment</em>. Figure <a href="#fig:coldata">3</a> is a visual summary of the cell-based metadata.</p>
 <aside>
 The ‘SKW-3’ sample is a control cell line, originally thought to originate from the peripheral blood of a 61 year old male patient with T cell chronic lymphocytic leukemia. (although <a href="https://web.expasy.org/cellosaurus/CVCL_2197">this is known to be problematic</a>).
@@ -2494,7 +2462,7 @@ Show code
 </div>
 </details>
 <table>
-<caption><span id="tab:unnamed-chunk-5">Table 1: </span>Data summary</caption>
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Data summary</caption>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Name</td>
@@ -2720,7 +2688,7 @@ Show code
 </div>
 </details>
 <table>
-<caption><span id="tab:unnamed-chunk-6">Table 2: </span>Data summary</caption>
+<caption><span id="tab:unnamed-chunk-5">Table 2: </span>Data summary</caption>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Name</td>
@@ -3323,7 +3291,7 @@ Show code
 </div>
 </details>
 <table>
-<caption><span id="tab:unnamed-chunk-12">Table 3: </span>QC cutoffs</caption>
+<caption><span id="tab:unnamed-chunk-11">Table 3: </span>QC cutoffs</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">batch</th>
@@ -3454,7 +3422,7 @@ Show code
 </div>
 </details>
 <table>
-<caption><span id="tab:unnamed-chunk-14">Table 4: </span>Number of samples removed by each QC step and the number of samples remaining. Rows are ordered by the percentage of cells remaining in that group.</caption>
+<caption><span id="tab:unnamed-chunk-13">Table 4: </span>Number of samples removed by each QC step and the number of samples remaining. Rows are ordered by the percentage of cells remaining in that group.</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">sample_gate</th>
@@ -4511,7 +4479,7 @@ Show code
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Australia/Melbourne         
- date     2021-07-07                  
+ date     2021-07-19                  
 
 ─ Packages ─────────────────────────────────────────────────────────
  ! package                           * version  date       lib
@@ -4844,7 +4812,7 @@ Show code
  Bioconductor  
 
 [1] /stornext/Projects/score/Analyses/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
-[2] /tmp/RtmpEheZ4M/renv-system-library
+[2] /tmp/RtmpsI0s1A/renv-system-library
 [3] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
 
  P ── Loaded and on-disk path mismatch.</code></pre>

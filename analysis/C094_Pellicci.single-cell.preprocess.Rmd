@@ -72,11 +72,6 @@ Gamma-delta T-cells are classified into 3 developmental stages based on the expr
 Figure \@ref(fig:facs) shows the expression of *CD4* and *CD161*, as measured by FACS, for all single-cells.
 
 ```{r facs, fig.cap = "Expression of *CD4* and *CD161*, as measured by FACS, for each sample.", fig.asp = 2 / 3}
-# Some useful colours
-stage_colours <- setNames(
-  unique(sce$colours$stage_colours),
-  unique(names(sce$colours$stage_colours)))
-
 x <- makePerCellDF(
   sce, 
   features = c("V525_50_A_CD4_BV510", "B530_30_A_CD161_FITC"),
@@ -117,27 +112,6 @@ ggplot(aes(x = V525_50_A_CD4_BV510, y = B530_30_A_CD161_FITC), data = x) +
 ```
 
 ## Incorporating cell-based annotations
-
-```{r}
-# Some more useful colours
-plate_number_colours <- setNames(
-  unique(sce$colours$plate_number_colours),
-  unique(names(sce$colours$plate_number_colours)))
-plate_number_colours <- plate_number_colours[levels(sce$plate_number)]
-tissue_colours <- setNames(
-  unique(sce$colours$tissue_colours),
-  unique(names(sce$colours$tissue_colours)))
-tissue_colours <- tissue_colours[levels(sce$tissue)]
-donor_colours <- setNames(
-  unique(sce$colours$donor_colours),
-  unique(names(sce$colours$donor_colours)))
-donor_colours <- donor_colours[levels(sce$donor)]
-
-sample_colours <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$sample))],
-  levels(sce$sample))
-sce$colours$sample_colours <- sample_colours[sce$sample]
-```
 
 Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
 Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
@@ -221,7 +195,6 @@ The table below is a `r BiocStyle::CRANpkg("skimr")` summary of the 'pseudolog-t
 t(assay(altExp(sce, "FACS"), "pseudolog")) %>% 
   skimr::skim()
 ```
-
 
 ## Incorporating gene-based annotation
 

@@ -1,4 +1,4 @@
-Gene ,Protein,Thymus Stage 1,Thymus Stage 2,Thymus Stage 3,Blood
+Gene ,Protein,Thymus.S1,Thymus.S2,Thymus.S3,Blood
 CD4,CD4,+++,-,-,+
 KLRB1,CD161,-,-,+++,+++
 CD38,CD38,+++,++,+,-

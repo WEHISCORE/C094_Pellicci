@@ -6,6 +6,9 @@ author:
     url: https://peterhickey.org
     affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
     affiliation_url: https://www.wehi.edu.au/people/shalin-naik/3310/score
+  - name: William Ho
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
 date: "`r Sys.Date()`"
 bibliography: ref.bib
 ---
