@@ -119,6 +119,13 @@ stage_colours <- setNames(
   unique(names(sce$colours$stage_colours)))
 stage_colours <- stage_colours[levels(sce$stage)]
 
+# also define group (i.e. tissue.stage)
+sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
+group_colours <- setNames(
+  palette.colors(nlevels(sce$group), "Paired"),
+  levels(sce$group))
+sce$colours$group_colours <- group_colours[sce$group]
+
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -133,6 +140,9 @@ ribo_set <- intersect(ribo_set, rownames(sce))
 sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
 pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+# NOTE: get rid of psuedogene seems not to be good enough for HVG determination of this dataset
+protein_coding_gene_set <- rownames(sce)[
+  any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
 ## Initial clustering
@@ -193,7 +203,14 @@ p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-(p1 | p2) / (p3 | p4) / (p5 | p6)
+p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = group), size = 0.25) +
+  scale_colour_manual(values = group_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
 ```{r cluster-barplot, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
@@ -250,7 +267,16 @@ p6 <- ggcells(sce) +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) 
+p7 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = group),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = group_colours) +
+  theme_cowplot(font_size = 8)
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
 **NOTE** for the unmerged data based on these figures:
@@ -456,11 +482,12 @@ plotHeatmap(
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
-    order_columns_by = c("cluster", "sample", "stage", "plate_number", "tissue", "donor"),
+    order_columns_by = c("cluster", "group", "sample", "stage", "plate_number", "tissue", "donor"),
     cluster_rows = TRUE,
     fontsize = 5,
     column_annotation_colors = list(
       cluster = cluster_colours,
+      group = group_colours,
       sample = sample_colours,
       stage = stage_colours,
       plate_number = plate_number_colours,
@@ -491,11 +518,12 @@ plotHeatmap(
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
-    order_columns_by = c("cluster", "sample", "stage", "plate_number", "tissue", "donor"),
+    order_columns_by = c("cluster", "group", "sample", "stage", "plate_number", "tissue", "donor"),
     cluster_rows = TRUE,
     fontsize = 5,
     column_annotation_colors = list(
       cluster = cluster_colours,
+      group = group_colours,
       sample = sample_colours,
       stage = stage_colours,
       plate_number = plate_number_colours,
@@ -522,11 +550,12 @@ m <- head(lab_markers, 50)
     color = hcl.colors(101, "Blue-Red 3"),
     center = TRUE,
     zlim = c(-3, 3),
-    order_columns_by = c("cluster", "sample", "stage", "plate_number", "tissue", "donor"),
+    order_columns_by = c("cluster", "group", "sample", "stage", "plate_number", "tissue", "donor"),
     cluster_rows = TRUE,
     fontsize = 5,
     column_annotation_colors = list(
       cluster = cluster_colours,
+      group = group_colours,
       sample = sample_colours,
       stage = stage_colours,
       plate_number = plate_number_colours,
@@ -642,11 +671,13 @@ We then re-process the *sample cells* remained in the dataset.
 
 ### Re-processing
 
+**NOTE**: as advised by Dan during the meeting on 15 Jul 2021, we should proceed with HVG determination (and thus clustering) based on protein coding genes only (instead of excluding ribosomal, mitochondrial and pseudogenes only).
+
 ```{r}
 sce$batch <- sce$plate_number
 var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
 hvg <- getTopHVGs(var_fit, var.threshold = 0)
-hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
+hvg <- intersect(hvg, protein_coding_gene_set)
 
 set.seed(67726)
 sce <- denoisePCA(
@@ -713,7 +744,14 @@ p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-(p1 | p2) / (p3 | p4) / (p5 | p6)
+p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+  geom_point(aes(colour = group), size = 0.25) +
+  scale_colour_manual(values = group_colours) + 
+  theme_cowplot(font_size = 8) + 
+  xlab("Dimension 1") + 
+  ylab("Dimension 2")
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
 ```{r cluster-barplot-cell-selected, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
@@ -770,7 +808,16 @@ p6 <- ggcells(sce) +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) 
+p7 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = group),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = group_colours) +
+  theme_cowplot(font_size = 8)
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
 *NOTE* for the unmerged data:
@@ -883,9 +930,15 @@ p11 <- plotReducedDim(sce, "UMAP", colour_by = "donor") +
 p12 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor") + 
   scale_colour_manual(values = donor_colours, name = "donor")
 
+p13 <- plotReducedDim(sce, "UMAP", colour_by = "group") + 
+  scale_colour_manual(values = group_colours, name = "group")
+p14 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group") + 
+  scale_colour_manual(values = group_colours, name = "group")
+
 p1 + p2 + p3 + p4 +
   p5 + p6 + p7 + p8 +
   p9 + p10 + p11 + p12 +
+  p13 + p14 + plot_spacer() + plot_spacer() +
   plot_layout(ncol = 2, guides = "collect")
 ```
 
@@ -1051,7 +1104,10 @@ p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7
 p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
 
-(p1 | p2) / (p3 | p4) / (p5 | p6)
+p7 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = group_colours, name = "group")
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
 ```{r cluster-barplot-cell-selected-merged, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
@@ -1108,7 +1164,16 @@ p6 <- ggcells(sce) +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) 
+p7 <- ggcells(sce) + 
+  geom_bar(
+    aes(x = cluster, fill = group),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = group_colours) +
+  theme_cowplot(font_size = 8)
+
+(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
 # Concluding remarks

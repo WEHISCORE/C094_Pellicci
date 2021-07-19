@@ -2253,6 +2253,10 @@ Show code
   <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>stage_colours</span><span class='op'>)</span>,
   <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>stage_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
 <span class='va'>stage_colours</span> <span class='op'>&lt;-</span> <span class='va'>stage_colours</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span><span class='op'>)</span><span class='op'>]</span>
+<span class='va'>group_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
+  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>group_colours</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>group_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>group_colours</span> <span class='op'>&lt;-</span> <span class='va'>group_colours</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span><span class='op'>)</span><span class='op'>]</span>
 <span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
   <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span><span class='op'>)</span>,
   <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
@@ -2383,104 +2387,104 @@ Show code
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">HLA-B</td>
+<td style="text-align: left;">TMSB4XP8</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">-1.0839564</td>
-<td style="text-align: right;">-0.7588960</td>
-<td style="text-align: right;">-1.0839564</td>
-<td style="text-align: right;">0.0875230</td>
+<td style="text-align: right;">-1.1536920</td>
+<td style="text-align: right;">-1.1536920</td>
+<td style="text-align: right;">-0.9426922</td>
+<td style="text-align: right;">-1.0862704</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">AC016700.2</td>
+<td style="text-align: left;">AC078817.1</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">1.1948743</td>
-<td style="text-align: right;">0.2192175</td>
-<td style="text-align: right;">0.1760728</td>
-<td style="text-align: right;">1.1948743</td>
+<td style="text-align: right;">-0.7752465</td>
+<td style="text-align: right;">-0.4363411</td>
+<td style="text-align: right;">-0.4855638</td>
+<td style="text-align: right;">-0.7752465</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">CCL5</td>
+<td style="text-align: left;">RPS29P16</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">-1.4482526</td>
-<td style="text-align: right;">-0.6236121</td>
-<td style="text-align: right;">-1.4482526</td>
-<td style="text-align: right;">-0.7542063</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">MIR1244-2</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.6913363</td>
-<td style="text-align: right;">0.3051802</td>
-<td style="text-align: right;">0.2976667</td>
-<td style="text-align: right;">0.6913363</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">SOX4</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.6760926</td>
-<td style="text-align: right;">0.6522542</td>
-<td style="text-align: right;">0.6760926</td>
-<td style="text-align: right;">0.5857725</td>
+<td style="text-align: right;">-1.2256554</td>
+<td style="text-align: right;">-1.2256554</td>
+<td style="text-align: right;">-1.1882636</td>
+<td style="text-align: right;">-1.0154671</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">TMSB4XP6</td>
-<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">0.8930680</td>
-<td style="text-align: right;">0.2714055</td>
-<td style="text-align: right;">0.0448002</td>
-<td style="text-align: right;">0.8930680</td>
+<td style="text-align: right;">-0.8153993</td>
+<td style="text-align: right;">-0.8424851</td>
+<td style="text-align: right;">-0.7007983</td>
+<td style="text-align: right;">-0.8153993</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">HLA-C</td>
-<td style="text-align: right;">3</td>
+<td style="text-align: left;">TMSB4XP4</td>
+<td style="text-align: right;">2</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">-0.9647014</td>
-<td style="text-align: right;">-0.6376903</td>
-<td style="text-align: right;">-0.9647014</td>
-<td style="text-align: right;">0.1436965</td>
+<td style="text-align: right;">-1.4358950</td>
+<td style="text-align: right;">-1.4358950</td>
+<td style="text-align: right;">-1.2149184</td>
+<td style="text-align: right;">-1.3077265</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">BCL11B</td>
+<td style="text-align: left;">RPL41P5</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-1.1622294</td>
+<td style="text-align: right;">-1.1345627</td>
+<td style="text-align: right;">-1.1731426</td>
+<td style="text-align: right;">-1.1622294</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AL591846.1</td>
 <td style="text-align: right;">3</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">0.7708648</td>
-<td style="text-align: right;">0.7092856</td>
-<td style="text-align: right;">0.7708648</td>
-<td style="text-align: right;">0.8256688</td>
+<td style="text-align: right;">-0.7671444</td>
+<td style="text-align: right;">-0.7671444</td>
+<td style="text-align: right;">-0.7275680</td>
+<td style="text-align: right;">-0.6321399</td>
 </tr>
-<tr class="odd">
-<td style="text-align: left;">TMSB4XP8</td>
+<tr class="even">
+<td style="text-align: left;">AC016700.2</td>
 <td style="text-align: right;">4</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">1.2580188</td>
-<td style="text-align: right;">0.2940020</td>
-<td style="text-align: right;">0.0398881</td>
-<td style="text-align: right;">1.2580188</td>
+<td style="text-align: right;">-0.9577676</td>
+<td style="text-align: right;">-0.8406147</td>
+<td style="text-align: right;">-0.8179034</td>
+<td style="text-align: right;">-0.9577676</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AC090498.1</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.7119718</td>
+<td style="text-align: right;">-0.7089696</td>
+<td style="text-align: right;">-0.7329696</td>
+<td style="text-align: right;">-0.7119718</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">TOX2</td>
-<td style="text-align: right;">4</td>
+<td style="text-align: left;">AL161787.1</td>
+<td style="text-align: right;">7</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">0.4621890</td>
-<td style="text-align: right;">0.4426036</td>
-<td style="text-align: right;">0.4621890</td>
-<td style="text-align: right;">0.4276049</td>
+<td style="text-align: right;">-1.1823050</td>
+<td style="text-align: right;">-1.1823050</td>
+<td style="text-align: right;">-1.1404512</td>
+<td style="text-align: right;">-0.9453817</td>
 </tr>
 </tbody>
 </table>
@@ -2520,11 +2524,13 @@ Show code
   features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
   columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
     <span class='st'>"cluster"</span>,
+    <span class='st'>"group"</span>,
     <span class='st'>"sample"</span>,
     <span class='st'>"stage"</span>,
     <span class='st'>"plate_number"</span><span class='op'>)</span>,
@@ -2542,6 +2548,7 @@ Show code
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
      Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+     group <span class='op'>=</span> <span class='va'>group_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
@@ -2582,6 +2589,7 @@ Show code
     features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
     columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+      <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>,
@@ -2589,6 +2597,7 @@ Show code
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span><span class='op'>)</span>,
     colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
         <span class='st'>"cluster"</span>,
+        <span class='st'>"group"</span>,
         <span class='st'>"sample"</span>,
         <span class='st'>"stage"</span>,
         <span class='st'>"plate_number"</span>,
@@ -2610,6 +2619,7 @@ Show code
          Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
       
          cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+         group <span class='op'>=</span> <span class='va'>group_colours</span>,
          sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
          stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
          plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span>,    
@@ -2766,11 +2776,13 @@ Show code
   features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
   columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
     <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   order_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
     <span class='st'>"cluster"</span>,
+    <span class='st'>"group"</span>,
     <span class='st'>"sample"</span>,
     <span class='st'>"stage"</span>,
     <span class='st'>"plate_number"</span><span class='op'>)</span>,
@@ -2788,6 +2800,7 @@ Show code
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
      Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+     group <span class='op'>=</span> <span class='va'>group_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
@@ -2828,11 +2841,13 @@ Show code
     features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
     columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+        <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
     colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
         <span class='st'>"cluster"</span>,
+        <span class='st'>"group"</span>,
         <span class='st'>"sample"</span>,
         <span class='st'>"stage"</span>,
         <span class='st'>"plate_number"</span><span class='op'>)</span>,
@@ -2850,6 +2865,7 @@ Show code
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
        Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
        cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+       group <span class='op'>=</span> <span class='va'>group_colours</span>,
        sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
        stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
        plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
@@ -2874,11 +2890,13 @@ Show code
     features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
     columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+        <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
         <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
     colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
         <span class='st'>"cluster"</span>,
+        <span class='st'>"group"</span>,
         <span class='st'>"sample"</span>,
         <span class='st'>"stage"</span>,
         <span class='st'>"plate_number"</span><span class='op'>)</span>,
@@ -2896,6 +2914,7 @@ Show code
     column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
        Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
        cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+       group <span class='op'>=</span> <span class='va'>group_colours</span>,
        sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
        stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
        plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
@@ -2996,11 +3015,13 @@ Show code
   features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
   columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+      <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
       <span class='st'>"cluster"</span>,
+      <span class='st'>"group"</span>,
       <span class='st'>"sample"</span>,
       <span class='st'>"stage"</span>,
       <span class='st'>"plate_number"</span><span class='op'>)</span>,
@@ -3018,6 +3039,7 @@ Show code
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
      Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+     group <span class='op'>=</span> <span class='va'>group_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
@@ -3058,11 +3080,13 @@ Show code
   features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
   columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+      <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>sample</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
       <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
   colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
       <span class='st'>"cluster"</span>,
+      <span class='st'>"group"</span>,
       <span class='st'>"sample"</span>,
       <span class='st'>"stage"</span>,
       <span class='st'>"plate_number"</span><span class='op'>)</span>,
@@ -3080,6 +3104,7 @@ Show code
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
      Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span> <span class='op'>=</span> <span class='st'>"red"</span>, <span class='st'>"No"</span> <span class='op'>=</span> <span class='st'>"lightgrey"</span><span class='op'>)</span>,
      cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+     group <span class='op'>=</span> <span class='va'>group_colours</span>,
      sample <span class='op'>=</span> <span class='va'>sample_colours</span>,
      stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
      plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
@@ -3271,100 +3296,100 @@ Show code
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">CCND3</td>
+<td style="text-align: left;">CCNB1</td>
 <td style="text-align: right;">1</td>
-<td style="text-align: right;">0.001</td>
-<td style="text-align: right;">0.015</td>
-<td style="text-align: right;">0.540</td>
-<td style="text-align: right;">0.540</td>
-<td style="text-align: right;">0.508</td>
-<td style="text-align: right;">0.499</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">CCNE2</td>
+<td style="text-align: right;">0.393</td>
 <td style="text-align: right;">1</td>
-<td style="text-align: right;">0.006</td>
-<td style="text-align: right;">0.032</td>
-<td style="text-align: right;">0.508</td>
-<td style="text-align: right;">0.510</td>
-<td style="text-align: right;">0.508</td>
-<td style="text-align: right;">0.503</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">CCND2</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.285</td>
-<td style="text-align: right;">0.640</td>
-<td style="text-align: right;">0.525</td>
-<td style="text-align: right;">0.503</td>
-<td style="text-align: right;">0.498</td>
-<td style="text-align: right;">0.525</td>
+<td style="text-align: right;">0.505</td>
+<td style="text-align: right;">0.494</td>
+<td style="text-align: right;">0.505</td>
+<td style="text-align: right;">0.497</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">CCNB2</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">0.054</td>
-<td style="text-align: right;">0.181</td>
-<td style="text-align: right;">0.511</td>
-<td style="text-align: right;">0.508</td>
-<td style="text-align: right;">0.511</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.499</td>
+<td style="text-align: right;">0.499</td>
+<td style="text-align: right;">0.498</td>
+<td style="text-align: right;">0.489</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CCNE2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.495</td>
+<td style="text-align: right;">0.504</td>
 <td style="text-align: right;">0.506</td>
+<td style="text-align: right;">0.495</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CCND3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.873</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.509</td>
+<td style="text-align: right;">0.494</td>
+<td style="text-align: right;">0.509</td>
+<td style="text-align: right;">0.482</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">CCNA2</td>
 <td style="text-align: right;">2</td>
-<td style="text-align: right;">0.320</td>
-<td style="text-align: right;">0.640</td>
-<td style="text-align: right;">0.507</td>
-<td style="text-align: right;">0.504</td>
-<td style="text-align: right;">0.502</td>
-<td style="text-align: right;">0.507</td>
+<td style="text-align: right;">0.802</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.493</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.493</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">CCNB1</td>
+<td style="text-align: left;">CCND2</td>
 <td style="text-align: right;">4</td>
-<td style="text-align: right;">0.637</td>
-<td style="text-align: right;">1.000</td>
-<td style="text-align: right;">0.501</td>
-<td style="text-align: right;">0.503</td>
-<td style="text-align: right;">0.501</td>
-<td style="text-align: right;">0.508</td>
+<td style="text-align: right;">0.999</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.457</td>
+<td style="text-align: right;">0.457</td>
+<td style="text-align: right;">0.458</td>
+<td style="text-align: right;">0.457</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">CCNE1</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">1.000</td>
-<td style="text-align: right;">0.505</td>
-<td style="text-align: right;">0.505</td>
-<td style="text-align: right;">0.506</td>
-<td style="text-align: right;">0.506</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">0.501</td>
+<td style="text-align: right;">0.498</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">CCND1</td>
 <td style="text-align: right;">8</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">1.000</td>
-<td style="text-align: right;">0.500</td>
-<td style="text-align: right;">0.500</td>
-<td style="text-align: right;">0.497</td>
-<td style="text-align: right;">0.500</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.506</td>
+<td style="text-align: right;">0.506</td>
+<td style="text-align: right;">0.506</td>
+<td style="text-align: right;">0.506</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">CCNB3</td>
 <td style="text-align: right;">9</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.500</td>
+<td style="text-align: right;">0.500</td>
 <td style="text-align: right;">0.499</td>
-<td style="text-align: right;">0.499</td>
-<td style="text-align: right;">0.501</td>
 <td style="text-align: right;">0.500</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">CCNA1</td>
 <td style="text-align: right;">10</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">1</td>
 <td style="text-align: right;">0.500</td>
 <td style="text-align: right;">0.500</td>
 <td style="text-align: right;">0.500</td>
