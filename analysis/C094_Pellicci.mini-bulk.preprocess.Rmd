@@ -89,36 +89,6 @@ sce <- sce[rowSums(assay(sce, "read_counts")) > 0, ]
 
 ## Incorporating cell-based annotations
 
-```{r}
-# Some useful colours
-plate_number_colours <- setNames(
-  unique(sce$colours$plate_number_colours),
-  unique(names(sce$colours$plate_number_colours)))[levels(sce$plate_number)]
-sample_type_colours <- setNames(
-  unique(sce$colours$sample_type_colours),
-  unique(names(sce$colours$sample_type_colours)))[levels(sce$sample_type)]
-sample_gate_colours <- setNames(
-  unique(sce$colours$sample_gate_colours),
-  unique(names(sce$colours$sample_gate_colours)))[levels(sce$sample_gate)]
-stage_colours <- setNames(
-  unique(sce$colours$stage_colours),
-  unique(names(sce$colours$stage_colours)))[levels(sce$stage)]
-sequencing_run_colours <- setNames(
-  unique(sce$colours$sequencing_run_colours),
-  unique(names(sce$colours$sequencing_run_colours)))[levels(sce$sequencing_run)]
-tissue_colours <- setNames(
-  unique(sce$colours$tissue_colours),
-  unique(names(sce$colours$tissue_colours)))[levels(sce$tissue)]
-donor_colours <- setNames(
-  unique(sce$colours$donor_colours),
-  unique(names(sce$colours$donor_colours)))[levels(sce$donor)]
-
-sample_colours <- setNames(
-  scater:::.get_palette("tableau20")[seq_len(nlevels(sce$sample))],
-  levels(sce$sample))
-sce$colours$sample_colours <- sample_colours[sce$sample]
-```
-
 Cell-based annotations are included in the *colData* of the *SingleCellExperiment*.
 Figure \@ref(fig:coldata) is a visual summary of the cell-based metadata.
 
@@ -240,8 +210,8 @@ p <- lapply(levels(sce$plate_number), function(p) {
       legend.text = element_text(size = 6),
       legend.title = element_text(size = 6)) +
     guides(
-      colour = guide_legend(override.aes = list(size = 4, alpha = 1)),
-      shape = guide_legend(override.aes = list(size = 4, alpha = 1)))
+      colour = guide_legend(override.aes = list(size = 2, alpha = 1)),
+      shape = guide_legend(override.aes = list(size = 2, alpha = 1)))
 })
 
 wrap_plots(p, ncol = 2)
@@ -777,7 +747,7 @@ p1 <- plotColData(
   sce,
   "sum",
   x = "donor",
-  shape_by = "tissue",
+  other_fields = "tissue",
   point_size = 0.5,
   colour_by = "donor",
   shape_by = "plate_number") +

@@ -1,6 +1,6 @@
 # Pre-processing that is common to the single-cell and mini-bulk samples
 # Peter Hickey
-# 2021-06-30
+# 2021-07-19
 
 # This script is complicated and ad hoc because the sample sheets are an
 # inconsistent mess that require a lot of normalization and post-processing.
@@ -184,32 +184,41 @@ sce$colours <- S4Vectors::make_zero_col_DFrame(ncol(sce))
 plate_number_colours <- setNames(
   palette.colors(nlevels(sce$plate_number), "Okabe-Ito"),
   levels(sce$plate_number))
-sce$colours$plate_number_colours <- plate_number_colours[sce$plate_number]
+sce$colours$plate_number_colours <- plate_number_colours[
+  as.character(sce$plate_number)]
 sample_type_colours <- setNames(
   palette.colors(nlevels(sce$sample_type), "R4"),
   levels(sce$sample_type))
-sce$colours$sample_type_colours <- sample_type_colours[sce$sample_type]
+sce$colours$sample_type_colours <- sample_type_colours[
+  as.character(sce$sample_type)]
 sample_gate_colours <- setNames(
   palette.colors(nlevels(sce$sample_gate), "Dark 2"),
   levels(sce$sample_gate))
-sce$colours$sample_gate_colours <- sample_gate_colours[sce$sample_gate]
+sce$colours$sample_gate_colours <- sample_gate_colours[
+  as.character(sce$sample_gate)]
 sequencing_run_colours <- c("NN215" = "orange", "NN227" = "dodgerBlue")
-sce$colours$sequencing_run_colours <- sequencing_run_colours[sce$sequencing_run]
+sce$colours$sequencing_run_colours <- sequencing_run_colours[
+  as.character(sce$sequencing_run)]
 tissue_colours <- setNames(
   palette.colors(nlevels(sce$tissue), "ggplot2"),
   levels(sce$tissue))
-sce$colours$tissue_colours <- tissue_colours[sce$tissue]
+sce$colours$tissue_colours <- tissue_colours[
+  as.character(sce$tissue)]
 donor_colours <- setNames(
   palette.colors(nlevels(sce$donor), "Tableau 10"),
   levels(sce$donor))
-sce$colours$donor_colours <- donor_colours[sce$donor]
+sce$colours$donor_colours <- donor_colours[as.character(sce$donor)]
 stage_colours <- c(
   "Unknown" = "black",
   "S1 (CD4+/CD161-)" = unname(sample_gate_colours["P6"]),
   "S2 (CD4-/CD161-)" = unname(sample_gate_colours["P7"]),
   "S3 (CD4-/CD161+)" = unname(sample_gate_colours["P8"]),
   "NA" = unname(sample_gate_colours["NA"]))
-sce$colours$stage_colours <- stage_colours[sce$stage]
+sce$colours$stage_colours <- stage_colours[as.character(sce$stage)]
+sample_colours <- setNames(
+  scater:::.get_palette("tableau20")[seq_len(nlevels(sce$sample))],
+  levels(sce$sample))
+sce$colours$sample_colours <- sample_colours[as.character(sce$sample)]
 
 # Incorporating gene-based annotation ------------------------------------------
 
