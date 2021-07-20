@@ -24,10 +24,6 @@ donor_colours <- setNames(
   unique(sce$colours$donor_colours),
   unique(names(sce$colours$donor_colours)))
 donor_colours <- donor_colours[levels(sce$donor)]
-sample_colours <- setNames(
-  unique(sce$colours$sample_colours),
-  unique(names(sce$colours$sample_colours)))
-sample_colours <- sample_colours[levels(sce$sample)]
 stage_colours <- setNames(
   unique(sce$colours$stage_colours),
   unique(names(sce$colours$stage_colours)))
@@ -59,25 +55,26 @@ pseudogene_set <- rownames(sce)[
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 
-# control-gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
-control <- c("TRDV2", "TRGV9", "KLRB1", "CD4")
+# gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
+interest <- c("KLRB1", "CD4", # QC
+             "NKG7", "GNLY", "CCL5", # cluster 1 selected unique markers
+             "TCF7", "SOX4", "LEF1", "CD3D", "CCR9", "BCL11B", "NREP" # cluster 3 selected unique markers
+             )
 
 # summary - UMAP
 p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = cluster_colours, name = "cluster")
-p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample", theme_size = 7, point_size = 0.2) +
-  scale_colour_manual(values = sample_colours, name = "sample")
-p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = stage_colours, name = "stage")
-p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) +
+p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
-p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = tissue_colours, name = "tissue")
-p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) +
+p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = donor_colours, name = "donor")
-p7 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) +
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = group_colours, name = "group")
-(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
+(p1 | p2) / (p3 | p4) / (p5 | p6)
 
 # summary - stacked barplot
 p1 <- ggcells(sce) +
@@ -89,21 +86,13 @@ p1 <- ggcells(sce) +
   geom_text(stat='count', aes(x = cluster, label=..count..), hjust=1.5, size=2)
 p2 <- ggcells(sce) +
   geom_bar(
-    aes(x = cluster, fill = sample),
-    position = position_fill(reverse = TRUE)) +
-  coord_flip() +
-  ylab("Frequency") +
-  scale_fill_manual(values = sample_colours) +
-  theme_cowplot(font_size = 8)
-p3 <- ggcells(sce) +
-  geom_bar(
     aes(x = cluster, fill = stage),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
-p4 <- ggcells(sce) +
+p3 <- ggcells(sce) +
   geom_bar(
     aes(x = cluster, fill = plate_number),
     position = position_fill(reverse = TRUE)) +
@@ -111,7 +100,7 @@ p4 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
-p5 <- ggcells(sce) +
+p4 <- ggcells(sce) +
   geom_bar(
     aes(x = cluster, fill = tissue),
     position = position_fill(reverse = TRUE)) +
@@ -119,7 +108,7 @@ p5 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
-p6 <- ggcells(sce) +
+p5 <- ggcells(sce) +
   geom_bar(
     aes(x = cluster, fill = donor),
     position = position_fill(reverse = TRUE)) +
@@ -127,7 +116,7 @@ p6 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
-p7 <- ggcells(sce) +
+p6 <- ggcells(sce) +
   geom_bar(
     aes(x = cluster, fill = group),
     position = position_fill(reverse = TRUE)) +
@@ -135,7 +124,7 @@ p7 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
-(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer())
+(p1 | p2) / (p3 | p4) / (p5 | p6)
 
 # block on plate
 sce$block <- paste0(sce$plate_number)
@@ -176,8 +165,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
        cluster_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- cluster1_uniquely_up_noiseR[union(rownames(cluster1_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- cluster1_uniquely_up_noiseR[union(rownames(cluster1_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -185,15 +174,17 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
-    sce$group,
-    sce$sample,
     sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -213,9 +204,10 @@ plotHeatmap(
   column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
@@ -243,8 +235,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"),
        cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- cluster2_uniquely_up_noiseR[union(rownames(cluster2_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- cluster2_uniquely_up_noiseR[union(rownames(cluster2_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -252,15 +244,17 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
-    sce$group,
-    sce$sample,
     sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -280,9 +274,10 @@ plotHeatmap(
   column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
@@ -312,8 +307,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"),
        cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- cluster3_uniquely_up_noiseR[union(rownames(cluster3_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- cluster3_uniquely_up_noiseR[union(rownames(cluster3_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -321,15 +316,17 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
-    sce$group,
-    sce$sample,
     sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -349,13 +346,13 @@ plotHeatmap(
   column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
-
 
 
 ##########################################
@@ -381,8 +378,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"),
        cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- cluster4_uniquely_up_noiseR[union(rownames(cluster4_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- cluster4_uniquely_up_noiseR[union(rownames(cluster4_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -390,15 +387,17 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
-    sce$group,
-    sce$sample,
     sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -418,13 +417,13 @@ plotHeatmap(
   column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
-
 
 
 
@@ -483,8 +482,8 @@ z <- c("KLRB1/CD161",
   which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"),
   A_uniquely_up_noiseR[which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- A_uniquely_up_noiseR[union(rownames(A_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- A_uniquely_up_noiseR[union(rownames(A_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -493,16 +492,18 @@ plotHeatmap(
   columns = order(
     cp$vs1,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs1",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -523,9 +524,10 @@ plotHeatmap(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     vs1 = vs1_colours,
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
@@ -553,8 +555,8 @@ z <- c("KLRB1/CD161",
        which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"),
        B_uniquely_up_noiseR[which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- B_uniquely_up_noiseR[union(rownames(B_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- B_uniquely_up_noiseR[union(rownames(B_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -563,16 +565,18 @@ plotHeatmap(
   columns = order(
     cp$vs1,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs1",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -588,13 +592,15 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     vs1 = vs1_colours,
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
@@ -662,8 +668,8 @@ z <- c("KLRB1/CD161",
        which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"),
        C_uniquely_up_noiseR[which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- C_uniquely_up_noiseR[union(rownames(C_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- C_uniquely_up_noiseR[union(rownames(C_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -672,16 +678,18 @@ plotHeatmap(
   columns = order(
     cp$vs2,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs2",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -695,15 +703,17 @@ plotHeatmap(
       # levels = c("Yes", "No")),
       levels = c("Yes")),
     row.names = rownames(best_set)),
-  main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
+  main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     vs2 = vs2_colours,
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
@@ -731,8 +741,8 @@ z <- c("KLRB1/CD161",
        which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"),
        D_uniquely_up_noiseR[which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- D_uniquely_up_noiseR[union(rownames(D_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- D_uniquely_up_noiseR[union(rownames(D_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -741,16 +751,18 @@ plotHeatmap(
   columns = order(
     cp$vs2,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs2",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -766,13 +778,15 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
     Sig = c("Yes" = "red", "No" = "lightgrey"),
     vs2 = vs2_colours,
     cluster = cluster_colours,
-    group = group_colours,
-    sample = sample_colours,
     stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
@@ -843,8 +857,8 @@ z <- c("KLRB1/CD161",
        which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"),
        E_uniquely_up_noiseR[which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- E_uniquely_up_noiseR[union(rownames(E_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- E_uniquely_up_noiseR[union(rownames(E_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -853,16 +867,18 @@ plotHeatmap(
   columns = order(
     cp$vs3,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs3",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -876,16 +892,18 @@ plotHeatmap(
       # levels = c("Yes", "No")),
       levels = c("Yes")),
     row.names = rownames(best_set)),
-  main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
+  main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
-                  Sig = c("Yes" = "red", "No" = "lightgrey"),
-                  vs3 = vs3_colours,
-                  cluster = cluster_colours,
-                  group = group_colours,
-                  sample = sample_colours,
-                  stage = stage_colours,
-                  plate_number = plate_number_colours),
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs3 = vs3_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
@@ -912,8 +930,8 @@ z <- c("KLRB1/CD161",
        which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"),
        F_uniquely_up_noiseR[which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- F_uniquely_up_noiseR[union(rownames(F_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- F_uniquely_up_noiseR[union(rownames(F_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -922,16 +940,18 @@ plotHeatmap(
   columns = order(
     cp$vs3,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs3",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -947,14 +967,16 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
-                  Sig = c("Yes" = "red", "No" = "lightgrey"),
-                  vs3 = vs3_colours,
-                  cluster = cluster_colours,
-                  group = group_colours,
-                  sample = sample_colours,
-                  stage = stage_colours,
-                  plate_number = plate_number_colours),
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs3 = vs3_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
@@ -1018,8 +1040,8 @@ z <- c("KLRB1/CD161",
        which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"),
        G_uniquely_up_noiseR[which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- G_uniquely_up_noiseR[union(rownames(G_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- G_uniquely_up_noiseR[union(rownames(G_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -1028,16 +1050,18 @@ plotHeatmap(
   columns = order(
     cp$vs4,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs4",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -1051,16 +1075,18 @@ plotHeatmap(
       # levels = c("Yes", "No")),
       levels = c("Yes")),
     row.names = rownames(best_set)),
-  main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
+  main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
-                  Sig = c("Yes" = "red", "No" = "lightgrey"),
-                  vs4 = vs4_colours,
-                  cluster = cluster_colours,
-                  group = group_colours,
-                  sample = sample_colours,
-                  stage = stage_colours,
-                  platG_number = plate_number_colours),
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs4 = vs4_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
@@ -1087,8 +1113,8 @@ z <- c("KLRB1/CD161",
        which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"),
        H_uniquely_up_noiseR[which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- H_uniquely_up_noiseR[union(rownames(H_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- H_uniquely_up_noiseR[union(rownames(H_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -1097,16 +1123,18 @@ plotHeatmap(
   columns = order(
     cp$vs4,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs4",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -1122,14 +1150,16 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
-                  Sig = c("Yes" = "red", "No" = "lightgrey"),
-                  vs4 = vs4_colours,
-                  cluster = cluster_colours,
-                  group = group_colours,
-                  sample = sample_colours,
-                  stage = stage_colours,
-                  plate_number = plate_number_colours),
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs4 = vs4_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
@@ -1195,8 +1225,8 @@ z <- c("KLRB1/CD161",
        which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"),
        I_uniquely_up_noiseR[which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- I_uniquely_up_noiseR[union(rownames(I_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- I_uniquely_up_noiseR[union(rownames(I_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -1205,16 +1235,18 @@ plotHeatmap(
   columns = order(
     cp$vs5,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs5",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -1228,16 +1260,18 @@ plotHeatmap(
       # levels = c("Yes", "No")),
       levels = c("Yes")),
     row.names = rownames(best_set)),
-  main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
+  main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
-                  Sig = c("Yes" = "red", "No" = "lightgrey"),
-                  vs5 = vs5_colours,
-                  cluster = cluster_colours,
-                  group = group_colours,
-                  sample = sample_colours,
-                  stage = stage_colours,
-                  platI_number = plate_number_colours),
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs5 = vs5_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
@@ -1264,8 +1298,8 @@ z <- c("KLRB1/CD161",
        which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"),
        J_uniquely_up_noiseR[which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only + control genelist
-best_set <- J_uniquely_up_noiseR[union(rownames(J_uniquely_up_noiseR)[1:50], control),]
+# top50 only + gene-of-interest
+best_set <- J_uniquely_up_noiseR[union(rownames(J_uniquely_up_noiseR)[1:25], interest),]
 
 # heatmap
 plotHeatmap(
@@ -1274,16 +1308,18 @@ plotHeatmap(
   columns = order(
     cp$vs5,
     cp$cluster,
-    cp$group,
-    cp$sample,
     cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
     cp$plate_number),
   colour_columns_by = c(
     "vs5",
     "cluster",
-    "group",
-    "sample",
     "stage",
+    "tissue",
+    "donor",
+    "group",
     "plate_number"),
   cluster_cols = FALSE,
   center = TRUE,
@@ -1299,14 +1335,16 @@ plotHeatmap(
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
-                z[1], "_top ", z[2], "_significance: ", z[3]),  column_annotation_colors = list(
-                  Sig = c("Yes" = "red", "No" = "lightgrey"),
-                  vs5 = vs5_colours,
-                  cluster = cluster_colours,
-                  group = group_colours,
-                  sample = sample_colours,
-                  stage = stage_colours,
-                  plate_number = plate_number_colours),
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs5 = vs5_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
@@ -1323,45 +1361,36 @@ assay(sce, "log2cpm") <- edgeR::cpm(
   log = TRUE,
   lib.size = colSums(counts(sce)))
 
-plotExpression(
-  sce,
-  features = "TRDV2",
-  x = "cluster",
-  exprs_values = "log2cpm",
-  colour_by = "cluster") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = cluster_colours, name = "cluster")
+plot_grid(
 
-plotExpression(
-  sce,
-  features = "TRGV9",
-  x = "cluster",
-  exprs_values = "log2cpm",
-  colour_by = "cluster") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = cluster_colours, name = "cluster")
+  plotExpression(
+    sce,
+    features = "TRDV2",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster",
+    other_fields = "stage") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster") +
+    facet_grid(~stage),
+  plotExpression(
+    sce,
+    features = "TRGV9",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster",
+    other_fields = "stage") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster") +
+    facet_grid(~stage),
+  ncol= 1,
+  align ="h"
+)
 
-
-
-plotExpression(
-  sce,
-  features = "TRDV2",
-  x = "cluster",
-  exprs_values = "log2cpm",
-  colour_by = "cluster",
-  other_fields = "stage") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = cluster_colours, name = "cluster") +
-  facet_grid(~stage)
+# NOTE: as suggested by Pete, we have no idea how well the CELSeq protocol could capture the expression of the T-cell-receptor component
+# The suggested known markers , i.e. TRDV2, TRGV9, may not be a good candidate for defining whether a cluster contains cells relevant to gamma-delta T cells
 
 
-plotExpression(
-  sce,
-  features = "TRGV9",
-  x = "cluster",
-  exprs_values = "log2cpm",
-  colour_by = "cluster",
-  other_fields = "stage") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_colour_manual(values = cluster_colours, name = "cluster") +
-  facet_grid(~stage)
+
+
+
