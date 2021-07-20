@@ -59,7 +59,7 @@ pseudogene_set <- rownames(sce)[
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 
-# control gene-list of particular interest (suggested by Dan at meeting on 15 Jul 2021)
+# control-gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
 control <- c("TRDV2", "TRGV9", "KLRB1", "CD4")
 
 # summary - UMAP
@@ -142,19 +142,6 @@ sce$block <- paste0(sce$plate_number)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ###################################
 # cluster 1 (i.e. S3 more Blood) vs 2 (i.e. S3 more Thymus) vs 3 (i.e. mostly Thymus.S1 + .S2) vs 4 (i.e. mostly Thymus.S3)
 
@@ -189,8 +176,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
        cluster_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- cluster1_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- cluster1_uniquely_up_noiseR[union(rownames(cluster1_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -233,8 +220,6 @@ plotHeatmap(
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
-
-
 ##########################################
 # look at cluster 2 (i.e. S3 more Thymus)
 chosen <- "2"
@@ -258,8 +243,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"),
        cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- cluster2_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- cluster2_uniquely_up_noiseR[union(rownames(cluster2_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -327,8 +312,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"),
        cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- cluster3_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- cluster3_uniquely_up_noiseR[union(rownames(cluster3_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -396,8 +381,8 @@ z <- c("KLRB1/CD161",
        which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"),
        cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- cluster4_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- cluster4_uniquely_up_noiseR[union(rownames(cluster4_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -498,8 +483,8 @@ z <- c("KLRB1/CD161",
   which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"),
   A_uniquely_up_noiseR[which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- A_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- A_uniquely_up_noiseR[union(rownames(A_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -527,7 +512,9 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
@@ -566,8 +553,8 @@ z <- c("KLRB1/CD161",
        which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"),
        B_uniquely_up_noiseR[which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- B_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- B_uniquely_up_noiseR[union(rownames(B_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -595,7 +582,9 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
@@ -673,8 +662,8 @@ z <- c("KLRB1/CD161",
        which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"),
        C_uniquely_up_noiseR[which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- C_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- C_uniquely_up_noiseR[union(rownames(C_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -702,7 +691,9 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
@@ -740,8 +731,8 @@ z <- c("KLRB1/CD161",
        which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"),
        D_uniquely_up_noiseR[which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- D_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- D_uniquely_up_noiseR[union(rownames(D_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -769,7 +760,9 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen, " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
@@ -850,8 +843,8 @@ z <- c("KLRB1/CD161",
        which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"),
        E_uniquely_up_noiseR[which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- E_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- E_uniquely_up_noiseR[union(rownames(E_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -879,7 +872,9 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
@@ -917,8 +912,8 @@ z <- c("KLRB1/CD161",
        which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"),
        F_uniquely_up_noiseR[which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- F_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- F_uniquely_up_noiseR[union(rownames(F_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -1023,8 +1018,8 @@ z <- c("KLRB1/CD161",
        which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"),
        G_uniquely_up_noiseR[which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- G_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- G_uniquely_up_noiseR[union(rownames(G_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -1092,8 +1087,8 @@ z <- c("KLRB1/CD161",
        which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"),
        H_uniquely_up_noiseR[which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- H_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- H_uniquely_up_noiseR[union(rownames(H_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -1200,8 +1195,8 @@ z <- c("KLRB1/CD161",
        which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"),
        I_uniquely_up_noiseR[which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- I_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- I_uniquely_up_noiseR[union(rownames(I_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -1229,7 +1224,9 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
   main = paste0("Cluster-group: ", chosen,  " ", x, " - ",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; ",
@@ -1267,8 +1264,8 @@ z <- c("KLRB1/CD161",
        which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"),
        J_uniquely_up_noiseR[which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top50 only
-best_set <- J_uniquely_up_noiseR[1:50, ]
+# top50 only + control genelist
+best_set <- J_uniquely_up_noiseR[union(rownames(J_uniquely_up_noiseR)[1:50], control),]
 
 # heatmap
 plotHeatmap(
@@ -1314,3 +1311,57 @@ plotHeatmap(
   fontsize = 7)
 
 
+
+
+
+
+
+# Sanity check (TRDV2 and TRGV9 expression)
+
+assay(sce, "log2cpm") <- edgeR::cpm(
+  counts(sce),
+  log = TRUE,
+  lib.size = colSums(counts(sce)))
+
+plotExpression(
+  sce,
+  features = "TRDV2",
+  x = "cluster",
+  exprs_values = "log2cpm",
+  colour_by = "cluster") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+
+plotExpression(
+  sce,
+  features = "TRGV9",
+  x = "cluster",
+  exprs_values = "log2cpm",
+  colour_by = "cluster") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+
+
+
+plotExpression(
+  sce,
+  features = "TRDV2",
+  x = "cluster",
+  exprs_values = "log2cpm",
+  colour_by = "cluster",
+  other_fields = "stage") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = cluster_colours, name = "cluster") +
+  facet_grid(~stage)
+
+
+plotExpression(
+  sce,
+  features = "TRGV9",
+  x = "cluster",
+  exprs_values = "log2cpm",
+  colour_by = "cluster",
+  other_fields = "stage") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_colour_manual(values = cluster_colours, name = "cluster") +
+  facet_grid(~stage)
