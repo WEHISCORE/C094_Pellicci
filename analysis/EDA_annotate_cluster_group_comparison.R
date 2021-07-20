@@ -2105,36 +2105,40 @@ chosen <- "3"
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S1 and Thymus.S2)"
 
-# retain only significant markers (FDR<0.05)
-B_uniquely_up_noiseR_sig <- B_uniquely_up_noiseR[B_uniquely_up_noiseR$FDR<0.05,]
-D_uniquely_up_noiseR_sig <- D_uniquely_up_noiseR[D_uniquely_up_noiseR$FDR<0.05,]
-I_uniquely_up_noiseR_sig <- I_uniquely_up_noiseR[I_uniquely_up_noiseR$FDR<0.05,]
-L_uniquely_up_noiseR_sig <- L_uniquely_up_noiseR[L_uniquely_up_noiseR$FDR<0.05,]
-P_uniquely_up_noiseR_sig <- P_uniquely_up_noiseR[P_uniquely_up_noiseR$FDR<0.05,]
+# retain only significant markers (FDR<0.05) + keep only required output columns
+B_uniquely_up_noiseR_sig <- B_uniquely_up_noiseR[B_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+D_uniquely_up_noiseR_sig <- D_uniquely_up_noiseR[D_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+I_uniquely_up_noiseR_sig <- I_uniquely_up_noiseR[I_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+L_uniquely_up_noiseR_sig <- L_uniquely_up_noiseR[L_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+P_uniquely_up_noiseR_sig <- P_uniquely_up_noiseR[P_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster3_uniquely_up_noiseR_sig <- cluster3_uniquely_up_noiseR[cluster3_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 
-# unify colnames, combine S4 objects, sort by FDR (ascending), keep only first unique entry for each marker
-colnames(B_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(D_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(I_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(L_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(P_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
+# add top column
+B_uniquely_up_noiseR_sig$top <- 1:nrow(B_uniquely_up_noiseR_sig)
+D_uniquely_up_noiseR_sig$top <- 1:nrow(D_uniquely_up_noiseR_sig)
+I_uniquely_up_noiseR_sig$top <- 1:nrow(I_uniquely_up_noiseR_sig)
+L_uniquely_up_noiseR_sig$top <- 1:nrow(L_uniquely_up_noiseR_sig)
+P_uniquely_up_noiseR_sig$top <- 1:nrow(P_uniquely_up_noiseR_sig)
+cluster3_uniquely_up_noiseR_sig$top <- 1:nrow(cluster3_uniquely_up_noiseR_sig)
 
-BDILP_uniquely_up_noiseR_sig <- rbind2(B_uniquely_up_noiseR_sig,
-                                       D_uniquely_up_noiseR_sig,
-                                       I_uniquely_up_noiseR_sig,
-                                       L_uniquely_up_noiseR_sig,
-                                       P_uniquely_up_noiseR_sig)
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+BDILP3_uniquely_up_noiseR_sig <- rbind2(B_uniquely_up_noiseR_sig,
+                                        D_uniquely_up_noiseR_sig,
+                                        I_uniquely_up_noiseR_sig,
+                                        L_uniquely_up_noiseR_sig,
+                                        P_uniquely_up_noiseR_sig,
+                                        cluster3_uniquely_up_noiseR_sig)
 
-BDILP_uniquely_up_noiseR_sig_sort <- BDILP_uniquely_up_noiseR_sig[with(BDILP_uniquely_up_noiseR_sig, order(FDR)), ]
-BDILP_uniquely_up_noiseR_sig_sort_uniq <- BDILP_uniquely_up_noiseR_sig_sort[unique(rownames(BDILP_uniquely_up_noiseR_sig_sort)), ]
+BDILP3_uniquely_up_noiseR_sig_sort <- BDILP3_uniquely_up_noiseR_sig[with(BDILP3_uniquely_up_noiseR_sig, order(top, FDR)), ]
+BDILP3_uniquely_up_noiseR_sig_sort_uniq <- BDILP3_uniquely_up_noiseR_sig_sort[unique(rownames(BDILP3_uniquely_up_noiseR_sig_sort)), ]
 
 # # de-select unannotated/ not well-characterised genes
 # deselected <- c("NPIPB13", "NPIPB3", "NPIPB11", "NPIPB5", "NPIPB4", "EEF1A1", "ACTG1", "ACTB", "IFITM1")
 deselected <- c()
-BDILP_uniquely_up_noiseR_sig_sort_uniq_selected <- BDILP_uniquely_up_noiseR_sig_sort_uniq[!(rownames(BDILP_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected <- BDILP3_uniquely_up_noiseR_sig_sort_uniq[!(rownames(BDILP3_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
 
 # top only + gene-of-interest
-best_set <- BDILP_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
+best_set <- BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
 
 # heatmap
 plotHeatmap(
@@ -2160,12 +2164,13 @@ plotHeatmap(
   zlim = c(-3, 3),
   show_colnames = FALSE,
   annotation_row = data.frame(
-    cluster3.vs.1.2.4 = ifelse(rownames(best_set) %in% rownames(B_uniquely_up_noiseR_sig), "DE", "not DE"),
     # TODO: temp trick to deal with the row-colouring problem
+    cluster3.vs.1.2.4 = factor(ifelse(rownames(best_set) %in% rownames(B_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
     cluster3.vs.1.2 = factor(ifelse(rownames(best_set) %in% rownames(D_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
-    cluster3.vs.4 = ifelse(rownames(best_set) %in% rownames(I_uniquely_up_noiseR_sig), "DE", "not DE"),
-    cluster3.vs.2 = ifelse(rownames(best_set) %in% rownames(L_uniquely_up_noiseR_sig), "DE", "not DE"),
-    cluster3.vs.1 = ifelse(rownames(best_set) %in% rownames(P_uniquely_up_noiseR_sig), "DE", "not DE"),
+    cluster3.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(I_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.2 = factor(ifelse(rownames(best_set) %in% rownames(L_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.1 = factor(ifelse(rownames(best_set) %in% rownames(P_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.1.vs.2.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(cluster3_uniquely_up_noiseR_sig_trim), "DE", "not DE"), levels = c("DE")),
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x),
   column_annotation_colors = list(
@@ -2190,25 +2195,29 @@ chosen <- "4"
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S3)"
 
-# retain only significant markers (FDR<0.05)
-F_uniquely_up_noiseR_sig <- F_uniquely_up_noiseR[F_uniquely_up_noiseR$FDR<0.05,]
-J_uniquely_up_noiseR_sig <- J_uniquely_up_noiseR[J_uniquely_up_noiseR$FDR<0.05,]
-N_uniquely_up_noiseR_sig <- N_uniquely_up_noiseR[N_uniquely_up_noiseR$FDR<0.05,]
-R_uniquely_up_noiseR_sig <- R_uniquely_up_noiseR[R_uniquely_up_noiseR$FDR<0.05,]
+# retain only significant markers (FDR<0.05) + keep only required output columns
+F_uniquely_up_noiseR_sig <- F_uniquely_up_noiseR[F_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+J_uniquely_up_noiseR_sig <- J_uniquely_up_noiseR[J_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+N_uniquely_up_noiseR_sig <- N_uniquely_up_noiseR[N_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+R_uniquely_up_noiseR_sig <- R_uniquely_up_noiseR[R_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster4_uniquely_up_noiseR_sig <- cluster4_uniquely_up_noiseR[cluster4_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 
-# unify colnames, combine S4 objects, sort by FDR (ascending), keep only first unique entry for each marker
-colnames(F_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(J_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(N_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(R_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
+# add top column
+F_uniquely_up_noiseR_sig$top <- 1:nrow(F_uniquely_up_noiseR_sig)
+J_uniquely_up_noiseR_sig$top <- 1:nrow(J_uniquely_up_noiseR_sig)
+N_uniquely_up_noiseR_sig$top <- 1:nrow(N_uniquely_up_noiseR_sig)
+R_uniquely_up_noiseR_sig$top <- 1:nrow(R_uniquely_up_noiseR_sig)
+cluster4_uniquely_up_noiseR_sig$top <- 1:nrow(cluster4_uniquely_up_noiseR_sig)
 
-FJNR_uniquely_up_noiseR_sig <- rbind2(F_uniquely_up_noiseR_sig,
-                                      J_uniquely_up_noiseR_sig,
-                                      N_uniquely_up_noiseR_sig,
-                                      R_uniquely_up_noiseR_sig)
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+FJNR4_uniquely_up_noiseR_sig <- rbind2(F_uniquely_up_noiseR_sig,
+                                       J_uniquely_up_noiseR_sig,
+                                       N_uniquely_up_noiseR_sig,
+                                       R_uniquely_up_noiseR_sig,
+                                       cluster4_uniquely_up_noiseR_sig)
 
-FJNR_uniquely_up_noiseR_sig_sort <- FJNR_uniquely_up_noiseR_sig[with(FJNR_uniquely_up_noiseR_sig, order(FDR)), ]
-FJNR_uniquely_up_noiseR_sig_sort_uniq <- FJNR_uniquely_up_noiseR_sig_sort[unique(rownames(FJNR_uniquely_up_noiseR_sig_sort)), ]
+FJNR4_uniquely_up_noiseR_sig_sort <- FJNR4_uniquely_up_noiseR_sig[with(FJNR4_uniquely_up_noiseR_sig, order(top, FDR)), ]
+FJNR4_uniquely_up_noiseR_sig_sort_uniq <- FJNR4_uniquely_up_noiseR_sig_sort[unique(rownames(FJNR4_uniquely_up_noiseR_sig_sort)), ]
 
 # # de-select unannotated/ not well-characterised genes
 # deselected <- c("MTRNR1L12", "MTRNR2L8", "NPIPB12", "NPIPB4", "NPIPB3", "NPIPB13", "NPIPB11", "NPIPB15", "MALAT1")
@@ -2244,9 +2253,10 @@ plotHeatmap(
   annotation_row = data.frame(
     # TODO: temp trick to deal with the row-colouring problem
     cluster4.vs.1.2 = factor(ifelse(rownames(best_set) %in% rownames(F_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
-    cluster4.vs.3 = ifelse(rownames(best_set) %in% rownames(J_uniquely_up_noiseR_sig), "DE", "not DE"),
-    cluster4.vs.2 = ifelse(rownames(best_set) %in% rownames(N_uniquely_up_noiseR_sig), "DE", "not DE"),
-    cluster4.vs.1 = ifelse(rownames(best_set) %in% rownames(R_uniquely_up_noiseR_sig), "DE", "not DE"),
+    cluster4.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(J_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.2 = factor(ifelse(rownames(best_set) %in% rownames(N_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.1 = factor(ifelse(rownames(best_set) %in% rownames(R_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.1.vs.2.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(cluster4_uniquely_up_noiseR_sig_trim), "DE", "not DE"), levels = c("DE")),
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x),
   column_annotation_colors = list(
@@ -2271,22 +2281,27 @@ chosen <- "2"
 # add description for the chosen cluster-group
 x <- "(S3-mix more Thymus)"
 
-# retain only significant markers (FDR<0.05)
-K_uniquely_up_noiseR_sig <- K_uniquely_up_noiseR[K_uniquely_up_noiseR$FDR<0.05,]
-M_uniquely_up_noiseR_sig <- M_uniquely_up_noiseR[M_uniquely_up_noiseR$FDR<0.05,]
-H_uniquely_up_noiseR_sig <- H_uniquely_up_noiseR[H_uniquely_up_noiseR$FDR<0.05,]
+# retain only significant markers (FDR<0.05) + keep only required output columns
+K_uniquely_up_noiseR_sig <- K_uniquely_up_noiseR[K_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+M_uniquely_up_noiseR_sig <- M_uniquely_up_noiseR[M_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+H_uniquely_up_noiseR_sig <- H_uniquely_up_noiseR[H_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster2_uniquely_up_noiseR_sig <- cluster2_uniquely_up_noiseR[cluster2_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 
-# unify colnames, combine S4 objects, sort by FDR (ascending), keep only first unique entry for each marker
-colnames(K_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(M_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(H_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
+# add top column
+K_uniquely_up_noiseR_sig$top <- 1:nrow(K_uniquely_up_noiseR_sig)
+M_uniquely_up_noiseR_sig$top <- 1:nrow(M_uniquely_up_noiseR_sig)
+# TODO: fix error - exclude list from rbind2 if empty
+H_uniquely_up_noiseR_sig$top <- 1:nrow(H_uniquely_up_noiseR_sig)
+cluster2_uniquely_up_noiseR_sig$top <- 1:nrow(cluster2_uniquely_up_noiseR_sig)
 
-KMH_uniquely_up_noiseR_sig <- rbind2(K_uniquely_up_noiseR_sig,
-                                     M_uniquely_up_noiseR_sig,
-                                     H_uniquely_up_noiseR_sig)
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+KMH2_uniquely_up_noiseR_sig <- rbind2(K_uniquely_up_noiseR_sig,
+                                      M_uniquely_up_noiseR_sig,
+                                      H_uniquely_up_noiseR_sig,
+                                      cluster2_uniquely_up_noiseR_sig)
 
-KMH_uniquely_up_noiseR_sig_sort <- KMH_uniquely_up_noiseR_sig[with(KMH_uniquely_up_noiseR_sig, order(FDR)), ]
-KMH_uniquely_up_noiseR_sig_sort_uniq <- KMH_uniquely_up_noiseR_sig_sort[unique(rownames(KMH_uniquely_up_noiseR_sig_sort)), ]
+KMH2_uniquely_up_noiseR_sig_sort <- KMH2_uniquely_up_noiseR_sig[with(KMH2_uniquely_up_noiseR_sig, order(top, FDR)), ]
+KMH2_uniquely_up_noiseR_sig_sort_uniq <- KMH2_uniquely_up_noiseR_sig_sort[unique(rownames(KMH2_uniquely_up_noiseR_sig_sort)), ]
 
 # # de-select unannotated/ not well-characterised genes
 deselected <- c()
@@ -2319,9 +2334,12 @@ plotHeatmap(
   zlim = c(-3, 3),
   show_colnames = FALSE,
   annotation_row = data.frame(
-    cluster2.vs.3 = ifelse(rownames(best_set) %in% rownames(K_uniquely_up_noiseR_sig), "DE", "not DE"),
-    cluster2.vs.4 = ifelse(rownames(best_set) %in% rownames(M_uniquely_up_noiseR_sig), "DE", "not DE"),
-    cluster2.vs.1 = ifelse(rownames(best_set) %in% rownames(H_uniquely_up_noiseR_sig), "DE", "not DE"),
+    # TODO: temp trick to deal with the row-colouring problem
+    cluster2.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(K_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster2.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(M_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    # TODO: work out how to remove `fill` from `not_DE`
+    cluster2.vs.1 = factor(ifelse(rownames(best_set) %in% rownames(H_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE", "not DE")),
+    cluster2.vs.1.vs.3.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(cluster2_uniquely_up_noiseR_sig_trim), "DE", "not DE"), levels = c("DE", "not DE")),
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x),
   column_annotation_colors = list(
@@ -2346,22 +2364,26 @@ chosen <- "1"
 # add description for the chosen cluster-group
 x <- "(S3-mix more Blood)"
 
-# retain only significant markers (FDR<0.05)
-G_uniquely_up_noiseR_sig <- G_uniquely_up_noiseR[G_uniquely_up_noiseR$FDR<0.05,]
-O_uniquely_up_noiseR_sig <- O_uniquely_up_noiseR[O_uniquely_up_noiseR$FDR<0.05,]
-Q_uniquely_up_noiseR_sig <- Q_uniquely_up_noiseR[Q_uniquely_up_noiseR$FDR<0.05,]
+# retain only significant markers (FDR<0.05) + keep only required output columns
+G_uniquely_up_noiseR_sig <- G_uniquely_up_noiseR[G_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+O_uniquely_up_noiseR_sig <- O_uniquely_up_noiseR[O_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+Q_uniquely_up_noiseR_sig <- Q_uniquely_up_noiseR[Q_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster1_uniquely_up_noiseR_sig <- cluster1_uniquely_up_noiseR[cluster1_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 
-# unify colnames, combine S4 objects, sort by FDR (ascending), keep only first unique entry for each marker
-colnames(G_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(O_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
-colnames(Q_uniquely_up_noiseR_sig) <- c("p.value", "FDR", "summary.logFC", "logFC")
+# add top column
+G_uniquely_up_noiseR_sig$top <- 1:nrow(G_uniquely_up_noiseR_sig)
+O_uniquely_up_noiseR_sig$top <- 1:nrow(O_uniquely_up_noiseR_sig)
+Q_uniquely_up_noiseR_sig$top <- 1:nrow(Q_uniquely_up_noiseR_sig)
+cluster1_uniquely_up_noiseR_sig$top <- 1:nrow(cluster1_uniquely_up_noiseR_sig)
 
-GOQ_uniquely_up_noiseR_sig <- rbind2(G_uniquely_up_noiseR_sig,
-                                     O_uniquely_up_noiseR_sig,
-                                     Q_uniquely_up_noiseR_sig)
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+GOQ1_uniquely_up_noiseR_sig <- rbind2(G_uniquely_up_noiseR_sig,
+                                      O_uniquely_up_noiseR_sig,
+                                      Q_uniquely_up_noiseR_sig,
+                                      cluster1_uniquely_up_noiseR_sig)
 
-GOQ_uniquely_up_noiseR_sig_sort <- GOQ_uniquely_up_noiseR_sig[with(GOQ_uniquely_up_noiseR_sig, order(FDR)), ]
-GOQ_uniquely_up_noiseR_sig_sort_uniq <- GOQ_uniquely_up_noiseR_sig_sort[unique(rownames(GOQ_uniquely_up_noiseR_sig_sort)), ]
+GOQ1_uniquely_up_noiseR_sig_sort <- GOQ1_uniquely_up_noiseR_sig[with(GOQ1_uniquely_up_noiseR_sig, order(top, FDR)), ]
+GOQ1_uniquely_up_noiseR_sig_sort_uniq <- GOQ1_uniquely_up_noiseR_sig_sort[unique(rownames(GOQ1_uniquely_up_noiseR_sig_sort)), ]
 
 # # de-select unannotated/ not well-characterised genes
 deselected <- c()
@@ -2396,9 +2418,9 @@ plotHeatmap(
   annotation_row = data.frame(
     # TODO: temp trick to deal with the row-colouring problem
     cluster1.vs.2 = factor(ifelse(rownames(best_set) %in% rownames(G_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
-    cluster1.vs.3 = ifelse(rownames(best_set) %in% rownames(O_uniquely_up_noiseR_sig), "DE", "not DE"),
-    # TODO: temp trick to deal with the row-colouring problem
+    cluster1.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(O_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
     cluster1.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(Q_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster1.vs.2.vs.3.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(cluster1_uniquely_up_noiseR_sig_trim), "DE", "not DE"), levels = c("DE")),
     row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x),
   column_annotation_colors = list(
@@ -2411,5 +2433,14 @@ plotHeatmap(
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
+
+
+
+
+
+
+
+
+
 
 
