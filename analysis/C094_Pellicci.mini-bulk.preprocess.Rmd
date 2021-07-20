@@ -960,7 +960,7 @@ There is also one donor 5 replicate with low *XIST* expression (`r names(which.m
 
 The results are less clear for the `Blood` samples with some of the `Blood.3` technical replicates having comparable *XIST* expression to replicates from nominally female donors 1 and 2.
 
-```{r xist-expression, fig.cap = "Expression of *XIST* by donor and tissue on a 'raw counts' and 'logCPM' scale using the read or UMI counts."}
+```{r xist-expression, fig.cap = "Expression of *XIST* by donor and tissue on a 'logCPM' scale using the read counts."}
 plotExpression(
   sce,
   "XIST",
@@ -982,7 +982,7 @@ plotExpression(
 
 ```{r}
 is_Y <- any(rowData(sce)$ENSEMBL.SEQNAME == "Y")
-z <- addPerCellQC(
+sce_Y <- addPerCellQC(
   sce, 
   subsets = list(Y = which(is_Y)),
   use.altexps = "ERCC",
@@ -995,7 +995,7 @@ The results in Figure \@ref(fig:chr-Y-expression) are consistent with those in F
 
 ```{r chr-Y-expression, fig.cap = "Proportion of read counts coming from Y chromosome genes by donor and tissue."}
 plotColData(
-  z,
+  sce_Y,
   "subsets_Y_percent",
   x = "donor",
   other_fields = "tissue",
