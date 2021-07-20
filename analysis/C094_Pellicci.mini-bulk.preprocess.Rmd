@@ -398,7 +398,10 @@ One way to think of sequencing saturation is [provided by 10x Genomics](https://
 
 > The inverse of the sequencing saturation can be interpreted as roughly the number of new transcripts you expect to find with one new read. If sequencing saturation is at 50%, it means that every 2 new reads will result in 1 new UMI count (unique transcript) detected. In contrast, 90% sequencing saturation means that 10 new reads are necessary to obtain one new UMI count. If the sequencing saturation is high, additional sequencing would not recover much new information for the library.
 
-**At this stage, it is not necessary to perform additional sequencing of the library (with the exception of the `Blood.1`, `Blood.2`, and `Blood.3` samples).**
+At this stage, it is not necessary to perform additional sequencing of the library.
+We considered additional sequencing of the `Blood.1`, `Blood.2`, and `Blood.3` samples.
+However, these samples are already pooled with the corresponding `Thymus.1`, `Thymus.2, and `Thymus.3` samples, which means we would also have to sequence these samples.
+Furthermore, since the `Blood.1`, `Blood.2`, and `Blood.3` used the `P5` gate rather than `P8` gate of the other `Blood` samples, and we were getting reasonable DE results with the existing data, it was decided not to do any additional sequencing.
 
 # UMI counts vs. read counts
 
