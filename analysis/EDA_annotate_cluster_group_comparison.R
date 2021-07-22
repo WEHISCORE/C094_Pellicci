@@ -8,8 +8,9 @@ library(SingleCellExperiment)
 
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.cells_selected.SCE.rds"))
 
-# dir.create(here("data", "marker_genes"), recursive = TRUE)
-# dir.create(here("output", "marker_genes"), recursive = TRUE)
+# pre-create directories for saving export, or error (dir not exists)
+dir.create(here("data", "marker_genes"), recursive = TRUE)
+dir.create(here("output", "marker_genes"), recursive = TRUE)
 
 # remove "Unknown" (as it is not informative at all)
 sce <- sce[, sce$stage != "Unknown"]
@@ -59,11 +60,13 @@ pseudogene_set <- rownames(sce)[
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 
-# gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
-interest <- c("KLRB1", "CD4", # QC
-             "NKG7", "GNLY", "CCL5", # cluster 1 selected unique markers
-             "TCF7", "SOX4", "LEF1", "CD3D", "CCR9", "BCL11B", "NREP" # cluster 3 selected unique markers
-             )
+# # gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
+# interest <- c("KLRB1", "CD4", # QC
+#              "NKG7", "GNLY", "CCL5", # cluster 1 selected unique markers
+#              "TCF7", "SOX4", "LEF1", "CD3D", "CCR9", "BCL11B", "NREP" # cluster 3 selected unique markers
+# )
+# NOTE: to prevent bias and confusion of the gene above are DE to all cases, I decide to include only the QC gene, i.e. "CD4" and "KLBR1", in each plot
+interest <- c("KLRB1", "CD4")
 
 # summary - UMAP
 p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) +
@@ -135,6 +138,12 @@ sce$block <- paste0(sce$plate_number)
 
 
 
+
+
+
+
+
+
 ###################################
 # cluster 1 (i.e. S3-mix more Blood) vs 2 (i.e. S3-mix more Thymus) vs 3 (i.e. mostly Thymus.S1 + .S2) vs 4 (i.e. mostly Thymus.S3)
 
@@ -145,6 +154,47 @@ uniquely_up <- findMarkers(
   block = sce$block,
   pval.type = "all",
   direction = "up")
+
+# export DGE lists
+saveRDS(
+  uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_2_vs_3_vs_4"), recursive = TRUE)
+
+vs_pair <- c("1", "2", "3", "4")
+
+message("Writing 'uniquely_up (cluster_1_vs_2_vs_3_vs_4)' marker genes to file.")
+for (n in names(uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_2_vs_3_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][1],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][2],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][3],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
 
 ##########################################
 # look at cluster 1 (i.e. S3-mix more Blood)
@@ -460,6 +510,42 @@ vs1_uniquely_up <- findMarkers(
   pval.type = "all",
   direction = "up")
 
+# export DGE lists
+saveRDS(
+  vs1_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_4_vs_3"), recursive = TRUE)
+
+vs_pair <- c("1_2_4", "3")
+
+message("Writing 'uniquely_up (cluster_1_2_4_vs_3)' marker genes to file.")
+for (n in names(vs1_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_2_4_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs1_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs1_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs1_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
 
 ##########################################################
 # look at cluster-group A / cluster 1+2+4 (i.e. mostly S3)
@@ -639,6 +725,43 @@ vs2_uniquely_up <- findMarkers(
   pval.type = "all",
   direction = "up")
 
+# export DGE lists
+saveRDS(
+  vs2_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_vs_3"), recursive = TRUE)
+
+vs_pair <- c("1_2", "3")
+
+message("Writing 'uniquely_up (cluster_1_2_vs_3)' marker genes to file.")
+for (n in names(vs2_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_2_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs2_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs2_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs2_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+
 ###############################################################
 # look at cluster-group C / cluster 1+2 (i.e. mostly Blood.S3)
 chosen <- "C"
@@ -816,6 +939,43 @@ vs3_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs3_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_vs_4"), recursive = TRUE)
+
+vs_pair <- c("1_2", "4")
+
+message("Writing 'uniquely_up (cluster_1_2_vs_4)' marker genes to file.")
+for (n in names(vs3_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_2_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs3_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs3_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs3_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
 
 ###############################################################
 # look at cluster-group E / cluster 1+2 (i.e. mostly Blood.S3)
@@ -995,6 +1155,43 @@ vs4_uniquely_up <- findMarkers(
   pval.type = "all",
   direction = "up")
 
+# export DGE lists
+saveRDS(
+  vs4_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_2"), recursive = TRUE)
+
+vs_pair <- c("1", "2")
+
+message("Writing 'uniquely_up (cluster_1_vs_2)' marker genes to file.")
+for (n in names(vs4_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_2",
+      paste0("cluster_",
+             vs_pair[which(names(vs4_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs4_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs4_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+
 ###########################################################
 # look at cluster-group G / cluster 1 (i.e. S3-mix more Blood)
 chosen <- "G"
@@ -1172,6 +1369,43 @@ vs5_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs5_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_3_vs_4"), recursive = TRUE)
+
+vs_pair <- c("3", "4")
+
+message("Writing 'uniquely_up (cluster_3_vs_4)' marker genes to file.")
+for (n in names(vs5_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_3_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs5_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs5_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs5_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
 
 #####################################################################
 # look at cluster-group I / cluster 3 (i.e. mostly Thymus.S1 and .S2)
@@ -1351,6 +1585,43 @@ vs6_uniquely_up <- findMarkers(
   pval.type = "all",
   direction = "up")
 
+# export DGE lists
+saveRDS(
+  vs6_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_2_vs_3"), recursive = TRUE)
+
+vs_pair <- c("2", "3")
+
+message("Writing 'uniquely_up (cluster_2_vs_3)' marker genes to file.")
+for (n in names(vs6_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_2_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs6_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs6_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs6_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+
 #####################################################################
 # look at cluster-group K / cluster 2 (i.e. S3-mix more Thymus)
 chosen <- "K"
@@ -1528,6 +1799,43 @@ vs7_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs7_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_2_vs_4"), recursive = TRUE)
+
+vs_pair <- c("2", "4")
+
+message("Writing 'uniquely_up (cluster_2_vs_4)' marker genes to file.")
+for (n in names(vs7_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_2_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs7_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs7_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs7_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
 
 #####################################################################
 # look at cluster-group M / cluster 2 (i.e. S3-mix more Thymus)
@@ -1707,6 +2015,43 @@ vs8_uniquely_up <- findMarkers(
   pval.type = "all",
   direction = "up")
 
+# export DGE lists
+saveRDS(
+  vs8_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_3"), recursive = TRUE)
+
+vs_pair <- c("1", "3")
+
+message("Writing 'uniquely_up (cluster_1_vs_3)' marker genes to file.")
+for (n in names(vs8_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs8_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs8_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs8_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+
 #####################################################################
 # look at cluster-group O / cluster 1 (i.e. S3-mix more Blood)
 chosen <- "O"
@@ -1884,6 +2229,43 @@ vs9_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs9_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_4"), recursive = TRUE)
+
+vs_pair <- c("1", "4")
+
+message("Writing 'uniquely_up (cluster_1_vs_4)' marker genes to file.")
+for (n in names(vs9_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs9_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs9_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs9_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
 
 #####################################################################
 # look at cluster-group Q / cluster 1 (i.e. S3-mix more Blood)
@@ -2095,7 +2477,6 @@ plot_grid(
 
 
 
-
 ############
 # cluster 3
 ############
@@ -2136,6 +2517,35 @@ BDILP3_uniquely_up_noiseR_sig_sort_uniq <- BDILP3_uniquely_up_noiseR_sig_sort[un
 # deselected <- c("NPIPB13", "NPIPB3", "NPIPB11", "NPIPB5", "NPIPB4", "EEF1A1", "ACTG1", "ACTB", "IFITM1")
 deselected <- c()
 BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected <- BDILP3_uniquely_up_noiseR_sig_sort_uniq[!(rownames(BDILP3_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_3_integrated)' marker genes to file.")
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      paste0("cluster_3_integrated",
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+
+  write.table(
+    x = BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
 
 # top only + gene-of-interest
 best_set <- BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
@@ -2222,7 +2632,36 @@ FJNR4_uniquely_up_noiseR_sig_sort_uniq <- FJNR4_uniquely_up_noiseR_sig_sort[uniq
 # # de-select unannotated/ not well-characterised genes
 # deselected <- c("MTRNR1L12", "MTRNR2L8", "NPIPB12", "NPIPB4", "NPIPB3", "NPIPB13", "NPIPB11", "NPIPB15", "MALAT1")
 deselected <- c()
-FJNR_uniquely_up_noiseR_sig_sort_uniq_selected <- FJNR_uniquely_up_noiseR_sig_sort_uniq[!(rownames(FJNR_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected <- FJNR4_uniquely_up_noiseR_sig_sort_uniq[!(rownames(FJNR4_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_4_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_4_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    paste0("cluster_4_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
 
 # top only + gene-of-interest
 best_set <- FJNR_uniquely_up_noiseR_sig_sort_uniq_selected[1:18, ]
@@ -2305,7 +2744,36 @@ KMH2_uniquely_up_noiseR_sig_sort_uniq <- KMH2_uniquely_up_noiseR_sig_sort[unique
 
 # # de-select unannotated/ not well-characterised genes
 deselected <- c()
-KMH_uniquely_up_noiseR_sig_sort_uniq_selected <- KMH_uniquely_up_noiseR_sig_sort_uniq[!(rownames(KMH_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+KMH2_uniquely_up_noiseR_sig_sort_uniq_selected <- KMH2_uniquely_up_noiseR_sig_sort_uniq[!(rownames(KMH2_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  KMH2_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_2_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    paste0("cluster_2_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = KMH2_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
 
 # top only + gene-of-interest
 best_set <- KMH_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
@@ -2387,7 +2855,36 @@ GOQ1_uniquely_up_noiseR_sig_sort_uniq <- GOQ1_uniquely_up_noiseR_sig_sort[unique
 
 # # de-select unannotated/ not well-characterised genes
 deselected <- c()
-GOQ_uniquely_up_noiseR_sig_sort_uniq_selected <- GOQ_uniquely_up_noiseR_sig_sort_uniq[!(rownames(GOQ_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected <- GOQ1_uniquely_up_noiseR_sig_sort_uniq[!(rownames(GOQ1_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_1_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    paste0("cluster_1_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
 
 # top only + gene-of-interest
 best_set <- GOQ_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
@@ -2433,13 +2930,6 @@ plotHeatmap(
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
-
-
-
-
-
-
-
 
 
 
