@@ -30,10 +30,9 @@ library(BiocStyle)
 library(readxl)
 library(dplyr)
 library(tidyr)
-source(here("code", "helper_functions.R"))
-# NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
-options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
-register(MulticoreParam(workers = getOption("mc.cores")))
+library(ggrepel)
+library(magrittr)
+
 knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate_files/")
 ```
 
@@ -44,11 +43,14 @@ We start from the cell selected *SingleCellExperiment* object created in ['Selec
 ```{r}
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.cells_selected.SCE.rds"))
 
+# pre-create directories for saving export, or error (dir not exists)
 dir.create(here("data", "marker_genes"), recursive = TRUE)
 dir.create(here("output", "marker_genes"), recursive = TRUE)
-```
 
-```{r}
+# remove "Unknown" (as it is not informative at all)
+sce <- sce[, sce$stage != "Unknown"]
+colData(sce) <- droplevels(colData(sce))
+
 # Some useful colours
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
@@ -62,10 +64,6 @@ donor_colours <- setNames(
   unique(sce$colours$donor_colours),
   unique(names(sce$colours$donor_colours)))
 donor_colours <- donor_colours[levels(sce$donor)]
-sample_colours <- setNames(
-  unique(sce$colours$sample_colours),
-  unique(names(sce$colours$sample_colours)))
-sample_colours <- sample_colours[levels(sce$sample)]
 stage_colours <- setNames(
   unique(sce$colours$stage_colours),
   unique(names(sce$colours$stage_colours)))
@@ -82,7 +80,7 @@ cluster_colours <- cluster_colours[levels(sce$cluster)]
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
-# NOTE: A more curated approach for identifying ribosomal protein genes 
+# NOTE: A more curated approach for identifying ribosomal protein genes
 #       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
 library(msigdbr)
 c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
@@ -93,12 +91,90 @@ ribo_set <- intersect(ribo_set, rownames(sce))
 sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
 pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
-# NOTE: get rid of psuedogene seems not to be good enough for HVG determination of this dataset
+# NOTE: not suggest to narrow down into protein coding genes (pcg) as it remove all significant candidate in most of the comparison !!!
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+
+# # gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
+# interest <- c("KLRB1", "CD4", # QC
+#              "NKG7", "GNLY", "CCL5", # cluster 1 selected unique markers
+#              "TCF7", "SOX4", "LEF1", "CD3D", "CCR9", "BCL11B", "NREP" # cluster 3 selected unique markers
+# )
+# NOTE: to prevent bias and confusion of the gene above are DE to all cases, I decide to include only the QC genes, i.e. "CD4" and "KLBR1", in each heatmap
+interest <- c("KLRB1", "CD4")
 ```
 
-**NOTE**: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at `cell` level) could not further sub-classify the developmental stage/subtype of them (cluster `4`: `Th1 cell`-/`Naive CD8`/`CD4 T cell`-alike; all other clusters, i.e. `1`, `2`, `3`: `Vd2gd T cells`) [see EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.
+# Data overview
+
+```{r clusterplot-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
+p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = stage_colours, name = "stage")
+p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = donor_colours, name = "donor")
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = group_colours, name = "group")
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+```
+
+```{r cluster-barplot, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+# summary - stacked barplot
+p1 <- ggcells(sce) +
+  geom_bar(aes(x = cluster, fill = cluster)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 8) +
+  scale_fill_manual(values = cluster_colours) +
+  geom_text(stat='count', aes(x = cluster, label=..count..), hjust=1.5, size=2)
+p2 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = stage),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = stage_colours) +
+  theme_cowplot(font_size = 8)
+p3 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = plate_number_colours) +
+  theme_cowplot(font_size = 8)
+p4 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 8)
+p5 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = donor_colours) +
+  theme_cowplot(font_size = 8)
+p6 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = group),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = group_colours) +
+  theme_cowplot(font_size = 8)
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+```
+
+**NOTE**: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at `cell` level) could not further sub-classify the developmental stage/subtype of them (cluster `4`: `Th1 cell`-/`Naive CD8`/`CD4 T cell`-alike; all other clusters, i.e. `1`, `2`, `3`: `Vd2gd T cells`) [if interested, refer to: EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.
 
 # Marker gene detection
 
@@ -114,481 +190,493 @@ The top DE genes are likely to be good candidate markers as they can effectively
 
 ## Using pairwise *t*-tests
 
-### Standard application
-
 The Welch *t*-test is an obvious choice of statistical method to test for differences in expression between clusters.
 It is quickly computed and has good statistical properties for large numbers of cells [@soneson2018bias].
 
 ```{r}
+# block on plate
 sce$block <- paste0(sce$plate_number)
 ```
 
-For each cluster, the DE results of the relevant comparisons are consolidated into a single output table.
-This allows a set of marker genes to be easily defined by taking the top DE genes from each pairwise comparison between clusters.
-Other statistics are also reported for each gene, including the adjusted p-values^[It must be stressed that the (adjusted) p-values computed here cannot be properly interpreted as measures of significance because the clusters have been empirically identified from the data.
-Nonetheless, they can still be used as way to rank 'interesting' genes.] and the log-fold changes relative to every other cluster.
+## Cluster `1` vs. `2` vs. `3` vs. `4`
+
+Here we look for the unique up-regulated markers of each cluster when compared to the all remaining ones.
+For instance, unique markers of cluster `1` refer to the genes significantly up-regulated in **all** of these comparisons: cluster `2` vs. `1` **and** cluster `3` vs. `1` **and** cluster `4` vs. `1`.
 
 ```{r}
-markers_union_any <- findMarkers(
-  sce, 
-  groups = sce$cluster,
-  block = sce$block,
-  pval.type = "any",
-  direction = "any")
-saveRDS(
-  markers_union_any, 
-  here("data", "marker_genes", "C094_Pellicci.markers_union_any.rds"),
-  compress = "xz")
-dir.create(here("output", "marker_genes", "union_any"))
-message("Writing 'union_any' marker genes to file.")
-for (n in names(markers_union_any)) {
-  message(n)
-  gzout <- gzfile(
-    description = here(
-      "output", 
-      "marker_genes", 
-      "union_any",
-      paste0("cluster_", n, ".union_any.csv.gz")),
-    open = "wb")
-  
-  write.table(
-    x = markers_union_any[[n]] %>%
-      as.data.frame() %>%
-      tibble::rownames_to_column("gene_ID"), 
-    file = gzout, 
-    sep = ",", 
-    quote = FALSE, 
-    row.names = FALSE,
-    col.names = TRUE)
-  close(gzout)
-}
-```
+###################################
+# cluster 1 (i.e. S3-mix more Blood) vs 2 (i.e. S3-mix more Thymus) vs 3 (i.e. mostly Thymus.S1 + .S2) vs 4 (i.e. mostly Thymus.S3)
 
-```{r}
-chosen <- "4"
-interesting <- markers_union_any[[chosen]]
-```
-
-To demonstrate, we use cluster `r chosen` as our cluster of interest for this section.
-The relevant table contains log~2~-fold changes of expression in cluster `r chosen` over each other cluster, along with several statistics obtained by combining $p$-values [@simes1986improved] across the pairwise comparisons involving `r chosen`.
-
-```{r}
-.adf(head(interesting, 10)) %>%
-  tibble::rownames_to_column("Gene") %>%
-  knitr::kable(
-    caption = paste0(
-      "First 10 marker genes for cluster ",
-      chosen,
-      " across comparisons."))
-```
-
-Of particular interest is the `Top` field, which contains the highest rank for each gene across all pairwise comparisons involving cluster `r chosen`.
-The set of genes with `Top` values of 1 contains the gene with the lowest $p$-value from each comparison.
-Similarly, the set of genes with `Top` values less than or equal to 10 contains the top 10 genes from each comparison.
-
-We use the `Top` value to identify a set of genes that is guaranteed to distinguish cluster `r chosen` from any other cluster.
-Figure \@ref(fig:heat-logFC) plots the log-fold changes for the top 10 genes from each pairwise comparison.
-
-```{r heat-logFC, fig.asp = 2, fig.cap = sprintf("Heatmap of log-fold changes for the top 10 marker genes for cluster %s over all other clusters. Each column is a cluster, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
-best_set <- interesting[interesting$Top <= 10, ]
-logFCs <- as.matrix(best_set[, -(1:4)])
-colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
-pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
-```
-
-Complementing Figure \@ref(fig:heat-logFC), Figure \@ref(fig:heat-logExp) plots the log-expression values of each cells in each cluster for the top 5 genes
-
-*NOTE*: based on this heatmap plot of top 10 gene differentially expressed from *any other* clusters, we can already spotted useful markers to tell apart cluster `4` from at least cluster `1` and `2`.
-
-```{r heat-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-page"}
-plotHeatmap(
-  sce,
-  features = rownames(best_set),
-  columns = order(
-    sce$cluster,
-    sce$group,
-    sce$sample,
-    sce$stage,
-    sce$plate_number),
-  order_columns_by = c(
-    "cluster",
-    "group",
-    "sample",
-    "stage",
-    "plate_number"),
-  cluster_cols = FALSE, 
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  annotation_row = data.frame(
-  Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
-  row.names = rownames(best_set)),
-  main = paste0("Cluster: ", chosen),
-  column_annotation_colors = list(
-     Sig = c("Yes" = "red", "No" = "lightgrey"),
-     cluster = cluster_colours,
-     group = group_colours,
-     sample = sample_colours,
-     stage = stage_colours,
-     plate_number = plate_number_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6)
-```
-
-Similar figures showing the top 10 marker genes for each cluster are available in [`output/marker_genes/union_any/heatmaps.union_any.pdf`](../output/marker_genes/union_any/heatmaps.union_any.pdf).
-
-```{r, results = "hide"}
-dev.off() # Needed to ensure next figure saves properly.
-pdf(
-  here(
-    "output",
-    "marker_genes",
-    "union_any",
-    "heatmaps.union_any.pdf"),
-  width = 10,
-  height = 12)
-for (cluster in levels(sce$cluster)) {
-  marker_set <- markers_union_any[[cluster]]
-  best_set <- marker_set[marker_set$Top <= 10, ]
-  
-  plotHeatmap(
-    sce,
-    features = rownames(best_set),
-    columns = order(
-      sce$cluster,
-      sce$group,
-      sce$sample,
-      sce$stage,
-      sce$plate_number,
-      sce$tissue,
-      sce$donor),
-    colour_columns_by = c(
-        "cluster",
-        "group",
-        "sample",
-        "stage",
-        "plate_number",
-        "tissue",
-        "donor"),
-    cluster_cols = FALSE, 
-    center = TRUE,
-    symmetric = TRUE,
-    zlim = c(-3, 3),
-    show_colnames = FALSE,
-    annotation_row = data.frame(
-    Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
-    row.names = rownames(best_set)),
-    main = paste0("Cluster: ", cluster),
-    column_annotation_colors = list(
-      
-         Sig = c("Yes" = "red", "No" = "lightgrey"),
-      
-         cluster = cluster_colours,
-         group = group_colours,
-         sample = sample_colours,
-         stage = stage_colours,
-         plate_number = plate_number_colours,    
-         tissue = tissue_colours,
-         donor = donor_colours),
-    color = hcl.colors(101, "Blue-Red 3"),
-    fontsize = 8)
-}
-dev.off()
-```
-
-We intentionally use pairwise comparisons between clusters rather than comparing each cluster to the average of all other cells.
-The latter approach is sensitive to the population composition, potentially resulting in wildly different sets of markers when cell type abundances change in different contexts.
-In the worst case, the presence of a single dominant subpopulation will drive the selection of top markers for every other cluster, pushing out useful genes that can resolve the various minor subpopulations.
-Moreover, pairwise comparisons naturally provide more information to interpret of the utility of a marker, e.g., by providing log-fold changes to indicate which clusters are distinguished by this gene.
-
-### Using the log-fold change
-
-The differential expression analysis in [Standard application] considers both up- and down-regulated genes to be potential markers.
-However, down-regulated genes are less appealing as markers as it is more difficult to interpret and experimentally validate an absence of expression.
-To focus on upregulated markers, we can instead perform a one-sided $t$-test to identify genes that are upregulated in each cluster compared to the others.
-
-```{r}
-markers_union_up <- findMarkers(
-  sce,
-  groups = sce$cluster,
-  block = sce$block,
-  pval.type = "any",
-  direction = "up")
-saveRDS(
-  markers_union_up, 
-  here("data", "marker_genes", "C094_Pellicci.markers_union_up.rds"),
-  compress = "xz")
-dir.create(here("output", "marker_genes", "union_up"))
-message("Writing 'union_up' marker genes to file.")
-for (n in names(markers_union_up)) {
-  message(n)
-  gzout <- gzfile(
-    description = here(
-      "output", 
-      "marker_genes", 
-      "union_up",
-      paste0("cluster_", n, ".union_up.csv.gz")),
-    open = "wb")
-  write.table(
-    x = markers_union_up[[n]] %>%
-      as.data.frame() %>%
-      tibble::rownames_to_column("gene_ID"), 
-    file = gzout, 
-    sep = ",", 
-    quote = FALSE, 
-    row.names = FALSE,
-    col.names = TRUE)
-  close(gzout)
-}
-```
-
-```{r}
-interesting_up <- markers_union_up[[chosen]]
-```
-
-The $t$-test also allows us to specify a non-zero log-fold change as the null hypothesis.
-This allows us to consider the magnitude of the log-fold change in our $p$-value calculations, in a manner that is more rigorous than simply filtering directly on the log-fold changes^[Specifically, a simple threshold does not consider the variance and can enrich for genes that have both large log-fold changes and large variances [@mccarthy2009treat]]. 
-For example, we can test for genes with log-fold changes that are significantly greater than 1.
-
-```{r}
-markers_union_up_lfc1 <- findMarkers(
-  sce,
-  groups = sce$cluster,
-  block = sce$block,
-  pval.type = "any",
-  direction = "up",
-  lfc = 1)
-saveRDS(
-  markers_union_up_lfc1, 
-  here("data", "marker_genes", "C094_Pellicci.markers_union_up_lfc1.rds"),
-  compress = "xz")
-dir.create(here("output", "marker_genes", "union_up_lfc1"))
-message("Writing 'union_up_lfc1' marker genes to file.")
-for (n in names(markers_union_up_lfc1)) {
-  message(n)
-  gzout <- gzfile(
-    description = here(
-      "output", 
-      "marker_genes", 
-      "union_up_lfc1",
-      paste0("cluster_", n, ".union_up_lfc1.csv.gz")),
-    open = "wb")
-  write.table(
-    x = markers_union_up_lfc1[[n]] %>%
-      as.data.frame() %>%
-      tibble::rownames_to_column("gene_ID"), 
-    file = gzout, 
-    sep = ",", 
-    quote = FALSE, 
-    row.names = FALSE,
-    col.names = TRUE)
-  close(gzout)
-}
-```
-
-```{r}
-interesting_up_lfc1 <- markers_union_up_lfc1[[chosen]]
-```
-
-Combining these two settings yield a more focused set of candidate marker genes that are 'upregulated with a log-fold change > 1' in cluster `r chosen` (Figures \@ref(fig:heat-focused-logFC) and \@ref(fig:heat-focused-logExp)).
-
-```{r heat-focused-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
-best_set <- interesting_up_lfc1[interesting_up_lfc1$Top <= 10,]
-logFCs <- as.matrix(best_set[,-(1:4)])
-colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
-pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
-```
-
-```{r heat-focused-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 10 'upregulated with a log-fold change > 1' marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-page"}
-plotHeatmap(
-  sce,
-  features = rownames(best_set),
-  columns = order(
-    sce$cluster,
-    sce$group,
-    sce$sample,
-    sce$stage,
-    sce$plate_number),
-  order_columns_by = c(
-    "cluster",
-    "group",
-    "sample",
-    "stage",
-    "plate_number"),
-  cluster_cols = FALSE, 
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  annotation_row = data.frame(
-  Sig = factor(
-    ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-    levels = c("Yes", "No")),
-  row.names = rownames(best_set)),
-  main = paste0("Cluster: ", chosen),
-  column_annotation_colors = list(
-     Sig = c("Yes" = "red", "No" = "lightgrey"),
-     cluster = cluster_colours,
-     group = group_colours,
-     sample = sample_colours,
-     stage = stage_colours,
-     plate_number = plate_number_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6)
-```
-
-Similar figures showing the top 10 upregulated and 'upregulated with a log-fold change > 1' marker genes for each cluster are available in [`output/marker_genes/union_up/heatmaps.union_up.pdf`](../output/marker_genes/union_up/heatmaps.union_up.pdf). and [`output/marker_genes/union_up_lfc1/heatmaps.union_up_lfc1.pdf`](../output/marker_genes/union_up_lfc1/heatmaps.union_up_lfc1.pdf).
-
-```{r, results = "hide"}
-dev.off() # Needed to ensure next figure saves properly.
-pdf(
-  here(
-    "output",
-    "marker_genes",
-    "union_up",
-    "heatmaps.union_up.pdf"),
-  width = 10,
-  height = 12)
-for (cluster in levels(sce$cluster)) {
-  marker_set <- markers_union_up[[cluster]]
-  best_set <- marker_set[marker_set$Top <= 10, ]
-  
-  plotHeatmap(
-    sce,
-    features = rownames(best_set),
-    columns = order(
-        sce$cluster,
-        sce$group,
-        sce$sample,
-        sce$stage,
-        sce$plate_number),
-    colour_columns_by = c(
-        "cluster",
-        "group",
-        "sample",
-        "stage",
-        "plate_number"),
-    cluster_cols = FALSE, 
-    center = TRUE,
-    symmetric = TRUE,
-    zlim = c(-3, 3),
-    show_colnames = FALSE,
-    annotation_row = data.frame(
-    Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
-    row.names = rownames(best_set)),
-    main = paste0("Cluster: ", cluster),
-    column_annotation_colors = list(
-       Sig = c("Yes" = "red", "No" = "lightgrey"),
-       cluster = cluster_colours,
-       group = group_colours,
-       sample = sample_colours,
-       stage = stage_colours,
-       plate_number = plate_number_colours),
-    color = hcl.colors(101, "Blue-Red 3"),
-    fontsize = 8)
-}
-dev.off()
-pdf(
-  here(
-    "output",
-    "marker_genes",
-    "union_up_lfc1",
-    "heatmaps.union_up_lfc1.pdf"),
-  width = 10,
-  height = 12)
-for (cluster in levels(sce$cluster)) {
-  marker_set <- markers_union_up_lfc1[[cluster]]
-  best_set <- marker_set[marker_set$Top <= 10, ]
-  
-  plotHeatmap(
-    sce,
-    features = rownames(best_set),
-    columns = order(
-        sce$cluster,
-        sce$group,
-        sce$sample,
-        sce$stage,
-        sce$plate_number),
-    colour_columns_by = c(
-        "cluster",
-        "group",
-        "sample",
-        "stage",
-        "plate_number"),
-    cluster_cols = FALSE, 
-    center = TRUE,
-    symmetric = TRUE,
-    zlim = c(-3, 3),
-    show_colnames = FALSE,
-    annotation_row = data.frame(
-    Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
-    row.names = rownames(best_set)),
-    main = paste0("Cluster: ", cluster),
-    column_annotation_colors = list(
-       Sig = c("Yes" = "red", "No" = "lightgrey"),
-       cluster = cluster_colours,
-       group = group_colours,
-       sample = sample_colours,
-       stage = stage_colours,
-       plate_number = plate_number_colours),
-    color = hcl.colors(101, "Blue-Red 3"),
-    fontsize = 8)
-}
-dev.off()
-```
-
-Of course, this increased stringency is not without cost.
-If only upregulated genes are requested, any cluster defined by down-regulation of a marker gene will not contain that gene among the top set of features in its table.
-This is occasionally relevant for subtypes or other states that are distinguished by high versus low expression of particular genes.
-Similarly, setting an excessively high log-fold change threshold may discard otherwise useful genes.
-For example, a gene upregulated in a small proportion of cells of a cluster will have a small log-fold change but can still be an effective marker if the focus is on specificity rather than sensitivity.
-
-### Finding cluster-specific markers
-
-The genes detected in [Standard application] and [Using the log-fold change] will give a high ranking to genes that are differentially expressed in any pairwise comparison.
-This is because a gene only needs a very low $p$-value in a single pairwise comparison to achieve a low `Top` value.
-A more stringent approach would only consider genes that are differentially expressed in all pairwise comparisons involving the cluster of interest.
-To achieve this, we use an intersection-union test [@berger1996bioequivalence] where the combined $p$-value for each gene is the maximum of the $p$-values from all pairwise comparisons.
-A gene will only achieve a low combined $p$-value if it is strongly DE in all comparisons to other clusters.
-
-```{r}
-markers_uniquely_up <- findMarkers(
+# find unique DE ./. clusters
+uniquely_up <- findMarkers(
   sce,
   groups = sce$cluster,
   block = sce$block,
   pval.type = "all",
   direction = "up")
+```
+
+```{r}
+# export DGE lists
 saveRDS(
-  markers_uniquely_up, 
-  here("data", "marker_genes", "C094_Pellicci.markers_uniquely_up.rds"),
+  uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"),
   compress = "xz")
-dir.create(here("output", "marker_genes", "uniquely_up"))
-message("Writing 'uniquely_up' marker genes to file.")
-for (n in names(markers_uniquely_up)) {
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_2_vs_3_vs_4"), recursive = TRUE)
+
+vs_pair <- c("1", "2", "3", "4")
+
+message("Writing 'uniquely_up (cluster_1_vs_2_vs_3_vs_4)' marker genes to file.")
+for (n in names(uniquely_up)) {
   message(n)
   gzout <- gzfile(
     description = here(
-      "output", 
-      "marker_genes", 
+      "output",
+      "marker_genes",
       "uniquely_up",
-      paste0("cluster_", n, ".uniquely_up.csv.gz")),
+      "cluster_1_vs_2_vs_3_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][1],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][2],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][3],
+             ".uniquely_up.csv.gz")),
     open = "wb")
   write.table(
-    x = markers_uniquely_up[[n]] %>%
+    x = uniquely_up[[n]] %>%
       as.data.frame() %>%
-      tibble::rownames_to_column("gene_ID"), 
-    file = gzout, 
-    sep = ",", 
-    quote = FALSE, 
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Cluster 1` {.panel-name}
+
+```{r}
+##########################################
+# look at cluster 1 (i.e. S3-mix more Blood)
+chosen <- "1"
+cluster1_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(S3-mix more Blood)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster1_uniquely_up <- cluster1_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster1_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster1_uniquely_up_noiseR <- cluster1_uniquely_up[setdiff(rownames(cluster1_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"),
+       cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- cluster1_uniquely_up_noiseR[union(rownames(cluster1_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Cluster 2` {.panel-name}
+
+```{r}
+##########################################
+# look at cluster 2 (i.e. S3-mix more Thymus)
+chosen <- "2"
+cluster2_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(S3-mix more Thymus)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster2_uniquely_up <- cluster2_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster2_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster2_uniquely_up_noiseR <- cluster2_uniquely_up[setdiff(rownames(cluster2_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster2_uniquely_up_noiseR) %in% "CD4"),
+       cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- cluster2_uniquely_up_noiseR[union(rownames(cluster2_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # annotation_row = data.frame(
+  #   Sig = factor(
+  #     ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+  #     # TODO: temp trick to deal with the row-colouring problem
+  #     # levels = c("Yes", "No")),
+  #     levels = c("No")),
+  #   row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Cluster 3` {.panel-name}
+
+```{r}
+##########################################
+# look at cluster 3 (i.e. mostly Thymus.S1 + .S2)
+chosen <- "3"
+cluster3_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S1 + .S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster3_uniquely_up <- cluster3_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster3_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster3_uniquely_up_noiseR <- cluster3_uniquely_up[setdiff(rownames(cluster3_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster3_uniquely_up_noiseR) %in% "CD4"),
+       cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- cluster3_uniquely_up_noiseR[union(rownames(cluster3_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Cluster 4` {.panel-name}
+
+```{r}
+##########################################
+# look at cluster 4 (i.e. mostly Thymus.S3)
+chosen <- "4"
+cluster4_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster4_uniquely_up <- cluster4_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster4_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster4_uniquely_up_noiseR <- cluster4_uniquely_up[setdiff(rownames(cluster4_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"),
+       cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- cluster4_uniquely_up_noiseR[union(rownames(cluster4_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::::::
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_2_vs_3_vs_4/`](..output/marker_genes/uniquely_up/cluster_1_vs_2_vs_3_vs_4/).
+
+**Summary**: Stemmed from the fact that the cluster `1`, `2`, and `4` are too similar to each other, except for cluster `3`, we cannot determine sufficient number of marker genes for characterizing each of these clusters.
+
+With this regard, apart from making "all pairwise comparisons" between "all clusters" to pinpoint DE unique to each cluster as above, we took an alternative path and determined the DE unique to only the "selected pairwise comparisons" between "clusters".
+Say, for cluster `3`, we determine markers that is significantly up-regulated in **at least one** of these comparisons: cluster `1` vs. `3` **or** cluster `2` vs. `3` **or** cluster `4` vs. `3`. 
+
+Besides, we also look into the the pairwise comparisons between the interesting "cluster-groups".
+For instance, cluster `3` is the only cluster relatively distant from the main groups in the UMAP (Figure \@ref(fig:clusterplot-umap)), thus it would be interesting to know what drive cluster `3` from the merged group of cluster `1`, `2`, and `4`, or maybe cluster `1` and `2`.
+
+## Cluster (selected pairwise comparisons)
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `cluster_1+2+4_vs_cluster_3` {.panel-name}
+
+```{r}
+#########
+# A vs B
+#########
+
+##########################################################################
+# cluster 1 + 2 + 4 (i.e. mostly S3) vs cluster 3 (i.e. mostly S1 and S2)
+
+# checkpoint
+cp <- sce
+
+# classify cluster-group for comparison
+cp$vs1 <- factor(ifelse(cp$cluster == 1 | cp$cluster == 2 | cp$cluster == 4, "A", "B"))
+
+# set vs colours
+vs1_colours <- setNames(
+  palette.colors(nlevels(cp$vs1), "Set1"),
+  levels(cp$vs1))
+cp$colours$vs1_colours <- vs1_colours[cp$vs1]
+
+# find unique DE ./. cluster-groups
+vs1_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs1,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs1_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_4_vs_3"), recursive = TRUE)
+
+vs_pair <- c("1_2_4", "3")
+
+message("Writing 'uniquely_up (cluster_1_2_4_vs_3)' marker genes to file.")
+for (n in names(vs1_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_2_4_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs1_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs1_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs1_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
     row.names = FALSE,
     col.names = TRUE)
   close(gzout)
@@ -596,43 +684,55 @@ for (n in names(markers_uniquely_up)) {
 ```
 
 ```{r}
-interesting_uniquely_up <- markers_uniquely_up[[chosen]]
+##########################################################
+# look at cluster-group A / cluster 1+2+4 (i.e. mostly S3)
+chosen <- "A"
+A_uniquely_up <- vs1_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 1+2+4; mostly S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# A_uniquely_up_pcg <- A_uniquely_up[intersect(protein_coding_gene_set, rownames(A_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+A_uniquely_up_noiseR <- A_uniquely_up[setdiff(rownames(A_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(A_uniquely_up_noiseR) %in% "CD4"),
+       A_uniquely_up_noiseR[which(rownames(A_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"),
+       A_uniquely_up_noiseR[which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- A_uniquely_up_noiseR[union(rownames(A_uniquely_up_noiseR)[1:25], interest),]
 ```
 
-This strategy will only report genes that are highly specific to the cluster of interest.
-When it works, it can be highly effective as it generates a small focused set of candidate markers. 
-However, any gene that is expressed at the same level in two or more clusters will simply not be detected. 
-This is likely to discard many interesting genes, especially if the clusters are finely resolved with weak separation.
-To give a concrete example, consider a mixed population of CD4^+^-only, CD8^+^-only, double-positive and double-negative T cells.
-Using this strategy, neither _Cd4_ or _Cd8_ would be detected as subpopulation-specific markers because each gene is expressed in two subpopulations.
-In comparison, the strategy in [Standard application] will detect both of these genes as they will be DE between at least one pair of subpopulations.
-
-Figures \@ref(fig:heat-uniquely-up-logFC) and \@ref(fig:heat-uniquely-up-logExp) show examples of this strategy for cluster `r chosen`.
-
-```{r heat-uniquely-up-logFC, fig.cap = sprintf("Heatmap of log-fold changes for cluster %s over all other clusters. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.7, layout = "l-body-outset"}
-best_set <- interesting_uniquely_up[1:25, ]
-logFCs <- as.matrix(best_set[, -(1:3)])
-colnames(logFCs) <- sub("logFC.", "", colnames(logFCs))
-pheatmap(logFCs, breaks = seq(-3, 3, length.out = 101), fontsize = 7)
-```
-
-```{r heat-uniquely-up-logExp, fig.cap = sprintf("Heatmap of log-expression values in each sample for the top 25 uniquely upregulated marker genes in cluster %s. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", chosen), fig.asp = 0.9, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-2-4-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
 plotHeatmap(
-  sce,
+  cp,
   features = rownames(best_set),
   columns = order(
-      sce$cluster,
-      sce$group,
-      sce$sample,
-      sce$stage,
-      sce$plate_number),
+    cp$vs1,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
   colour_columns_by = c(
-      "cluster",
-      "group",
-      "sample",
-      "stage",
-      "plate_number"),
-  cluster_cols = FALSE, 
+    "vs1",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -640,54 +740,76 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
-  main = paste0("Cluster: ", chosen),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
   column_annotation_colors = list(
-     Sig = c("Yes" = "red", "No" = "lightgrey"),
-     cluster = cluster_colours,
-     group = group_colours,
-     sample = sample_colours,
-     stage = stage_colours,
-     plate_number = plate_number_colours),
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs1 = vs1_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 ```
 
-Similar figures showing the top 25 uniquely upregulated marker genes for each cluster are available in [`output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf`](../output/marker_genes/uniquely_up/heatmaps.uniquely_up.pdf).
-Recall that the stringency of the 'cluster-specific marker' criteria is such that a cluster may only have a small number of statistically significant marker genes or indeed none at all.
-Therefore, these plots include a row annotation highlighting if the gene is a statistically significant cluster-specific marker (i.e. $FDR < 0.05$).
+```{r}
+###########################################################
+# look at cluster-group B / cluster 3 (i.e. mostly S1 + S2)
+chosen <- "B"
+B_uniquely_up <- vs1_uniquely_up[[chosen]]
 
-```{r, results = "hide"}
-dev.off() # Needed to ensure next figure saves properly.
-pdf(
-  here(
-    "output",
-    "marker_genes",
-    "uniquely_up",
-    "heatmaps.uniquely_up.pdf"),
-  width = 10,
-  height = 12)
-for (cluster in levels(sce$cluster)) {
-  marker_set <- markers_uniquely_up[[cluster]]
-  best_set <- marker_set[1:25, ]
-  
+# add description for the chosen cluster-group
+x <- "(cluster 3; mostly S1 and S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# B_uniquely_up_pcg <- B_uniquely_up[intersect(protein_coding_gene_set, rownames(B_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+B_uniquely_up_noiseR <- B_uniquely_up[setdiff(rownames(B_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(B_uniquely_up_noiseR) %in% "CD4"),
+       B_uniquely_up_noiseR[which(rownames(B_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"),
+       B_uniquely_up_noiseR[which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- B_uniquely_up_noiseR[union(rownames(B_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-3-vs-1-2-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
 plotHeatmap(
-  sce,
+  cp,
   features = rownames(best_set),
   columns = order(
-      sce$cluster,
-      sce$group,
-      sce$sample,
-      sce$stage,
-      sce$plate_number),
+    cp$vs1,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
   colour_columns_by = c(
-      "cluster",
-      "group",
-      "sample",
-      "stage",
-      "plate_number"),
-  cluster_cols = FALSE, 
+    "vs1",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -695,183 +817,2460 @@ plotHeatmap(
   annotation_row = data.frame(
     Sig = factor(
       ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      levels = c("Yes", "No")),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
     row.names = rownames(best_set)),
-  main = paste0("Cluster: ", cluster),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
   column_annotation_colors = list(
-     Sig = c("Yes" = "red", "No" = "lightgrey"),
-     cluster = cluster_colours,
-     group = group_colours,
-     sample = sample_colours,
-     stage = stage_colours,
-     plate_number = plate_number_colours),
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs1 = vs1_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8)
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_2_4_vs_3/`](..output/marker_genes/uniquely_up/cluster_1_2_4_vs_3/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_1+2_vs_cluster_3` {.panel-name}
+
+```{r}
+#########
+# C vs D
+#########
+
+##########################################################################################
+# cluster 1 + 2 (i.e. mostly Blood.S3) vs cluster 3 (i.e. mostly Thymus.S1 and Thymus.S2)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster != "4"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs2 <- factor(ifelse(cp$cluster == 1 | cp$cluster == 2 , "C", "D"))
+
+# set vs colours
+vs2_colours <- setNames(
+  palette.colors(nlevels(cp$vs2), "Set1"),
+  levels(cp$vs2))
+cp$colours$vs2_colours <- vs2_colours[cp$vs2]
+
+# find unique DE ./. cluster-groups
+vs2_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs2,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs2_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_vs_3"), recursive = TRUE)
+
+vs_pair <- c("1_2", "3")
+
+message("Writing 'uniquely_up (cluster_1_2_vs_3)' marker genes to file.")
+for (n in names(vs2_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_2_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs2_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs2_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs2_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
 }
 ```
 
-Finally, a common visualisation of cluster-specific marker genes is in a so-called 'dot plot' or 'bubble plot'.
-In these plots, the size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level.
+```{r}
+###############################################################
+# look at cluster-group C / cluster 1+2 (i.e. mostly Blood.S3)
+chosen <- "C"
+C_uniquely_up <- vs2_uniquely_up[[chosen]]
 
-Figure \@ref(fig:dot-plot) is a dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster.
+# add description for the chosen cluster-group
+x <- "(cluster 1+2; mostly Blood.S3)"
 
-```{r dot-plot, fig.cap = "Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average expression level", fig.asp = 0.9, layout="l-body-outset"}
-markers <- unlist(lapply(markers_uniquely_up, function(x) head(rownames(x), 3)))
-x <- logcounts(sce)[markers, ]
-y <- do.call(
-  rbind,
-  lapply(levels(sce$cluster), function(cluster) {
-    data.frame(
-      exp = Matrix::rowMeans(x[, sce$cluster == cluster]),
-      frac_exp = 100 * Matrix::rowMeans(x[, sce$cluster == cluster] > 0),
-      cluster = factor(cluster, levels = levels(sce$cluster)),
-      gene = rownames(x),
-      stringsAsFactors = FALSE)
-  })) %>%
-  dplyr::group_by(gene) %>%
-  dplyr::mutate(
-    centered_exp = scale(exp, scale = FALSE),
-    z_scaled_exp = scale(exp)) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(gene = factor(gene, levels = markers))
-ggplot(data = y, aes(x = gene, y = cluster)) +
-  geom_point(aes(size = frac_exp, colour = exp)) +
-  scale_colour_viridis_c(
-    option = "plasma", 
-    guide_legend(title = "Average Expression")) +
-  scale_size(guide_legend(title = "Percent Expressed")) +
-  theme_cowplot(font_size = 10) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# C_uniquely_up_pcg <- C_uniquely_up[intersect(protein_coding_gene_set, rownames(C_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+C_uniquely_up_noiseR <- C_uniquely_up[setdiff(rownames(C_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(C_uniquely_up_noiseR) %in% "CD4"),
+       C_uniquely_up_noiseR[which(rownames(C_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"),
+       C_uniquely_up_noiseR[which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- C_uniquely_up_noiseR[union(rownames(C_uniquely_up_noiseR)[1:25], interest),]
 ```
 
-As can be seen in Figure \@ref(fig:dot-plot), several of the marker genes are relatively highly expressed across all clusters.
-To compensate for this, Figure \@ref(fig:dot-plot-centered) first centres the average expression level of each gene before visualization.
-
-```{r dot-plot-centered, fig.cap = "Dot plot of the top-3 'uniquely up-regulated' marker genes for each cluster. The size of the dot corresponds to the percentage of cells expressing the feature in each cluster while the colour represents the average (centered) expression level. Each gene (column) is centred by the average expression over all clusters.", fig.asp = 0.9, layout="l-body-outset"}
-ylim <- c(-max(abs(y$z_scaled_exp)), max(abs(y$z_scaled_exp)))
-ggplot(data = y, aes(x = gene, y = cluster)) +
-  geom_point(aes(size = frac_exp, colour = z_scaled_exp)) +
-  scale_size(guide_legend(title = "Percent Expressed")) +
-  scale_colour_gradient2(
-    guide_legend(title = "Centered Average Expression"),
-    low = "blue3",
-    mid = "white",
-    high = "red3",
-    limits = ylim) +
-  cowplot::theme_cowplot(font_size = 8) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```{r heat-uniquely-up-logExp-cluster-1-2-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs2,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs2",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs2 = vs2_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
 ```
 
-## Summary
+```{r}
+###########################################################################
+# look at cluster-group D / cluster 3 (i.e. mostly Thymus.S1 and Thymus.S2)
+chosen <- "D"
+D_uniquely_up <- vs2_uniquely_up[[chosen]]
 
-The tables of marker genes are available as CSV files in [`output/marker_genes/`](../output/marker_genes/) and are named as follows:
+# add description for the chosen cluster-group
+x <- "(cluster 3; mostly Thymus.S1 and Thymus.S2)"
 
-- `union_any`: Marker genes from [Standard application] whereby marker genes are formed from the **union** of genes differentially expressed in **any** direction.
-- `union_up`: Marker genes from [Using the log-fold change] whereby marker genes are formed from the **union** of genes differentially expressed that are **up**regulated.
-- `union_up_lfc1`: Marker genes from [Using the log-fold change] whereby marker genes are formed from the **union** of genes differentially expressed that are **up**regulated with a log-fold change of at least 1 (**lfc1**).
-- `uniquely_up`: Marker genes from [Finding cluster-specific markers] whereby marker genes are cluster-specific (**uniquely**) differentially expressed genes that are **up**regulated.
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# D_uniquely_up_pcg <- D_uniquely_up[intersect(protein_coding_gene_set, rownames(D_uniquely_up)), ]
 
-### Using marker genes to perform cell type annotation
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+D_uniquely_up_noiseR <- D_uniquely_up[setdiff(rownames(D_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
 
-Regardless of the strategy employed, [Standard application], [Using the log-fold change] or [Finding cluster-specific markers], the result is a gene list that needs to be examined to try to identify the cell type.
-As such, they can be analysed like any other gene list, just as you might a list of differentially expressed genes from a bulk RNA-seq experiment.
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(D_uniquely_up_noiseR) %in% "CD4"),
+       D_uniquely_up_noiseR[which(rownames(D_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"),
+       D_uniquely_up_noiseR[which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-This includes:
-
-- Staring at heatmaps and spreadsheets, such as those included with this report, and googling some of the more informative genes, such as the cluster-specific marker genes.
-- Gene set enrichment analysis, e.g., using GO or KEGG terms.
-This can require a fair amount of manual work and knowledge of the biological system but is an essential complement to the automated approach to cell type labelling.
-
-# Cell cycle assignment
-
-On occasion, it can be desirable to determine cell cycle activity from scRNA-seq data.
-In and of itself, the distribution of cells across phases of the cell cycle is not usually informative, but we can use this to determine if there are differences in cell cycle progression between subpopulations or across treatment conditions.
-Many of the key events in the cell cycle (e.g., passage through checkpoints) are post-translational and thus not directly visible in transcriptomic data; nonetheless, there are enough changes in expression that can be exploited to determine cell cycle phase.
-
-## Using the cyclins
-
-```{r, results = "hide"}
-cyclin_genes <- rownames(sce)[c(grep("^CCN[ABDE][0-9]$", rownames(sce)))]
-cyclin_genes
+# top25 only + gene-of-interest
+best_set <- D_uniquely_up_noiseR[union(rownames(D_uniquely_up_noiseR)[1:25], interest),]
 ```
 
-The cyclins control progression through the cell cycle and have well-characterized patterns of expression across cell cycle phases.
-The cyclins available in this dataset are as follows: `r glue::glue_collapse(cyclin_genes, ", ", last = ", and ")`.
-Cyclin D is expressed throughout but peaks at G1; cyclin E is expressed highest in the G1/S transition; cyclin A is expressed across S and G2; and cyclin B is expressed highest in late G2 and mitosis.
-Inspection of the relative expression of cyclins across the population can often be sufficient to determine the relative cell cycle activity in each cluster.
+```{r heat-uniquely-up-logExp-cluster-3-vs-1-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs2,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs2",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs2 = vs2_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
 
-Figure \@ref(fig:cyclin-heatmap) shows the expression of the cyclin genes in the dataset.
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_2_vs_3/`](..output/marker_genes/uniquely_up/cluster_1_2_vs_3/).
 
-Unfortunately, *no obviously different* expression of cyclins were observed in a particular cluster of this dataset, suggesting there could have no cell cycle-related difference between the clusters.
+:::
 
-```{r cyclin-heatmap, fig.cap = "Heatmap of the log-normalized expression values of the cyclin genes in the dataset."}
+::: {.panel}
+
+#### `cluster_1+2_vs_cluster_4` {.panel-name}
+
+```{r}
+#########
+# E vs F
+#########
+
+##########################################################################
+# cluster 1 + 2 (i.e. mostly Blood.S3) vs cluster 4 (i.e. mostly Thymus.S3)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster != "3"]
+colData(cp) <- droplevels(colData(cp))
+# classify cluster-group for comparison
+
+cp$vs3 <- factor(ifelse(cp$cluster == 1 | cp$cluster == 2 , "E", "F"))
+
+# set vs colours
+vs3_colours <- setNames(
+  palette.colors(nlevels(cp$vs3), "Set1"),
+  levels(cp$vs3))
+cp$colours$vs3_colours <- vs3_colours[cp$vs3]
+
+# find unique DE ./. cluster-groups
+vs3_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs3,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs3_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_vs_4"), recursive = TRUE)
+
+vs_pair <- c("1_2", "4")
+
+message("Writing 'uniquely_up (cluster_1_2_vs_4)' marker genes to file.")
+for (n in names(vs3_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_2_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs3_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs3_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs3_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+###############################################################
+# look at cluster-group E / cluster 1+2 (i.e. mostly Blood.S3)
+chosen <- "E"
+E_uniquely_up <- vs3_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 1+2; mostly Blood.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# E_uniquely_up_pcg <- E_uniquely_up[intersect(protein_coding_gene_set, rownames(E_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+E_uniquely_up_noiseR <- E_uniquely_up[setdiff(rownames(E_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(E_uniquely_up_noiseR) %in% "CD4"),
+       E_uniquely_up_noiseR[which(rownames(E_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"),
+       E_uniquely_up_noiseR[which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- E_uniquely_up_noiseR[union(rownames(E_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-1-2-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs3,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs3",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs3 = vs3_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+##############################################################
+# look at cluster-group F / cluster 4 (i.e. mostly Thymus.S3)
+chosen <- "F"
+F_uniquely_up <- vs3_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 4; mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# F_uniquely_up_pcg <- F_uniquely_up[intersect(protein_coding_gene_set, rownames(F_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+F_uniquely_up_noiseR <- F_uniquely_up[setdiff(rownames(F_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(F_uniquely_up_noiseR) %in% "CD4"),
+       F_uniquely_up_noiseR[which(rownames(F_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"),
+       F_uniquely_up_noiseR[which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- F_uniquely_up_noiseR[union(rownames(F_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-4-vs-1-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs3,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs3",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs3 = vs3_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_2_vs_4/`](..output/marker_genes/uniquely_up/cluster_1_2_vs_4/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_1_vs_cluster_2` {.panel-name}
+
+```{r}
+#########
+# G vs H
+#########
+
+##########################################################################
+# cluster 1 (i.e. S3-mix more Blood) vs cluster 2 (i.e. S3-mix more Thymus)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster == "1" | cp$cluster == "2"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs4 <- factor(ifelse(cp$cluster == 1 , "G", "H"))
+
+# set vs colours
+vs4_colours <- setNames(
+  palette.colors(nlevels(cp$vs4), "Set1"),
+  levels(cp$vs4))
+cp$colours$vs4_colours <- vs4_colours[cp$vs4]
+
+# find unique DE ./. cluster-groups
+vs4_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs4,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs4_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_2"), recursive = TRUE)
+
+vs_pair <- c("1", "2")
+
+message("Writing 'uniquely_up (cluster_1_vs_2)' marker genes to file.")
+for (n in names(vs4_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_2",
+      paste0("cluster_",
+             vs_pair[which(names(vs4_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs4_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs4_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+###########################################################
+# look at cluster-group G / cluster 1 (i.e. S3-mix more Blood)
+chosen <- "G"
+G_uniquely_up <- vs4_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 1; S3-mix more Blood)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# G_uniquely_up_pcg <- G_uniquely_up[intersect(protein_coding_genG_set, rownames(G_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+G_uniquely_up_noiseR <- G_uniquely_up[setdiff(rownames(G_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(G_uniquely_up_noiseR) %in% "CD4"),
+       G_uniquely_up_noiseR[which(rownames(G_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"),
+       G_uniquely_up_noiseR[which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- G_uniquely_up_noiseR[union(rownames(G_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-1-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs4,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs4",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs4 = vs4_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+############################################################
+# look at cluster-group H / cluster 2 (i.e. S3-mix more Thymus)
+chosen <- "H"
+H_uniquely_up <- vs4_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 2; mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# H_uniquely_up_pcg <- H_uniquely_up[intersect(protein_coding_genG_set, rownames(H_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+H_uniquely_up_noiseR <- H_uniquely_up[setdiff(rownames(H_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(H_uniquely_up_noiseR) %in% "CD4"),
+       H_uniquely_up_noiseR[which(rownames(H_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"),
+       H_uniquely_up_noiseR[which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- H_uniquely_up_noiseR[union(rownames(H_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-2-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs4,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs4",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # annotation_row = data.frame(
+  #   Sig = factor(
+  #     ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+  #     # TODO: temp trick to deal with the row-colouring problem
+  #     # levels = c("Yes", "No")),
+  #     levels = c("No")),
+  #   row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs4 = vs4_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_2/`](..output/marker_genes/uniquely_up/cluster_2_vs_1/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_3_vs_cluster_4` {.panel-name}
+
+```{r}
+#########
+# I vs J
+#########
+
+#################################################################################
+# cluster 3 (i.e. mostly Thymus.S1 and .S2) vs cluster 4 (i.e. mostly Thymus.S3)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster == "3" | cp$cluster == "4"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs5 <- factor(ifelse(cp$cluster == 3 , "I", "J"))
+
+# set vs colours
+vs5_colours <- setNames(
+  palette.colors(nlevels(cp$vs5), "Set1"),
+  levels(cp$vs5))
+cp$colours$vs5_colours <- vs5_colours[cp$vs5]
+
+# find unique DE ./. cluster-groups
+vs5_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs5,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs5_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_3_vs_4"), recursive = TRUE)
+
+vs_pair <- c("3", "4")
+
+message("Writing 'uniquely_up (cluster_3_vs_4)' marker genes to file.")
+for (n in names(vs5_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_3_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs5_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs5_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs5_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+#####################################################################
+# look at cluster-group I / cluster 3 (i.e. mostly Thymus.S1 and .S2)
+chosen <- "I"
+I_uniquely_up <- vs5_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 3; mostly Thymus.S1 and .S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# I_uniquely_up_pcg <- I_uniquely_up[intersect(protein_coding_genI_set, rownames(I_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+I_uniquely_up_noiseR <- I_uniquely_up[setdiff(rownames(I_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(I_uniquely_up_noiseR) %in% "CD4"),
+       I_uniquely_up_noiseR[which(rownames(I_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"),
+       I_uniquely_up_noiseR[which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- I_uniquely_up_noiseR[union(rownames(I_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-3-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs5,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs5",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs5 = vs5_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+##############################################################
+# look at cluster-group J / cluster 4  (i.e. mostly Thymus.S3)
+chosen <- "J"
+J_uniquely_up <- vs5_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 4; mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# J_uniquely_up_pcg <- J_uniquely_up[intersect(protein_coding_genI_set, rownames(J_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+J_uniquely_up_noiseR <- J_uniquely_up[setdiff(rownames(J_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(J_uniquely_up_noiseR) %in% "CD4"),
+       J_uniquely_up_noiseR[which(rownames(J_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"),
+       J_uniquely_up_noiseR[which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- J_uniquely_up_noiseR[union(rownames(J_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-4-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs5,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs5",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs5 = vs5_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_3_vs_4/`](..output/marker_genes/uniquely_up/cluster_3_vs_4/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_2_vs_cluster_3` {.panel-name}
+
+```{r}
+#########
+# K vs L
+#########
+
+#################################################################################
+# cluster 2 (i.e. S3-mix more Thymus) vs cluster 3 (i.e. mostly Thymus.S1 + .S2)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster == "2" | cp$cluster == "3"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs6 <- factor(ifelse(cp$cluster == 2 , "K", "L"))
+
+# set vs colours
+vs6_colours <- setNames(
+  palette.colors(nlevels(cp$vs6), "Set1"),
+  levels(cp$vs6))
+cp$colours$vs6_colours <- vs6_colours[cp$vs6]
+
+# find unique DE ./. cluster-groups
+vs6_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs6,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs6_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_2_vs_3"), recursive = TRUE)
+
+vs_pair <- c("2", "3")
+
+message("Writing 'uniquely_up (cluster_2_vs_3)' marker genes to file.")
+for (n in names(vs6_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_2_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs6_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs6_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs6_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+#####################################################################
+# look at cluster-group K / cluster 2 (i.e. S3-mix more Thymus)
+chosen <- "K"
+K_uniquely_up <- vs6_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 2; S3-mix more Thymus)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# K_uniquely_up_pcg <- K_uniquely_up[intersect(protein_coding_genK_set, rownames(K_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+K_uniquely_up_noiseR <- K_uniquely_up[setdiff(rownames(K_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(K_uniquely_up_noiseR) %in% "CD4"),
+       K_uniquely_up_noiseR[which(rownames(K_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(K_uniquely_up_noiseR) %in% "KLRB1"),
+       K_uniquely_up_noiseR[which(rownames(K_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- K_uniquely_up_noiseR[union(rownames(K_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-2-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs6,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs6",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs6 = vs6_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+##############################################################
+# look at cluster-group L / cluster 3  (i.e. mostly Thymus.S1 + .S2)
+chosen <- "L"
+L_uniquely_up <- vs6_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 3; mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# L_uniquely_up_pcg <- L_uniquely_up[intersect(protein_coding_genK_set, rownames(L_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+L_uniquely_up_noiseR <- L_uniquely_up[setdiff(rownames(L_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(L_uniquely_up_noiseR) %in% "CD4"),
+       L_uniquely_up_noiseR[which(rownames(L_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(L_uniquely_up_noiseR) %in% "KLRB1"),
+       L_uniquely_up_noiseR[which(rownames(L_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- L_uniquely_up_noiseR[union(rownames(L_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-3-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs6,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs6",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs6 = vs6_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_2_vs_3/`](..output/marker_genes/uniquely_up/cluster_2_vs_3/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_2_vs_cluster_4` {.panel-name}
+
+```{r}
+#########
+# M vs N
+#########
+
+#################################################################################
+# cluster 2 (i.e. S3-mix more Thymus) vs cluster 4 (i.e. mostly Thymus.S3)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster == "2" | cp$cluster == "4"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs7 <- factor(ifelse(cp$cluster == 2 , "M", "N"))
+
+# set vs colours
+vs7_colours <- setNames(
+  palette.colors(nlevels(cp$vs7), "Set1"),
+  levels(cp$vs7))
+cp$colours$vs7_colours <- vs7_colours[cp$vs7]
+
+# find unique DE ./. cluster-groups
+vs7_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs7,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs7_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_2_vs_4"), recursive = TRUE)
+
+vs_pair <- c("2", "4")
+
+message("Writing 'uniquely_up (cluster_2_vs_4)' marker genes to file.")
+for (n in names(vs7_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_2_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs7_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs7_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs7_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+#####################################################################
+# look at cluster-group M / cluster 2 (i.e. S3-mix more Thymus)
+chosen <- "M"
+M_uniquely_up <- vs7_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 2; S3-mix more Thymus)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# M_uniquely_up_pcg <- M_uniquely_up[intersect(protein_coding_genM_set, rownames(M_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+M_uniquely_up_noiseR <- M_uniquely_up[setdiff(rownames(M_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(M_uniquely_up_noiseR) %in% "CD4"),
+       M_uniquely_up_noiseR[which(rownames(M_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(M_uniquely_up_noiseR) %in% "KLRB1"),
+       M_uniquely_up_noiseR[which(rownames(M_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- M_uniquely_up_noiseR[union(rownames(M_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-2-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs7,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs7",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs7 = vs7_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+##############################################################
+# look at cluster-group N / cluster 4  (i.e. mostly Thymus.S3)
+chosen <- "N"
+N_uniquely_up <- vs7_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 4; mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# N_uniquely_up_pcg <- N_uniquely_up[intersect(protein_coding_genM_set, rownames(N_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+N_uniquely_up_noiseR <- N_uniquely_up[setdiff(rownames(N_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(N_uniquely_up_noiseR) %in% "CD4"),
+       N_uniquely_up_noiseR[which(rownames(N_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(N_uniquely_up_noiseR) %in% "KLRB1"),
+       N_uniquely_up_noiseR[which(rownames(N_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- N_uniquely_up_noiseR[union(rownames(N_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-4-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs7,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs7",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs7 = vs7_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_2_vs_4/`](..output/marker_genes/uniquely_up/cluster_2_vs_4/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_1_vs_cluster_3` {.panel-name}
+
+```{r}
+#########
+# O vs P
+#########
+
+#################################################################################
+# cluster 1 (i.e. S3-mix more Blood) vs cluster 3 (i.e. mostly Thymus.S1 and .S2)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster == "1" | cp$cluster == "3"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs8 <- factor(ifelse(cp$cluster == 1 , "O", "P"))
+
+# set vs colours
+vs8_colours <- setNames(
+  palette.colors(nlevels(cp$vs8), "Set1"),
+  levels(cp$vs8))
+cp$colours$vs8_colours <- vs8_colours[cp$vs8]
+
+# find unique DE ./. cluster-groups
+vs8_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs8,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs8_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_3"), recursive = TRUE)
+
+vs_pair <- c("1", "3")
+
+message("Writing 'uniquely_up (cluster_1_vs_3)' marker genes to file.")
+for (n in names(vs8_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_3",
+      paste0("cluster_",
+             vs_pair[which(names(vs8_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs8_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs8_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+#####################################################################
+# look at cluster-group O / cluster 1 (i.e. S3-mix more Blood)
+chosen <- "O"
+O_uniquely_up <- vs8_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 1; S3-mix more Blood)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# O_uniquely_up_pcg <- O_uniquely_up[intersect(protein_coding_genO_set, rownames(O_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+O_uniquely_up_noiseR <- O_uniquely_up[setdiff(rownames(O_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(O_uniquely_up_noiseR) %in% "CD4"),
+       O_uniquely_up_noiseR[which(rownames(O_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(O_uniquely_up_noiseR) %in% "KLRB1"),
+       O_uniquely_up_noiseR[which(rownames(O_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- O_uniquely_up_noiseR[union(rownames(O_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-1-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs8,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs8",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs8 = vs8_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+##############################################################
+# look at cluster-group P / cluster 3  (i.e. mostly Thymus.S1 and .S2)
+chosen <- "P"
+P_uniquely_up <- vs8_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 3; mostly Thymus.S1 and .S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# P_uniquely_up_pcg <- P_uniquely_up[intersect(protein_coding_genO_set, rownames(P_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+P_uniquely_up_noiseR <- P_uniquely_up[setdiff(rownames(P_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(P_uniquely_up_noiseR) %in% "CD4"),
+       P_uniquely_up_noiseR[which(rownames(P_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(P_uniquely_up_noiseR) %in% "KLRB1"),
+       P_uniquely_up_noiseR[which(rownames(P_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- P_uniquely_up_noiseR[union(rownames(P_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-3-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs8,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs8",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs8 = vs8_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_3/`](..output/marker_genes/uniquely_up/cluster_1_vs_3/).
+
+:::
+
+::: {.panel}
+
+#### `cluster_1_vs_cluster_4` {.panel-name}
+
+```{r}
+#########
+# Q vs R
+#########
+
+#################################################################################
+# cluster 1 (i.e. S3-mix more Blood) vs cluster 4 (i.e. mostly Thymus.S3)
+
+# checkpoint
+cp <- sce
+# exclude cells of uninterested cluster from cp
+cp <- cp[, cp$cluster == "1" | cp$cluster == "4"]
+colData(cp) <- droplevels(colData(cp))
+
+# classify cluster-group for comparison
+cp$vs9 <- factor(ifelse(cp$cluster == 1 , "Q", "R"))
+
+# set vs colours
+vs9_colours <- setNames(
+  palette.colors(nlevels(cp$vs9), "Set1"),
+  levels(cp$vs9))
+cp$colours$vs9_colours <- vs9_colours[cp$vs9]
+
+# find unique DE ./. cluster-groups
+vs9_uniquely_up <- findMarkers(
+  cp,
+  groups = cp$vs9,
+  block = cp$block,
+  pval.type = "all",
+  direction = "up")
+
+# export DGE lists
+saveRDS(
+  vs9_uniquely_up,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_4"), recursive = TRUE)
+
+vs_pair <- c("1", "4")
+
+message("Writing 'uniquely_up (cluster_1_vs_4)' marker genes to file.")
+for (n in names(vs9_uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "uniquely_up",
+      "cluster_1_vs_4",
+      paste0("cluster_",
+             vs_pair[which(names(vs9_uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(vs9_uniquely_up) %in% n)][1],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = vs9_uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r}
+#####################################################################
+# look at cluster-group Q / cluster 1 (i.e. S3-mix more Blood)
+chosen <- "Q"
+Q_uniquely_up <- vs9_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 1; S3-mix more Blood)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# Q_uniquely_up_pcg <- Q_uniquely_up[intersect(protein_coding_genQ_set, rownames(Q_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+Q_uniquely_up_noiseR <- Q_uniquely_up[setdiff(rownames(Q_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(Q_uniquely_up_noiseR) %in% "CD4"),
+       Q_uniquely_up_noiseR[which(rownames(Q_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(Q_uniquely_up_noiseR) %in% "KLRB1"),
+       Q_uniquely_up_noiseR[which(rownames(Q_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- Q_uniquely_up_noiseR[union(rownames(Q_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-1-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs9,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs9",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs9 = vs9_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+##############################################################
+# look at cluster-group R / cluster 4  (i.e. mostly Thymus.S3)
+chosen <- "R"
+R_uniquely_up <- vs9_uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(cluster 4; mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# R_uniquely_up_pcg <- R_uniquely_up[intersect(protein_coding_genQ_set, rownames(R_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+R_uniquely_up_noiseR <- R_uniquely_up[setdiff(rownames(R_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(R_uniquely_up_noiseR) %in% "CD4"),
+       R_uniquely_up_noiseR[which(rownames(R_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(R_uniquely_up_noiseR) %in% "KLRB1"),
+       R_uniquely_up_noiseR[which(rownames(R_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- R_uniquely_up_noiseR[union(rownames(R_uniquely_up_noiseR)[1:25], interest),]
+```
+
+```{r heat-uniquely-up-logExp-cluster-4-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  cp,
+  features = rownames(best_set),
+  columns = order(
+    cp$vs9,
+    cp$cluster,
+    cp$stage,
+    cp$tissue,
+    cp$donor,
+    cp$group,
+    cp$plate_number),
+  colour_columns_by = c(
+    "vs9",
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster-group: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    vs9 = vs9_colours,
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_4/`](..output/marker_genes/uniquely_up/cluster_1_vs_4/).
+
+:::
+
+::::::
+
+To have a comprehensive overview, the above analyses were summarized in the following heatmap per cluster:
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Cluster_3_integrated` {.panel-name}
+
+```{r}
+############
+# cluster 3
+############
+
+chosen <- "3"
+
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S1 and Thymus.S2)"
+
+# retain only significant markers (FDR<0.05) + keep only required output columns
+B_uniquely_up_noiseR_sig <- B_uniquely_up_noiseR[B_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+D_uniquely_up_noiseR_sig <- D_uniquely_up_noiseR[D_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+I_uniquely_up_noiseR_sig <- I_uniquely_up_noiseR[I_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+L_uniquely_up_noiseR_sig <- L_uniquely_up_noiseR[L_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+P_uniquely_up_noiseR_sig <- P_uniquely_up_noiseR[P_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster3_uniquely_up_noiseR_sig <- cluster3_uniquely_up_noiseR[cluster3_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+
+# add top column
+B_uniquely_up_noiseR_sig$top <- 1:nrow(B_uniquely_up_noiseR_sig)
+D_uniquely_up_noiseR_sig$top <- 1:nrow(D_uniquely_up_noiseR_sig)
+I_uniquely_up_noiseR_sig$top <- 1:nrow(I_uniquely_up_noiseR_sig)
+L_uniquely_up_noiseR_sig$top <- 1:nrow(L_uniquely_up_noiseR_sig)
+P_uniquely_up_noiseR_sig$top <- 1:nrow(P_uniquely_up_noiseR_sig)
+cluster3_uniquely_up_noiseR_sig$top <- 1:nrow(cluster3_uniquely_up_noiseR_sig)
+
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+BDILP3_uniquely_up_noiseR_sig <- rbind2(B_uniquely_up_noiseR_sig,
+                                        D_uniquely_up_noiseR_sig,
+                                        I_uniquely_up_noiseR_sig,
+                                        L_uniquely_up_noiseR_sig,
+                                        P_uniquely_up_noiseR_sig,
+                                        cluster3_uniquely_up_noiseR_sig)
+
+BDILP3_uniquely_up_noiseR_sig_sort <- BDILP3_uniquely_up_noiseR_sig[with(BDILP3_uniquely_up_noiseR_sig, order(top, FDR)), ]
+BDILP3_uniquely_up_noiseR_sig_sort_uniq <- BDILP3_uniquely_up_noiseR_sig_sort[unique(rownames(BDILP3_uniquely_up_noiseR_sig_sort)), ]
+
+# # de-select unannotated/ not well-characterised genes
+# deselected <- c("NPIPB13", "NPIPB3", "NPIPB11", "NPIPB5", "NPIPB4", "EEF1A1", "ACTG1", "ACTB", "IFITM1")
+deselected <- c()
+BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected <- BDILP3_uniquely_up_noiseR_sig_sort_uniq[!(rownames(BDILP3_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_3_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    "integrated",
+    paste0("cluster_3_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
+
+# top only + gene-of-interest
+best_set <- BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
+```
+
+```{r heat-uniquely-up-logExp-cluster-3-integrated, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
 plotHeatmap(
   sce,
-  colour_columns_by = "cluster",
-  cluster_cols = FALSE, 
-  columns = order(sce$cluster),
-  cluster_rows = FALSE, 
-  features = sort(cyclin_genes),
-  column_annotation_colors = list(cluster = cluster_colours),
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
   show_colnames = FALSE,
-  zlim = c(0, 4),
-  color = viridisLite::viridis(101, option = "inferno"))
+  annotation_row = data.frame(
+    # TODO: temp trick to deal with the row-colouring problem
+    cluster3.vs.1.2.4 = factor(ifelse(rownames(best_set) %in% rownames(B_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.1.2 = factor(ifelse(rownames(best_set) %in% rownames(D_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(I_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.2 = factor(ifelse(rownames(best_set) %in% rownames(L_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.1 = factor(ifelse(rownames(best_set) %in% rownames(P_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster3.vs.1.vs.2.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(cluster3_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
 ```
 
-We can also use standard differential expression methods to look for upregulation of each cyclin, allowing us to determine if there are more cells in the corresponding phase of the cell cycle between subpopulations.
+**Summary**: Here is a heatmap summarizes the row-normalized expression of the top 50 unique DE ordered by the ranking of FDR for each of the pairwise comparisons mentioned for cluster 3.
+On top, is the classification of cells based on key experimental factor, such as cluster, stage, and tissue.
+Whilst on the left, the colour bar indicates if a gene is a unique DE in a particular comparison, say, the POTEF gene is a unique DE only when comparing 3 to 4, but not the other 5 comparisons.
+
+To interpret this heatmap, we can approach in several different ways.
+Say, we can start by looking at the genes that are "DE in all 6 comparisons".
+
+For instance, LEF1 and TCF is a known pair of transcription factors modulating T cell development in thymocytes. [Immunity 37, 813–826, November 16, 2012], and SOX4 is a canonical HMG-TF working with miR181 to facilitate thymocyte differentiation. [Eur J Immunol. 1997 May;27(5):1292-5; J Exp Med (2018) 215 (11): 2887–2900]. 
+Also, knockdown in CD3D expression is proven to affect the differentiation of alpha-beta and gamma-delta T cells in human [J Clin Invest. 2011;121(10):3872-3876], whilst TOX is a key factor involved in T cell lineage commitment in thymocytes [Nature Immunology volume 3, pages 272–280 (2002)].
+
+Another way round, we can also focus on genes that appear to be DE in a particular comparison only. 
+For example, TRDC is the T cell receptor delta chain and is higher in expression in cluster 3 (i.e. mostly S3) when compared to cluster group of 1, 2, and 4 (i.e. mostly S1 and S2), whilst NPIPB gene family members known to modulate type I interferon [J. Microbiol. Immunol. Infect. 50, 277–285 (2015)] were constantly expressed in both cluster 1 and 4 cells, but was slightly higher in expression in cluster 3 when compared to cluster 2.
+
+:::
+
+::: {.panel}
+
+#### `Cluster_4_integrated` {.panel-name}
 
 ```{r}
-markers <- findMarkers(
-  sce,
-  subset.row = cyclin_genes, 
-  groups = sce$cluster,
-  test.type = "wilcox", 
-  direction = "up", 
-  block = sce$plate_number)
-```
+############
+# cluster 4
+############
 
-Here we use pairwise Wilcoxon rank sum tests to compute differential expression of cyclin genes between each pair of clusters.
-The Wilcoxon test estimates effect sizes as the area under the curve (`AUC` in the tables below).
-Consider the distribution of expression values for gene $X$ within each of two groups $A$ and $B$.
-The `AUC` is the probability that a randomly selected cell in $A$ has a greater expression of $X$ than a randomly selected cell in $B$^[Ties are assumed to be randomly broken].
-Concordance probabilities near 0 indicate that most observations in $A$ are lower than most observations in $B$; conversely, probabilities near 1 indicate that most observations in $A$ are higher than those in $B$.
-The Wilcoxon rank sum test effectively tests for significant deviations from an `AUC` of 0.5.
+chosen <- "4"
 
-```{r}
-knitr::kable(
-  .adf(markers[[4]]),
-  caption = "Cyclin DE analysis comparing cluster 4 to all other clusters.",
-  digits = 3)
-```
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S3)"
 
-Direct examination of cyclin expression is easily understood, interpreted and validated with other technologies.
-However, it is best suited for statements about relative cell cycle activity; for example, we would find it difficult to assign cell cycle phase in Figure \@ref(fig:cyclin-heatmap) without the presence of clusters spanning all phases to provide benchmarks for "high" and "low" expression of each cyclin.
-We also assume that cyclin expression is not affected by biological processes other than the cell cycle, which may be a strong assumption in some cases, e.g., malignant cells.
+# retain only significant markers (FDR<0.05) + keep only required output columns
+F_uniquely_up_noiseR_sig <- F_uniquely_up_noiseR[F_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+J_uniquely_up_noiseR_sig <- J_uniquely_up_noiseR[J_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+N_uniquely_up_noiseR_sig <- N_uniquely_up_noiseR[N_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+R_uniquely_up_noiseR_sig <- R_uniquely_up_noiseR[R_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster4_uniquely_up_noiseR_sig <- cluster4_uniquely_up_noiseR[cluster4_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 
-*NOTE*: Taken together, there is neither apparent differential nor significant up-regulation of cyclin genes in the 4 clusters, implying that there may be no significant differences in cell cycle progression between the cells in this dataset.
+# add top column
+F_uniquely_up_noiseR_sig$top <- 1:nrow(F_uniquely_up_noiseR_sig)
+J_uniquely_up_noiseR_sig$top <- 1:nrow(J_uniquely_up_noiseR_sig)
+N_uniquely_up_noiseR_sig$top <- 1:nrow(N_uniquely_up_noiseR_sig)
+R_uniquely_up_noiseR_sig$top <- 1:nrow(R_uniquely_up_noiseR_sig)
+cluster4_uniquely_up_noiseR_sig$top <- 1:nrow(cluster4_uniquely_up_noiseR_sig)
 
-# Concluding remarks
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+FJNR4_uniquely_up_noiseR_sig <- rbind2(F_uniquely_up_noiseR_sig,
+                                       J_uniquely_up_noiseR_sig,
+                                       N_uniquely_up_noiseR_sig,
+                                       R_uniquely_up_noiseR_sig,
+                                       cluster4_uniquely_up_noiseR_sig)
 
-```{r}
+FJNR4_uniquely_up_noiseR_sig_sort <- FJNR4_uniquely_up_noiseR_sig[with(FJNR4_uniquely_up_noiseR_sig, order(top, FDR)), ]
+FJNR4_uniquely_up_noiseR_sig_sort_uniq <- FJNR4_uniquely_up_noiseR_sig_sort[unique(rownames(FJNR4_uniquely_up_noiseR_sig_sort)), ]
+
+# # de-select unannotated/ not well-characterised genes
+# deselected <- c("MTRNR1L12", "MTRNR2L8", "NPIPB12", "NPIPB4", "NPIPB3", "NPIPB13", "NPIPB11", "NPIPB15", "MALAT1")
+deselected <- c()
+FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected <- FJNR4_uniquely_up_noiseR_sig_sort_uniq[!(rownames(FJNR4_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
 saveRDS(
-  sce,
-  here("data", "SCEs", "C094_Pellicci_annotate.SCE.rds"),
+  FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_4_integrated.rds"),
   compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_4_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    "integrated",
+    paste0("cluster_4_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
+
+# top only + gene-of-interest
+best_set <- FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected[1:18, ]
 ```
 
-The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci_annotate.SCE.rds`](../data/SCEs/C094_Pellicci_annotate.SCE.rds)).
-This will be used in downstream analyses, e.g., differential expression analysis between conditions within each cluster and differential abundance analyses between conditions for each cluster.
+```{r heat-uniquely-up-logExp-cluster-4-integrated, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    # TODO: temp trick to deal with the row-colouring problem
+    cluster4.vs.1.2 = factor(ifelse(rownames(best_set) %in% rownames(F_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(J_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.2 = factor(ifelse(rownames(best_set) %in% rownames(N_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.1 = factor(ifelse(rownames(best_set) %in% rownames(R_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster4.vs.1.vs.2.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(cluster4_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
 
-# Additional information {.appendix}
+**Summary**: Cluster 4 did not have as many DE when pairwise-compared to the other clusters, except when compared to cluster 3.
+This may suggest that cluster 4 could represents an "interim development stage" that shared lots of transcriptomic fingerprints with the other clusters.
+Indeed, this goes in line with the fact that cluster 4 is enriched by cells from Thymic S3, which supposed to be formed from Thymic S2 (enriched in cluster 3) and will be developed into Blood S3 (that found mostly in cluster 1).
 
-The following are available on request:
+:::
 
-- Full CSV tables of any data presented.
-- PDF/PNG files of any static plots.
+::: {.panel}
+
+#### `Cluster_2_integrated` {.panel-name}
+
+```{r}
+############
+# cluster 2
+############
+
+chosen <- "2"
+
+# add description for the chosen cluster-group
+x <- "(S3-mix more Thymus)"
+
+# retain only significant markers (FDR<0.05) + keep only required output columns
+K_uniquely_up_noiseR_sig <- K_uniquely_up_noiseR[K_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+M_uniquely_up_noiseR_sig <- M_uniquely_up_noiseR[M_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+H_uniquely_up_noiseR_sig <- H_uniquely_up_noiseR[H_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster2_uniquely_up_noiseR_sig <- cluster2_uniquely_up_noiseR[cluster2_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+
+# add top column
+K_uniquely_up_noiseR_sig$top <- 1:nrow(K_uniquely_up_noiseR_sig)
+M_uniquely_up_noiseR_sig$top <- 1:nrow(M_uniquely_up_noiseR_sig)
+# TODO: fix error - exclude list from rbind2 if empty
+# H_uniquely_up_noiseR_sig$top <- 1:nrow(H_uniquely_up_noiseR_sig)
+# cluster2_uniquely_up_noiseR_sig$top <- 1:nrow(cluster2_uniquely_up_noiseR_sig)
+
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+KMH2_uniquely_up_noiseR_sig <- rbind2(K_uniquely_up_noiseR_sig,
+                                      M_uniquely_up_noiseR_sig,
+                                      H_uniquely_up_noiseR_sig,
+                                      cluster2_uniquely_up_noiseR_sig)
+
+KMH2_uniquely_up_noiseR_sig_sort <- KMH2_uniquely_up_noiseR_sig[with(KMH2_uniquely_up_noiseR_sig, order(top, FDR)), ]
+KMH2_uniquely_up_noiseR_sig_sort_uniq <- KMH2_uniquely_up_noiseR_sig_sort[unique(rownames(KMH2_uniquely_up_noiseR_sig_sort)), ]
+
+# # de-select unannotated/ not well-characterised genes
+deselected <- c()
+KMH2_uniquely_up_noiseR_sig_sort_uniq_selected <- KMH2_uniquely_up_noiseR_sig_sort_uniq[!(rownames(KMH2_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  KMH2_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_2_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    "integrated",
+    paste0("cluster_2_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = KMH2_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
+
+# top only + gene-of-interest
+best_set <- KMH2_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
+```
+
+```{r heat-uniquely-up-logExp-cluster-2-integrated, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    # TODO: temp trick to deal with the row-colouring problem
+    cluster2.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(K_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster2.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(M_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    # TODO: work out how to remove `fill` from `not_DE`
+    cluster2.vs.1 = factor(ifelse(rownames(best_set) %in% rownames(H_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE", "not DE")),
+    cluster2.vs.1.vs.3.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(cluster2_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE", "not DE")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+**Summary**: see `Cluster_1_integrated` summary about comment on this cluster.
+
+:::
+
+::: {.panel}
+
+#### `Cluster_1_integrated` {.panel-name}
+
+```{r}
+############
+# cluster 1
+############
+
+chosen <- "1"
+
+# add description for the chosen cluster-group
+x <- "(S3-mix more Blood)"
+
+# retain only significant markers (FDR<0.05) + keep only required output columns
+G_uniquely_up_noiseR_sig <- G_uniquely_up_noiseR[G_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+O_uniquely_up_noiseR_sig <- O_uniquely_up_noiseR[O_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+Q_uniquely_up_noiseR_sig <- Q_uniquely_up_noiseR[Q_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+cluster1_uniquely_up_noiseR_sig <- cluster1_uniquely_up_noiseR[cluster1_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
+
+# add top column
+G_uniquely_up_noiseR_sig$top <- 1:nrow(G_uniquely_up_noiseR_sig)
+O_uniquely_up_noiseR_sig$top <- 1:nrow(O_uniquely_up_noiseR_sig)
+Q_uniquely_up_noiseR_sig$top <- 1:nrow(Q_uniquely_up_noiseR_sig)
+cluster1_uniquely_up_noiseR_sig$top <- 1:nrow(cluster1_uniquely_up_noiseR_sig)
+
+# unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
+GOQ1_uniquely_up_noiseR_sig <- rbind2(G_uniquely_up_noiseR_sig,
+                                      O_uniquely_up_noiseR_sig,
+                                      Q_uniquely_up_noiseR_sig,
+                                      cluster1_uniquely_up_noiseR_sig)
+
+GOQ1_uniquely_up_noiseR_sig_sort <- GOQ1_uniquely_up_noiseR_sig[with(GOQ1_uniquely_up_noiseR_sig, order(top, FDR)), ]
+GOQ1_uniquely_up_noiseR_sig_sort_uniq <- GOQ1_uniquely_up_noiseR_sig_sort[unique(rownames(GOQ1_uniquely_up_noiseR_sig_sort)), ]
+
+# # de-select unannotated/ not well-characterised genes
+deselected <- c()
+GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected <- GOQ1_uniquely_up_noiseR_sig_sort_uniq[!(rownames(GOQ1_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
+
+# export DGE lists
+saveRDS(
+  GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected,
+  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_integrated.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+
+message("Writing 'uniquely_up (cluster_1_integrated)' marker genes to file.")
+gzout <- gzfile(
+  description = here(
+    "output",
+    "marker_genes",
+    "uniquely_up",
+    "integrated",
+    paste0("cluster_1_integrated",
+           ".uniquely_up.csv.gz")),
+  open = "wb")
+
+write.table(
+  x = GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("gene_ID"),
+  file = gzout,
+  sep = ",",
+  quote = FALSE,
+  row.names = FALSE,
+  col.names = TRUE)
+close(gzout)
+
+# top only + gene-of-interest
+best_set <- GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
+```
+
+```{r heat-uniquely-up-logExp-cluster-1-integrated, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    # TODO: temp trick to deal with the row-colouring problem
+    cluster1.vs.2 = factor(ifelse(rownames(best_set) %in% rownames(G_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster1.vs.3 = factor(ifelse(rownames(best_set) %in% rownames(O_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster1.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(Q_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    cluster1.vs.2.vs.3.vs.4 = factor(ifelse(rownames(best_set) %in% rownames(cluster1_uniquely_up_noiseR_sig), "DE", "not DE"), levels = c("DE")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+**Summary**: The next two clusters I would like to talk about is cluster 1 and 2 (Figure \@ref(fig:clusterplot-umap)).
+Cell-types/ -stages of cluster `1` and cluster `2` are highly similar as implied by their UMAP distribution. 
+When looked into the heatmap for both cluster `1` and `2`, the first thing that draw my particular attention is that both cluster 1 and 2 contains number of interferon- and interleukin-related genes (such as members of the Interferon Induced Transmembrane IFITM family, and of the interleukin-receptor family) and also the class I HLA genes (including HLA-A, B, C, E and F).
+
+Having said that these two clusters shared a number of similarities, they do show differences. 
+In terms of `tissue` and `stage`, both cluster `1` and `2` are enriched by `S3` cells and the only recognizable difference between the two clusters is that, cluster `2` seems to be `S3`-mix contains more `thymus` cells, whilst cluster 1 is a `S3`-mix as well but with more cells from `blood.`
+In terms of DE, cluster `1` still contain a handful of markers highly expressed in cluster 1, but not in cluster `2`. 
+This includes: CCL5, i.e. a chemokine that known to be involved in thymocyte trafficking [Oncotarget. 2017; 8:83-94] and capable to alter the coordinated maturation and migration of thymocytes [Cell Adhesion & Migration 2010 4:3, 382-390].
+EFHD2, a calcium binding adapter protein required for human T cell–mediated cytotoxicity [The Journal of Immunology, 2018, 201].
+GNLY is a component of cytotoxic granules that cytotoxic granules that can cause lipid degradation secreted by NK and T cells [Innate Immunity Vol 24, Issue 8, 2018, pp452-465].
+Last but not least is NKG7, which is a factor essential for cytotoxic degranulation and activation of proinflammatory responses triggered by T cells [Nature Immunology volume 21, pages 1139–1140 (2020)].
+
+:::
+
+::::::
+
+## Supplemental info
+
+**Comment**: We have no idea how well the CELSeq protocol could capture the expression of the T-cell-receptor component and the suggested known markers, i.e. TRDV2, TRGV9, may not be a good candidate for defining whether a cluster contains cells relevant to gamma-delta T cells.
+
+```{r}
+############################################
+# Sanity check (TRDV2 and TRGV9 expression)
+
+assay(sce, "log2cpm") <- edgeR::cpm(
+  counts(sce),
+  log = TRUE,
+  lib.size = colSums(counts(sce)))
+```
+
+```{r violin-trdv2-trgv9, fig.asp = 1, layout="l-body-outset"}
+plot_grid(
+  
+  plotExpression(
+    sce,
+    features = "TRDV2",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster",
+    other_fields = "stage") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster") +
+    facet_grid(~stage),
+  plotExpression(
+    sce,
+    features = "TRGV9",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster",
+    other_fields = "stage") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster") +
+    facet_grid(~stage),
+  ncol= 1,
+  align ="h"
+)
+```
 
 # Session info {.appendix}
-
-The analysis and this document were prepared using the following software:
 
 <summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
 <details>

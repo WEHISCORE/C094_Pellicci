@@ -2524,7 +2524,7 @@ saveRDS(
   here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_3_integrated)' marker genes to file.")
   gzout <- gzfile(
@@ -2532,6 +2532,7 @@ message("Writing 'uniquely_up (cluster_3_integrated)' marker genes to file.")
       "output",
       "marker_genes",
       "uniquely_up",
+      "integrated",
       paste0("cluster_3_integrated",
              ".uniquely_up.csv.gz")),
     open = "wb")
@@ -2640,7 +2641,7 @@ saveRDS(
   here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_4_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_4_integrated)' marker genes to file.")
 gzout <- gzfile(
@@ -2648,6 +2649,7 @@ gzout <- gzfile(
     "output",
     "marker_genes",
     "uniquely_up",
+    "integrated",
     paste0("cluster_4_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
@@ -2752,7 +2754,7 @@ saveRDS(
   here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_2_integrated)' marker genes to file.")
 gzout <- gzfile(
@@ -2760,6 +2762,7 @@ gzout <- gzfile(
     "output",
     "marker_genes",
     "uniquely_up",
+    "integrated",
     paste0("cluster_2_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
@@ -2863,7 +2866,7 @@ saveRDS(
   here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_1_integrated)' marker genes to file.")
 gzout <- gzfile(
@@ -2871,6 +2874,7 @@ gzout <- gzfile(
     "output",
     "marker_genes",
     "uniquely_up",
+    "integrated",
     paste0("cluster_1_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
