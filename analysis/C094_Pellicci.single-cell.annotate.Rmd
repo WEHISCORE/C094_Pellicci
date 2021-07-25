@@ -101,7 +101,6 @@ protein_coding_gene_set <- rownames(sce)[
 #              "TCF7", "SOX4", "LEF1", "CD3D", "CCR9", "BCL11B", "NREP" # cluster 3 selected unique markers
 # )
 # NOTE: to prevent bias and confusion of the gene above are DE to all cases, I decide to include only the QC genes, i.e. "CD4" and "KLBR1", in each heatmap
-interest <- c("KLRB1", "CD4")
 ```
 
 # Data overview
@@ -298,10 +297,10 @@ z <- c("KLRB1/CD161",
        cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- cluster1_uniquely_up_noiseR[union(rownames(cluster1_uniquely_up_noiseR)[1:25], interest),]
+best_set <- cluster1_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   sce,
@@ -378,10 +377,10 @@ z <- c("KLRB1/CD161",
        cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- cluster2_uniquely_up_noiseR[union(rownames(cluster2_uniquely_up_noiseR)[1:25], interest),]
+best_set <- cluster2_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   sce,
@@ -458,10 +457,10 @@ z <- c("KLRB1/CD161",
        cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- cluster3_uniquely_up_noiseR[union(rownames(cluster3_uniquely_up_noiseR)[1:25], interest),]
+best_set <- cluster3_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   sce,
@@ -538,10 +537,10 @@ z <- c("KLRB1/CD161",
        cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- cluster4_uniquely_up_noiseR[union(rownames(cluster4_uniquely_up_noiseR)[1:25], interest),]
+best_set <- cluster4_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   sce,
@@ -708,10 +707,10 @@ z <- c("KLRB1/CD161",
        A_uniquely_up_noiseR[which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- A_uniquely_up_noiseR[union(rownames(A_uniquely_up_noiseR)[1:25], interest),]
+best_set <- A_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1-2-4-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-2-4-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -785,10 +784,10 @@ z <- c("KLRB1/CD161",
        B_uniquely_up_noiseR[which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- B_uniquely_up_noiseR[union(rownames(B_uniquely_up_noiseR)[1:25], interest),]
+best_set <- B_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-3-vs-1-2-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-3-vs-1-2-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -939,10 +938,10 @@ z <- c("KLRB1/CD161",
        C_uniquely_up_noiseR[which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- C_uniquely_up_noiseR[union(rownames(C_uniquely_up_noiseR)[1:25], interest),]
+best_set <- C_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1-2-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-2-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1016,10 +1015,10 @@ z <- c("KLRB1/CD161",
        D_uniquely_up_noiseR[which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- D_uniquely_up_noiseR[union(rownames(D_uniquely_up_noiseR)[1:25], interest),]
+best_set <- D_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-3-vs-1-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-3-vs-1-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1170,10 +1169,10 @@ z <- c("KLRB1/CD161",
        E_uniquely_up_noiseR[which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- E_uniquely_up_noiseR[union(rownames(E_uniquely_up_noiseR)[1:25], interest),]
+best_set <- E_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1-2-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-2-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1247,10 +1246,10 @@ z <- c("KLRB1/CD161",
        F_uniquely_up_noiseR[which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- F_uniquely_up_noiseR[union(rownames(F_uniquely_up_noiseR)[1:25], interest),]
+best_set <- F_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-4-vs-1-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-4-vs-1-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1401,10 +1400,10 @@ z <- c("KLRB1/CD161",
        G_uniquely_up_noiseR[which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- G_uniquely_up_noiseR[union(rownames(G_uniquely_up_noiseR)[1:25], interest),]
+best_set <- G_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1478,10 +1477,10 @@ z <- c("KLRB1/CD161",
        H_uniquely_up_noiseR[which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- H_uniquely_up_noiseR[union(rownames(H_uniquely_up_noiseR)[1:25], interest),]
+best_set <- H_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-2-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-2-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1632,10 +1631,10 @@ z <- c("KLRB1/CD161",
        I_uniquely_up_noiseR[which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- I_uniquely_up_noiseR[union(rownames(I_uniquely_up_noiseR)[1:25], interest),]
+best_set <- I_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-3-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-3-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1709,10 +1708,10 @@ z <- c("KLRB1/CD161",
        J_uniquely_up_noiseR[which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- J_uniquely_up_noiseR[union(rownames(J_uniquely_up_noiseR)[1:25], interest),]
+best_set <- J_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-4-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-4-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1863,10 +1862,10 @@ z <- c("KLRB1/CD161",
        K_uniquely_up_noiseR[which(rownames(K_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- K_uniquely_up_noiseR[union(rownames(K_uniquely_up_noiseR)[1:25], interest),]
+best_set <- K_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-2-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-2-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -1940,10 +1939,10 @@ z <- c("KLRB1/CD161",
        L_uniquely_up_noiseR[which(rownames(L_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- L_uniquely_up_noiseR[union(rownames(L_uniquely_up_noiseR)[1:25], interest),]
+best_set <- L_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-3-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-3-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2094,10 +2093,10 @@ z <- c("KLRB1/CD161",
        M_uniquely_up_noiseR[which(rownames(M_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- M_uniquely_up_noiseR[union(rownames(M_uniquely_up_noiseR)[1:25], interest),]
+best_set <- M_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-2-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-2-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2171,10 +2170,10 @@ z <- c("KLRB1/CD161",
        N_uniquely_up_noiseR[which(rownames(N_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- N_uniquely_up_noiseR[union(rownames(N_uniquely_up_noiseR)[1:25], interest),]
+best_set <- N_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-4-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-4-vs-2, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2325,10 +2324,10 @@ z <- c("KLRB1/CD161",
        O_uniquely_up_noiseR[which(rownames(O_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- O_uniquely_up_noiseR[union(rownames(O_uniquely_up_noiseR)[1:25], interest),]
+best_set <- O_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-vs-3, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2402,10 +2401,10 @@ z <- c("KLRB1/CD161",
        P_uniquely_up_noiseR[which(rownames(P_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- P_uniquely_up_noiseR[union(rownames(P_uniquely_up_noiseR)[1:25], interest),]
+best_set <- P_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-3-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-3-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2556,10 +2555,10 @@ z <- c("KLRB1/CD161",
        Q_uniquely_up_noiseR[which(rownames(Q_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- Q_uniquely_up_noiseR[union(rownames(Q_uniquely_up_noiseR)[1:25], interest),]
+best_set <- Q_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-1-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-1-vs-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2633,10 +2632,10 @@ z <- c("KLRB1/CD161",
        R_uniquely_up_noiseR[which(rownames(R_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only + gene-of-interest
-best_set <- R_uniquely_up_noiseR[union(rownames(R_uniquely_up_noiseR)[1:25], interest),]
+best_set <- R_uniquely_up_noiseR[1:25, ]
 ```
 
-```{r heat-uniquely-up-logExp-cluster-4-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-uniquely-up-logExp-cluster-4-vs-1, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
 # heatmap
 plotHeatmap(
   cp,
@@ -2690,6 +2689,8 @@ DGE lists of these comparisons are available in [`output/marker_genes/uniquely_u
 :::
 
 ::::::
+
+## Cluster (selected pairwise comparisons - integrated)
 
 To have a comprehensive overview, the above analyses were summarized in the following heatmap per cluster:
 
@@ -2966,9 +2967,92 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-**Summary**: Cluster 4 did not have as many DE when pairwise-compared to the other clusters, except when compared to cluster 3.
-This may suggest that cluster 4 could represents an "interim development stage" that shared lots of transcriptomic fingerprints with the other clusters.
-Indeed, this goes in line with the fact that cluster 4 is enriched by cells from Thymic S3, which supposed to be formed from Thymic S2 (enriched in cluster 3) and will be developed into Blood S3 (that found mostly in cluster 1).
+**Summary**: Cluster `4` did not have as many DE when pairwise-compared to the other clusters, except when compared to cluster `3`.
+This may suggest that cluster `4` could represents an "interim development stage" that shared lots of transcriptomic fingerprints with the other clusters.
+Indeed, this goes in line with the fact that cluster `4` is enriched by cells from Thymic S3, which supposed to be formed from `Thymic S2` (enriched in cluster `3`) and will be developed into `Blood S3` (that found mostly in cluster `1`).
+
+In terms of marker genes, the only clear marker shown in this cluster is `MALAT1` (which is a long non-coding RNA highly and commonly variably expressed in different T cells; it also is known to be non-essential to the T cell development [RNA Biol. 2018; 15(12): 1477–1486)]).
+But notably, this cluster did have higher expression level of `KLRB1` than cluster `3`, indicating its `S3` identity. Moreover, this cluster also possesses marker such as `SYNE2` that is known to be expressed in gamma-delta T cells [Nat Immunol 13, 1000–1009 (2012)], supporting this cluster contains cells relevant to this study rather than being contaminant.
+
+Further, based on the fact that most of the cells of cluster `4` is originated from donor `2` and two of the markers, `MTRNR2L12` and `MTRNR2L8`, of cluster 4 are mitochondrial transcripts, this makes us wonder whether it could indicate a technical error and/or stress-induced mitochondrial expression sourced from samples of donor `2`.
+However, based on the QC plot broken down by `cluster` and `donor` (Figure \@ref(fig:qcplot-by-cluster-donor), we cannot spot any apparent difference between donor `2` samples and the rest in terms of both library size or mitochondrial transcript proportion, thus we rule out this hypothesis.
+
+An additional point-to-note is that we observe a number of `NPIPB`-related genes appears as markers for this cluster.
+`NPIPB` is supposed to a gene family with members of highly similar sequence.
+As we only perform 3'-tag sequencing and reads from any member of this gene family could potentially mis-aligned during the mapping step, which could in turn potentially lead to the variation of the gene expression we observed for cluster `4`.
+With this regard, we will need to be cautious and try not to make some critical statement or build any key hypothesis based on the NPIPB-related genes.
+
+```{r qcplot-by-cluster-donor, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes, number of expressed genes, and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", layout = "l-page", fig.asp = 0.7}
+plot_grid(
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = sum, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_y_log10(limits = c(1, NA)) +
+    annotation_logticks(
+      sides = "l",
+      short = unit(0.03, "cm"),
+      mid = unit(0.06, "cm"),
+      long = unit(0.09, "cm")),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = altexps_ERCC_percent, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    ylim(0, 100) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = detected, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_y_log10(limits = c(1, NA)) +
+    annotation_logticks(
+      sides = "l",
+      short = unit(0.03, "cm"),
+      mid = unit(0.06, "cm"),
+      long = unit(0.09, "cm")),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = subsets_Mito_percent, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    ylim(0, 100) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ncol = 2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 :::
 
@@ -3252,9 +3336,11 @@ plot_grid(
     exprs_values = "log2cpm",
     colour_by = "cluster",
     other_fields = "stage") +
+    ggtitle("Expression of TRDV2") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster") +
     facet_grid(~stage),
+  
   plotExpression(
     sce,
     features = "TRGV9",
@@ -3262,9 +3348,11 @@ plot_grid(
     exprs_values = "log2cpm",
     colour_by = "cluster",
     other_fields = "stage") +
+    ggtitle("Expression of TRGV9") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster") +
     facet_grid(~stage),
+  
   ncol= 1,
   align ="h"
 )

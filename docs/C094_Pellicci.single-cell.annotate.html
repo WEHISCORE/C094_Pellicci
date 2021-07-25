@@ -2161,6 +2161,7 @@ Supplementary files
 <li><a href="#using-pairwise-t-tests">Using pairwise <em>t</em>-tests</a></li>
 <li><a href="#cluster-1-vs.-2-vs.-3-vs.-4">Cluster <code>1</code> vs. <code>2</code> vs. <code>3</code> vs. <code>4</code></a></li>
 <li><a href="#cluster-selected-pairwise-comparisons">Cluster (selected pairwise comparisons)</a></li>
+<li><a href="#cluster-selected-pairwise-comparisons---integrated">Cluster (selected pairwise comparisons - integrated)</a></li>
 <li><a href="#supplemental-info">Supplemental info</a></li>
 </ul></li>
 <li><a href="#session-info">Session info</a></li>
@@ -2267,7 +2268,6 @@ Show code
 <span class='co'>#              "TCF7", "SOX4", "LEF1", "CD3D", "CCR9", "BCL11B", "NREP" # cluster 3 selected unique markers</span>
 <span class='co'># )</span>
 <span class='co'># NOTE: to prevent bias and confusion of the gene above are DE to all cases, I decide to include only the QC genes, i.e. "CD4" and "KLBR1", in each heatmap</span>
-<span class='va'>interest</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"KLRB1"</span>, <span class='st'>"CD4"</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
@@ -2505,7 +2505,7 @@ Show code
        <span class='va'>cluster1_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster1_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster1_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster1_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster1_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -2563,9 +2563,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title" width="624" />
 <p class="caption">
-Figure 3: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 3: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title
 </p>
 </div>
 </div>
@@ -2602,7 +2602,7 @@ Show code
        <span class='va'>cluster2_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster2_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster2_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster2_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster2_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -2660,9 +2660,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-2"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 4: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 4: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -2699,7 +2699,7 @@ Show code
        <span class='va'>cluster3_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster3_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster3_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster3_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster3_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -2757,9 +2757,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-3"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 5: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 5: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -2796,7 +2796,7 @@ Show code
        <span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -2854,9 +2854,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-4"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 6: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 6: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -2988,7 +2988,7 @@ Show code
        <span class='va'>A_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>A_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>A_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>A_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>A_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3049,9 +3049,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-2-4-vs-3"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-2-4-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-2-4-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 7: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 7: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3085,7 +3085,7 @@ Show code
        <span class='va'>B_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>B_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>B_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>B_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>B_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3146,9 +3146,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-3-vs-1-2-4"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-1-2-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-1-2-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 8: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 8: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3262,7 +3262,7 @@ Show code
        <span class='va'>C_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>C_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>C_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>C_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>C_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3323,9 +3323,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-2-vs-3"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-2-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-2-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 9: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 9: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3359,7 +3359,7 @@ Show code
        <span class='va'>D_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>D_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>D_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>D_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>D_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3420,9 +3420,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-3-vs-1-2"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-1-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-1-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 10: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 10: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3536,7 +3536,7 @@ Show code
        <span class='va'>E_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>E_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>E_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>E_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>E_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3597,9 +3597,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-2-vs-4"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-2-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-2-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 11: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 11: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3633,7 +3633,7 @@ Show code
        <span class='va'>F_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>F_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>F_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>F_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>F_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3694,9 +3694,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-4-vs-1-2"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-1-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-1-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 12: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 12: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3810,7 +3810,7 @@ Show code
        <span class='va'>G_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>G_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>G_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>G_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>G_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3871,9 +3871,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-vs-2"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-vs-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-vs-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 13: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 13: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -3907,7 +3907,7 @@ Show code
        <span class='va'>H_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>H_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>H_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>H_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>H_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -3968,9 +3968,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-2-vs-1"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-vs-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-vs-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 14: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 14: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4084,7 +4084,7 @@ Show code
        <span class='va'>I_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>I_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>I_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>I_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>I_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4145,9 +4145,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-3-vs-4"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 15: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 15: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4181,7 +4181,7 @@ Show code
        <span class='va'>J_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>J_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>J_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>J_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>J_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4242,9 +4242,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-4-vs-3"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 16: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 16: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4358,7 +4358,7 @@ Show code
        <span class='va'>K_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>K_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>K_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>K_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>K_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4419,9 +4419,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-2-vs-3"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 17: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 17: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4455,7 +4455,7 @@ Show code
        <span class='va'>L_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>L_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>L_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>L_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>L_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4516,9 +4516,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-3-vs-2"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 18: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 18: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4632,7 +4632,7 @@ Show code
        <span class='va'>M_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>M_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>M_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>M_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>M_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4693,9 +4693,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-2-vs-4"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 19: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 19: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4729,7 +4729,7 @@ Show code
        <span class='va'>N_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>N_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>N_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>N_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>N_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4790,9 +4790,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-4-vs-2"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-2-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 20: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 20: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -4906,7 +4906,7 @@ Show code
        <span class='va'>O_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>O_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>O_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>O_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>O_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -4967,9 +4967,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-vs-3"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-vs-3-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 21: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 21: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -5003,7 +5003,7 @@ Show code
        <span class='va'>P_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>P_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>P_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>P_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>P_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -5064,9 +5064,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-3-vs-1"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-3-vs-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 22: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 22: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -5180,7 +5180,7 @@ Show code
        <span class='va'>Q_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>Q_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>Q_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>Q_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>Q_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -5241,9 +5241,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-vs-4"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-vs-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 23: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 23: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
@@ -5277,7 +5277,7 @@ Show code
        <span class='va'>R_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>R_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
 
 <span class='co'># top25 only + gene-of-interest</span>
-<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>R_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://generics.r-lib.org/reference/setops.html'>union</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>R_uniquely_up_noiseR</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span>, <span class='va'>interest</span><span class='op'>)</span>,<span class='op'>]</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>R_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
 </code></pre>
 </div>
 </details>
@@ -5338,15 +5338,16 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-4-vs-1"></span>
-<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-4-vs-1-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
 <p class="caption">
-Figure 24: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 24: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
 </p>
 </div>
 </div>
 <p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_vs_4/"><code>output/marker_genes/uniquely_up/cluster_1_vs_4/</code></a>.</p>
 </section>
 </div>
+<h2 id="cluster-selected-pairwise-comparisons---integrated">Cluster (selected pairwise comparisons - integrated)</h2>
 <p>To have a comprehensive overview, the above analyses were summarized in the following heatmap per cluster:</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -5653,7 +5654,79 @@ Figure 26: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p><strong>Summary</strong>: Cluster 4 did not have as many DE when pairwise-compared to the other clusters, except when compared to cluster 3. This may suggest that cluster 4 could represents an “interim development stage” that shared lots of transcriptomic fingerprints with the other clusters. Indeed, this goes in line with the fact that cluster 4 is enriched by cells from Thymic S3, which supposed to be formed from Thymic S2 (enriched in cluster 3) and will be developed into Blood S3 (that found mostly in cluster 1).</p>
+<p><strong>Summary</strong>: Cluster <code>4</code> did not have as many DE when pairwise-compared to the other clusters, except when compared to cluster <code>3</code>. This may suggest that cluster <code>4</code> could represents an “interim development stage” that shared lots of transcriptomic fingerprints with the other clusters. Indeed, this goes in line with the fact that cluster <code>4</code> is enriched by cells from Thymic S3, which supposed to be formed from <code>Thymic S2</code> (enriched in cluster <code>3</code>) and will be developed into <code>Blood S3</code> (that found mostly in cluster <code>1</code>).</p>
+<p>In terms of marker genes, the only clear marker shown in this cluster is <code>MALAT1</code> (which is a long non-coding RNA highly and commonly variably expressed in different T cells; it also is known to be non-essential to the T cell development [RNA Biol. 2018; 15(12): 1477–1486)]). But notably, this cluster did have higher expression level of <code>KLRB1</code> than cluster <code>3</code>, indicating its <code>S3</code> identity. Moreover, this cluster also possesses marker such as <code>SYNE2</code> that is known to be expressed in gamma-delta T cells [Nat Immunol 13, 1000–1009 (2012)], supporting this cluster contains cells relevant to this study rather than being contaminant.</p>
+<p>Further, based on the fact that most of the cells of cluster <code>4</code> is originated from donor <code>2</code> and two of the markers, <code>MTRNR2L12</code> and <code>MTRNR2L8</code>, of cluster 4 are mitochondrial transcripts, this makes us wonder whether it could indicate a technical error and/or stress-induced mitochondrial expression sourced from samples of donor <code>2</code>. However, based on the QC plot broken down by <code>cluster</code> and <code>donor</code> (Figure <a href="#fig:qcplot-by-cluster-donor">27</a>, we cannot spot any apparent difference between donor <code>2</code> samples and the rest in terms of both library size or mitochondrial transcript proportion, thus we rule out this hypothesis.</p>
+<p>An additional point-to-note is that we observe a number of <code>NPIPB</code>-related genes appears as markers for this cluster. <code>NPIPB</code> is supposed to a gene family with members of highly similar sequence. As we only perform 3’-tag sequencing and reads from any member of this gene family could potentially mis-aligned during the mapping step, which could in turn potentially lead to the variation of the gene expression we observed for cluster <code>4</code>. With this regard, we will need to be cautious and try not to make some critical statement or build any key hypothesis based on the NPIPB-related genes.</p>
+<div class="layout-chunk" data-layout="l-page">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://wilkelab.org/cowplot/reference/plot_grid.html'>plot_grid</a></span><span class='op'>(</span>
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>sum</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_continuous.html'>scale_y_log10</a></span><span class='op'>(</span>limits <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>, <span class='cn'>NA</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/annotation_logticks.html'>annotation_logticks</a></span><span class='op'>(</span>
+      sides <span class='op'>=</span> <span class='st'>"l"</span>,
+      short <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grid/unit.html'>unit</a></span><span class='op'>(</span><span class='fl'>0.03</span>, <span class='st'>"cm"</span><span class='op'>)</span>,
+      mid <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grid/unit.html'>unit</a></span><span class='op'>(</span><span class='fl'>0.06</span>, <span class='st'>"cm"</span><span class='op'>)</span>,
+      long <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grid/unit.html'>unit</a></span><span class='op'>(</span><span class='fl'>0.09</span>, <span class='st'>"cm"</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>altexps_ERCC_percent</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/lims.html'>ylim</a></span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>100</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>detected</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_continuous.html'>scale_y_log10</a></span><span class='op'>(</span>limits <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>, <span class='cn'>NA</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/annotation_logticks.html'>annotation_logticks</a></span><span class='op'>(</span>
+      sides <span class='op'>=</span> <span class='st'>"l"</span>,
+      short <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grid/unit.html'>unit</a></span><span class='op'>(</span><span class='fl'>0.03</span>, <span class='st'>"cm"</span><span class='op'>)</span>,
+      mid <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grid/unit.html'>unit</a></span><span class='op'>(</span><span class='fl'>0.06</span>, <span class='st'>"cm"</span><span class='op'>)</span>,
+      long <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grid/unit.html'>unit</a></span><span class='op'>(</span><span class='fl'>0.09</span>, <span class='st'>"cm"</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>subsets_Mito_percent</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/lims.html'>ylim</a></span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>100</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  ncol <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:qcplot-by-cluster-donor"></span>
+<img src="C094_Pellicci.single-cell.annotate_files/qcplot-by-cluster-donor-1.png" alt="Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes, number of expressed genes, and proportion of reads mapped to spike-in transcripts or mitochondrial genes." width="624" />
+<p class="caption">
+Figure 27: Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes, number of expressed genes, and proportion of reads mapped to spike-in transcripts or mitochondrial genes.
+</p>
+</div>
+</div>
 </section>
 <section id="cluster_2_integrated" class="panel-name panel">
 <h4 class="panel-name"><code>Cluster_2_integrated</code></h4>
@@ -5788,7 +5861,7 @@ Show code
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-2-integrated"></span>
 <img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-2-integrated-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 27: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 28: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -5925,7 +5998,7 @@ Show code
 <div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-1-integrated"></span>
 <img src="C094_Pellicci.single-cell.annotate_files/heat-uniquely-up-logExp-cluster-1-integrated-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
 <p class="caption">
-Figure 28: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+Figure 29: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
 </div>
@@ -5967,9 +6040,11 @@ Show code
     exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
     colour_by <span class='op'>=</span> <span class='st'>"cluster"</span>,
     other_fields <span class='op'>=</span> <span class='st'>"stage"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ggtitle</a></span><span class='op'>(</span><span class='st'>"Expression of TRDV2"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/facet_grid.html'>facet_grid</a></span><span class='op'>(</span><span class='op'>~</span><span class='va'>stage</span><span class='op'>)</span>,
+  
   <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
     <span class='va'>sce</span>,
     features <span class='op'>=</span> <span class='st'>"TRGV9"</span>,
@@ -5977,9 +6052,11 @@ Show code
     exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
     colour_by <span class='op'>=</span> <span class='st'>"cluster"</span>,
     other_fields <span class='op'>=</span> <span class='st'>"stage"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ggtitle</a></span><span class='op'>(</span><span class='st'>"Expression of TRGV9"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/facet_grid.html'>facet_grid</a></span><span class='op'>(</span><span class='op'>~</span><span class='va'>stage</span><span class='op'>)</span>,
+  
   ncol<span class='op'>=</span> <span class='fl'>1</span>,
   align <span class='op'>=</span><span class='st'>"h"</span>
 <span class='op'>)</span>
@@ -6083,13 +6160,13 @@ Show code
  P jsonlite               1.7.2    2020-12-09 [?]
    knitr                  1.33     2021-04-24 [1]
  P labeling               0.4.2    2020-10-20 [?]
-   lattice                0.20-41  2020-04-02 [2]
+ P lattice                0.20-41  2020-04-02 [3]
  P lifecycle              1.0.0    2021-02-15 [?]
  P limma                * 3.46.0   2020-10-27 [?]
  P locfit                 1.5-9.4  2020-03-25 [?]
  P lubridate              1.7.10   2021-02-26 [?]
  P magrittr             * 2.0.1    2020-11-17 [?]
-   Matrix                 1.2-18   2019-11-27 [2]
+ P Matrix                 1.2-18   2019-11-27 [3]
  P MatrixGenerics       * 1.2.1    2021-01-30 [?]
  P matrixStats          * 0.58.0   2021-01-29 [?]
  P memoise                2.0.0    2021-01-26 [?]
@@ -6125,7 +6202,7 @@ Show code
    stringi                1.7.3    2021-07-16 [1]
  P stringr                1.4.0    2019-02-10 [?]
  P SummarizedExperiment * 1.20.0   2020-10-27 [?]
-   survival               3.2-7    2020-09-28 [2]
+ P survival               3.2-7    2020-09-28 [3]
  P tibble                 3.1.0    2021-02-25 [?]
  P tidyr                * 1.1.3    2021-03-03 [?]
  P tidyselect             1.1.0    2020-05-11 [?]
@@ -6270,7 +6347,8 @@ Show code
  Bioconductor                            
 
 [1] /stornext/Home/data/allstaff/h/ho.w/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
-[2] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
+[2] /tmp/Rtmpdx7FwB/renv-system-library
+[3] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
 
  P ── Loaded and on-disk path mismatch.</code></pre>
 </div>
