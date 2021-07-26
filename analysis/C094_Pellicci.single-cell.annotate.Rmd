@@ -3038,22 +3038,6 @@ plot_grid(
   ncol = 2)
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 :::
 
 ::: {.panel}
@@ -3311,6 +3295,8 @@ Last but not least is NKG7, which is a factor essential for cytotoxic degranulat
 :::
 
 ::::::
+
+DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/integrated/`](..output/marker_genes/uniquely_up/integrated/).
 
 ## Supplemental info
 
