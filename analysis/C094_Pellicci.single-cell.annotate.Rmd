@@ -3280,8 +3280,8 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-**Summary**: The next two clusters I would like to talk about is cluster 1 and 2 (Figure \@ref(fig:clusterplot-umap)).
-Cell-types/ -stages of cluster `1` and cluster `2` are highly similar as implied by their UMAP distribution. 
+**Summary**: The next two clusters I would like to talk about is cluster 1 and 2.
+Cell-types/ -stages of cluster `1` and cluster `2` are highly similar as implied by their UMAP distribution (Figure \@ref(fig:clusterplot-umap)). 
 When looked into the heatmap for both cluster `1` and `2`, the first thing that draw my particular attention is that both cluster 1 and 2 contains number of interferon- and interleukin-related genes (such as members of the Interferon Induced Transmembrane IFITM family, and of the interleukin-receptor family) and also the class I HLA genes (including HLA-A, B, C, E and F).
 
 Having said that these two clusters shared a number of similarities, they do show differences. 
