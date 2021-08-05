@@ -96,7 +96,6 @@ We start from the preprocessed *SingleCellExperiment* object created in ['Prepro
 
 ```{r}
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.preprocessed.SCE.rds"))
-
 # Some useful colours
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
@@ -118,14 +117,12 @@ stage_colours <- setNames(
   unique(sce$colours$stage_colours),
   unique(names(sce$colours$stage_colours)))
 stage_colours <- stage_colours[levels(sce$stage)]
-
 # also define group (i.e. tissue.stage)
 sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
 group_colours <- setNames(
   palette.colors(nlevels(sce$group), "Paired"),
   levels(sce$group))
 sce$colours$group_colours <- group_colours[sce$group]
-
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -167,49 +164,42 @@ p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = sample), size = 0.25) +
   scale_colour_manual(values = sample_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = stage), size = 0.25) +
   scale_colour_manual(values = stage_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = plate_number), size = 0.25) +
   scale_colour_manual(values = plate_number_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = tissue), size = 0.25) +
   scale_colour_manual(values = tissue_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = donor), size = 0.25) +
   scale_colour_manual(values = donor_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = group), size = 0.25) +
   scale_colour_manual(values = group_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
@@ -221,7 +211,6 @@ p1 <- ggcells(sce) +
   theme_cowplot(font_size = 8) +
   scale_fill_manual(values = cluster_colours) +
   geom_text(stat='count', aes(x = cluster, label=..count..), hjust=1.5, size=2)
-
 p2 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = sample),
@@ -230,7 +219,6 @@ p2 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = sample_colours) +
   theme_cowplot(font_size = 8)
-
 p3 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = stage),
@@ -239,7 +227,6 @@ p3 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
-
 p4 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = plate_number),
@@ -248,7 +235,6 @@ p4 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
-
 p5 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = tissue),
@@ -257,7 +243,6 @@ p5 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
-
 p6 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = donor),
@@ -266,7 +251,6 @@ p6 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
-
 p7 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = group),
@@ -275,7 +259,6 @@ p7 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
-
 (p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
 ```
 
@@ -392,14 +375,11 @@ However, the `mi.gdT_vs_Mono` marker genes are also expressed in `Plasmablasts` 
 # NOTE: Have to remove column names from MI to avoid an error.
 tmp <- mi
 colnames(tmp) <- seq_len(ncol(tmp))
-
 # select only the annotation used in this dataset
 tmp <- tmp[,tmp$label.fine==levels(sce$label_cluster_fine)]
-
 # specify a more contrasting colour than default
 # TODO: `row_annotation_colors` seems still not able to pass the colours to the plotHeatmap function
 markers_colours <- setNames(c("red", "green"), c("mi.Mono_vs_gdT", "mi.gdT_vs_Mono"))
-
 plotHeatmap(
   tmp,
   features = markers,
@@ -425,13 +405,11 @@ Although the other three clusters labelled as `Vd2 gd T cells` do not give a ver
 Therefore, it suggests the likelihood that the cells in cluster `5` could really be the `intermediate monocyte` and less likely be the `Vd2 gd T cells`.
 
 ```{r test-mi-mono-and-gdT-markers, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for selected marker genes between the `Intermediate monocytes` and `Vd2 gd T cells` labels. Each column is a sample, each row a gene. For legibility, only a random 10% of non-`Intermediate monocytes` cells are shown.", fig.asp = 1.1}
-
 tmp <- logNormCounts(
   sumCountsAcrossCells(
     sce,
     ids = colData(sce)[, c("cluster", "label_cluster_fine")],
     subset_row = markers), exprs_values = 1)
-
 plotHeatmap(
   tmp,
   features = markers,
@@ -475,7 +453,6 @@ The heatmaps below highlight the top-50 genes for cluster `5`.
 ```{r heatmap-unique-cluster-5, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for cluster-specific marker with FDR <0.05. Each column is a cell, each row a gene. For legibility", fig.asp = 1.25}
 lab <- "5"
 m <- rownames(cluster_markers[[lab]])[cluster_markers[[lab]]$FDR < 0.05]
-
 plotHeatmap(
     object = sce,
     features = m,
@@ -506,12 +483,10 @@ We look for genes that are specifically upregulated in cluster `1` compared to a
 The heatmaps below highlight the top-50 genes for cluster `1`.
 
 ```{r heatmap-unique-cluster-1, fig.wide = TRUE, fig.cap = "Heatmap of log-expression values in our dataset at the cell-level for cluster-specific marker with FDR <0.05. Each column is a cell, each row a gene. For legibility", fig.asp = 1.25}
-
 lab <- "1"
 lab_markers <- rownames(cluster_markers[[lab]])[cluster_markers[[lab]]$FDR < 0.05]
 # NOTE: Select top-50 markers for plotting.
 m <- head(lab_markers, 50)
-
 plotHeatmap(
     object = sce,
     features = m,
@@ -538,7 +513,6 @@ As a result, this may drive the grouping of the cells between thymus cells and t
 
 ```{r heatmap-unique-focused-cluster-1}
 sce1 <- sce[, (sce$cluster == "1") | (sce$cluster == "2" & sce$sample == "Thymus 2" | sce$cluster == "2" & sce$sample == "Thymus 3" )]
-
 lab <- "1"
 lab_markers <- rownames(cluster_markers[[lab]])[cluster_markers[[lab]]$FDR < 0.05]
 # NOTE: Select top-50 markers for plotting.
@@ -592,15 +566,12 @@ The cell line alone, unfortunately, seems not be sufficient to help with the bat
 
 ```{r, results = "hide"}
 tmp <- sce
-
 tmp$batch <- tmp$plate_number
 var_fit <- modelGeneVarWithSpikes(tmp, "ERCC", block = tmp$batch)
 hvg <- getTopHVGs(var_fit, var.threshold = 0)
 hvg <- setdiff(hvg, c(ribo_set, mito_set, pseudogene_set))
-
 library(batchelor)
 set.seed(1819)
-
 # manual merge 
 # NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
 mnn_out_0 <- fastMNN(
@@ -612,9 +583,7 @@ mnn_out_0 <- fastMNN(
   merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
   restrict = list(tmp$tissue == "SKW3"), 
   subset.row = hvg)
-
 reducedDim(tmp, "corrected") <- reducedDim(mnn_out_0, "corrected")
-
 # generate UMAP
 set.seed(11901)
 tmp <- runUMAP(tmp, dimred = "corrected", name = "UMAP_corrected")
@@ -623,9 +592,7 @@ tmp <- runUMAP(tmp, dimred = "corrected", name = "UMAP_corrected")
 ```{r umap-plate-number-cell-line-guided-MNN, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
 umap_df <- makePerCellDF(tmp)
 bg <- dplyr::select(umap_df, -plate_number)
-
 plot_grid(
-
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
@@ -637,7 +604,6 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   facet_wrap(~plate_number, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
@@ -649,7 +615,6 @@ ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   facet_wrap(~plate_number, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ncol= 2,
 align ="h"
 )
@@ -659,7 +624,7 @@ Notably, the `SKW3` cell line also seems to affect the grouping of some of the s
 
 **NOTE**: Taken all of these evidences together, we decide to remove the `Cell line` proceed the analyses with only the sample cells.
 Also, after our online discussion with Dan and Stuart on 30 June 2021, we confirmed that cells in cluster `5` are contaminants.
-Together with the cells with `Unknown` stage, all should be removed from the the subsequent analyses as well.
+<!-- Together with the cells with `Unknown` stage, all should be removed from the the subsequent analyses as well. -->
 
 ```{r}
 # remove `cell line` and cells from cluster

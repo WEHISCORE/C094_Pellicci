@@ -52,10 +52,6 @@ donor_colours <- setNames(
   unique(sce$colours$donor_colours),
   unique(names(sce$colours$donor_colours)))
 donor_colours <- donor_colours[levels(sce$donor)]
-sample_colours <- setNames(
-  unique(sce$colours$sample_colours),
-  unique(names(sce$colours$sample_colours)))
-sample_colours <- sample_colours[levels(sce$sample)]
 stage_colours <- setNames(
   unique(sce$colours$stage_colours),
   unique(names(sce$colours$stage_colours)))
@@ -87,7 +83,7 @@ protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
-### Re-processing (whole cell)
+# Re-processing (whole cell)
 
 We re-process the cells from *thymus only* remained in the dataset.
 
@@ -135,48 +131,41 @@ p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   ylab("Dimension 2")
 
 p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = sample), size = 0.25) +
-  scale_colour_manual(values = sample_colours) + 
-  theme_cowplot(font_size = 8) + 
-  xlab("Dimension 1") + 
-  ylab("Dimension 2")
-
-p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = stage), size = 0.25) +
   scale_colour_manual(values = stage_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = plate_number), size = 0.25) +
   scale_colour_manual(values = plate_number_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = tissue), size = 0.25) +
   scale_colour_manual(values = tissue_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = donor), size = 0.25) +
   scale_colour_manual(values = donor_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-p7 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
+p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = group), size = 0.25) +
   scale_colour_manual(values = group_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
+(p1 | p2) / (p3 | p4) / (p5 | p6) 
 ```
 
 ```{r cluster-barplot-reprocessed, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
@@ -190,15 +179,6 @@ p1 <- ggcells(sce) +
 
 p2 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = sample),
-    position = position_fill(reverse = TRUE)) +
-  coord_flip() +
-  ylab("Frequency") +
-  scale_fill_manual(values = sample_colours) +
-  theme_cowplot(font_size = 8)
-
-p3 <- ggcells(sce) + 
-  geom_bar(
     aes(x = cluster, fill = stage),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
@@ -206,7 +186,7 @@ p3 <- ggcells(sce) +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
 
-p4 <- ggcells(sce) + 
+p3 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = plate_number),
     position = position_fill(reverse = TRUE)) +
@@ -215,7 +195,7 @@ p4 <- ggcells(sce) +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
 
-p5 <- ggcells(sce) + 
+p4 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = tissue),
     position = position_fill(reverse = TRUE)) +
@@ -224,7 +204,7 @@ p5 <- ggcells(sce) +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
 
-p6 <- ggcells(sce) + 
+p5 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = donor),
     position = position_fill(reverse = TRUE)) +
@@ -233,7 +213,7 @@ p6 <- ggcells(sce) +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
 
-p7 <- ggcells(sce) + 
+p6 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = group),
     position = position_fill(reverse = TRUE)) +
@@ -242,31 +222,13 @@ p7 <- ggcells(sce) +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
+(p1 | p2) / (p3 | p4) / (p5 | p6)
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 *NOTE* for the unmerged data:
-  
-  - there is one big population, which is subdivided into four clusters (i.e. cluster `1`, `2`, `3`, and `4`)
-  - cells in cluster `1`, `3`, and `4` are mostly in `S3`, whilst cells in cluster `2` are mostly be mixture of `S1`, `S2`, and small proportion of `S3` 
+  - there are two big populations, which subdivided into two and three clusters, respectively;
+  - cells in cluster `1` and `2` are mostly in `S1` and `S2`;
+  - cells in cluster `3`, `4` and `5` are mostly in `S3`;
   - plate-specific batch effect seems prominent without MNN correction
 
 # Data integration
@@ -287,6 +249,63 @@ We will use the Mutual Nearest Neighbours (MNN) approach of @haghverdi2018batch,
 The MNN approach does not rely on pre-defined or equal population compositions across batches, only requiring that a subset of the population be shared between batches.
 
 ## MNN correction
+
+```{r barplot-breakdown-plate-number, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+p1 <- ggcells(sce) +
+  geom_bar(aes(x = plate_number, fill = plate_number)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 8) +
+  scale_fill_manual(values = plate_number_colours) +
+  geom_text(stat='count', aes(x = plate_number, label=..count..), hjust=1.5, size=2)
+
+p2 <- ggcells(sce) +
+  geom_bar(
+    aes(x = plate_number, fill = stage),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = stage_colours) +
+  theme_cowplot(font_size = 8)
+
+p3 <- ggcells(sce) +
+  geom_bar(
+    aes(x = plate_number, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = plate_number_colours) +
+  theme_cowplot(font_size = 8)
+
+p4 <- ggcells(sce) +
+  geom_bar(
+    aes(x = plate_number, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 8)
+
+p5 <- ggcells(sce) +
+  geom_bar(
+    aes(x = plate_number, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = donor_colours) +
+  theme_cowplot(font_size = 8)
+
+p6 <- ggcells(sce) +
+  geom_bar(
+    aes(x = plate_number, fill = group),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = group_colours) +
+  theme_cowplot(font_size = 8)
+
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+```
 
 We treat each plate as a batch and also test to manually provide the merge order.
 
@@ -348,48 +367,42 @@ p1 <- plotReducedDim(sce, "UMAP", colour_by = "plate_number", theme_size = 7, po
 p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
 
-p3 <- plotReducedDim(sce, "UMAP", colour_by = "sample", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_colours, name = "sample")
-p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_colours, name = "sample")
-
-p5 <- plotReducedDim(sce, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+p3 <- plotReducedDim(sce, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours, name = "cluster")
-p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours, name = "cluster")
 
-p7 <- plotReducedDim(sce, "UMAP", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
+p5 <- plotReducedDim(sce, "UMAP", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = stage_colours, name = "stage")
-p8 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = stage_colours, name = "stage")
 
-p9 <- plotReducedDim(sce, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+p7 <- plotReducedDim(sce, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = tissue_colours, name = "tissue")
-p10 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+p8 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = tissue_colours, name = "tissue")
 
-p11 <- plotReducedDim(sce, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+p9 <- plotReducedDim(sce, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
-p12 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+p10 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
 
-p13 <- plotReducedDim(sce, "UMAP", colour_by = "group", theme_size = 7, point_size = 0.2) + 
+p11 <- plotReducedDim(sce, "UMAP", colour_by = "group", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = group_colours, name = "group")
-p14 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
+p12 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = group_colours, name = "group")
 
 p1 + p2 + p3 + p4 + 
   p5 + p6 + p7 + p8 + 
   p9 + p10 + p11 + p12 + 
-  p13 + p14 + 
   plot_layout(ncol = 2, guides = "collect")
 ```
 
-To get an insight, here we focus on the uncorrected and the corrected data by the *manual merge*, then break down the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number-vs)), `stage` (Figure \@ref(fig:umap-post-hoc-sample-gate-vs)), and `tissue` (Figure \@ref(fig:umap-tissue-vs)).
+To get an insight, here we focus on the uncorrected and the corrected data by the *manual merge*, then break down the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number-vs)) and `stage` (Figure \@ref(fig:umap-stage-vs)).
 
 From the perspective of correcting the batch effect, the MNN correction can effectively alleviate the plate-specific grouping of cells (Figure \@ref(fig:umap-plate-number-vs)).
 
-From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the "shifting" of the transcriptomic stages of cells `P6` to `P7`, then `P8` (Figure \@ref(fig:umap-post-hoc-sample-gate-vs)); (ii) `Blood` contains cells mostly at `P8` only, whilst `Thymus` contains cells at all three phases, i.e. `P6`, `P7` and `P8` (Figure \@ref(fig:umap-tissue-vs)).
+From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe the "shifting" of the transcriptomic stages of cells `P6` to `P7`, then `P8` (Figure \@ref(fig:umap-stage-vs)).
 
 ```{r umap-plate-number-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
 
@@ -427,7 +440,7 @@ align ="h"
 )
 ```
 
-```{r umap-post-hoc-sample-gate-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `stage` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
+```{r umap-stage-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `stage` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
 
 umap_df <- makePerCellDF(sce)
 bg <- dplyr::select(umap_df, -stage)
@@ -471,41 +484,6 @@ align ="h"
 )
 ```
 
-```{r umap-tissue-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 2/3, layout="l-body"}
-umap_df <- makePerCellDF(sce)
-bg <- dplyr::select(umap_df, -tissue)
-
-plot_grid(
-
-ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = tissue_colours, name = "tissue") +
-  scale_colour_manual(values = tissue_colours, name = "tissue") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~tissue, ncol = 2) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
-  guides(colour = FALSE),
-
-ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = tissue_colours, name = "tissue") +
-  scale_colour_manual(values = tissue_colours, name = "tissue") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~tissue, ncol = 2) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
-  guides(colour = FALSE),
-
-ncol= 2,
-align ="h"
-)
-```
-
 Taken altogether, we conclude that the data corrected by the *manual merge* as the best possible merge order for data integration of this dataset and proceed.
 
 ```{r}
@@ -532,25 +510,22 @@ To sumup, there are `r nlevels(sce$cluster)` clusters detected, shown on the UMA
 p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours, name = "cluster")
 
-p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "sample", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = sample_colours, name = "sample")
-
-p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = stage_colours, name = "stage")
 
-p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
 
-p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = tissue_colours, name = "tissue")
 
-p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
 
-p7 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = group_colours, name = "group")
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
+(p1 | p2) / (p3 | p4) / (p5 | p6) 
 ```
 
 ```{r cluster-barplot-merged, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
@@ -564,15 +539,6 @@ p1 <- ggcells(sce) +
 
 p2 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = sample),
-    position = position_fill(reverse = TRUE)) +
-  coord_flip() +
-  ylab("Frequency") +
-  scale_fill_manual(values = sample_colours) +
-  theme_cowplot(font_size = 8)
-
-p3 <- ggcells(sce) + 
-  geom_bar(
     aes(x = cluster, fill = stage),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
@@ -580,7 +546,7 @@ p3 <- ggcells(sce) +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
 
-p4 <- ggcells(sce) + 
+p3 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = plate_number),
     position = position_fill(reverse = TRUE)) +
@@ -589,7 +555,7 @@ p4 <- ggcells(sce) +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
 
-p5 <- ggcells(sce) + 
+p4 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = tissue),
     position = position_fill(reverse = TRUE)) +
@@ -598,7 +564,7 @@ p5 <- ggcells(sce) +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
 
-p6 <- ggcells(sce) + 
+p5 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = donor),
     position = position_fill(reverse = TRUE)) +
@@ -607,7 +573,7 @@ p6 <- ggcells(sce) +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
 
-p7 <- ggcells(sce) + 
+p6 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = group),
     position = position_fill(reverse = TRUE)) +
@@ -616,7 +582,7 @@ p7 <- ggcells(sce) +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) / (p7 | plot_spacer()) 
+(p1 | p2) / (p3 | p4) / (p5 | p6)
 ```
 
 # Concluding remarks
@@ -624,11 +590,11 @@ p7 <- ggcells(sce) +
 ```{r}
 saveRDS(
   sce,
-  here("data", "SCEs", "C094_Pellicci.single-cell.merge.whole_cell.SCE.rds"),
+  here("data", "SCEs", "C094_Pellicci.single-cell.merge.thymus_only.SCE.rds"),
   compress = "xz")
 ```
 
-The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.single-cell.merge.whole_cell.SCE.rds`](../data/SCEs/C094_Pellicci.single-cell.merge.whole_cell.SCE.rds)).
+The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.single-cell.merge.thymus_only.SCE.rds`](../data/SCEs/C094_Pellicci.single-cell.merge.thymus_only.SCE.rds)).
 This will be used in downstream analyses, e.g., identifying cluster marker genes and refining the cell labels.
 
 # Additional information {.appendix}
@@ -648,3 +614,4 @@ sessioninfo::session_info()
 ```
 
 </details>
+
