@@ -6,7 +6,7 @@
 library(here)
 library(SingleCellExperiment)
 
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.cells_selected.SCE.rds"))
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.merged.whole_cell.SCE.rds"))
 
 # pre-create directories for saving export, or error (dir not exists)
 dir.create(here("data", "marker_genes"), recursive = TRUE)

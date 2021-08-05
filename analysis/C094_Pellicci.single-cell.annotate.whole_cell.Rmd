@@ -44,8 +44,8 @@ We start from the cell selected *SingleCellExperiment* object created in ['Mergi
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merge.whole_cell.SCE.rds"))
 
 # pre-create directories for saving export, or error (dir not exists)
-dir.create(here("data", "marker_genes"), recursive = TRUE)
-dir.create(here("output", "marker_genes"), recursive = TRUE)
+dir.create(here("data", "marker_genes", "whole_cell"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell"), recursive = TRUE)
 
 # remove "Unknown" (as it is not informative at all)
 sce <- sce[, sce$stage != "Unknown"]
@@ -219,10 +219,10 @@ uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_2_vs_3_vs_4"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_2_vs_3_vs_4"), recursive = TRUE)
 
 vs_pair <- c("1", "2", "3", "4")
 
@@ -233,6 +233,7 @@ for (n in names(uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_vs_2_vs_3_vs_4",
       paste0("cluster_",
@@ -590,7 +591,7 @@ plotHeatmap(
 
 ::::::
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_2_vs_3_vs_4/`](..output/marker_genes/uniquely_up/cluster_1_vs_2_vs_3_vs_4/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_2_vs_3_vs_4/`](..output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_2_vs_3_vs_4/).
 
 **Summary**: Stemmed from the fact that the cluster `1`, `2`, and `4` are too similar to each other, except for cluster `3`, we cannot determine sufficient number of marker genes for characterizing each of these clusters.
 
@@ -600,7 +601,7 @@ Say, for cluster `3`, we determine markers that is significantly up-regulated in
 Besides, we also look into the the pairwise comparisons between the interesting "cluster-groups".
 For instance, cluster `3` is the only cluster relatively distant from the main groups in the UMAP (Figure \@ref(fig:clusterplot-umap)), thus it would be interesting to know what drive cluster `3` from the merged group of cluster `1`, `2`, and `4`, or maybe cluster `1` and `2`.
 
-## Cluster (selected pairwise comparisons)
+## Selected pairwise comparisons
 
 ```{r, echo = FALSE}
 # NOTE: The following is a workaround to the lack of support for tabsets in 
@@ -647,10 +648,10 @@ vs1_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs1_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_4_vs_3"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_2_4_vs_3"), recursive = TRUE)
 
 vs_pair <- c("1_2_4", "3")
 
@@ -661,6 +662,7 @@ for (n in names(vs1_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_2_4_vs_3",
       paste0("cluster_",
@@ -836,7 +838,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_2_4_vs_3/`](..output/marker_genes/uniquely_up/cluster_1_2_4_vs_3/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_2_4_vs_3/`](..output/marker_genes/whole_cell/uniquely_up/cluster_1_2_4_vs_3/).
 
 :::
 
@@ -878,10 +880,10 @@ vs2_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs2_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_vs_3"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_2_vs_3"), recursive = TRUE)
 
 vs_pair <- c("1_2", "3")
 
@@ -892,6 +894,7 @@ for (n in names(vs2_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_2_vs_3",
       paste0("cluster_",
@@ -1067,7 +1070,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_2_vs_3/`](..output/marker_genes/uniquely_up/cluster_1_2_vs_3/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_3/`](..output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_3/).
 
 :::
 
@@ -1109,10 +1112,10 @@ vs3_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs3_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_2_vs_4"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_2_vs_4"), recursive = TRUE)
 
 vs_pair <- c("1_2", "4")
 
@@ -1123,6 +1126,7 @@ for (n in names(vs3_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_2_vs_4",
       paste0("cluster_",
@@ -1298,7 +1302,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_2_vs_4/`](..output/marker_genes/uniquely_up/cluster_1_2_vs_4/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_4/`](..output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_4/).
 
 :::
 
@@ -1340,10 +1344,10 @@ vs4_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs4_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_2"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_2"), recursive = TRUE)
 
 vs_pair <- c("1", "2")
 
@@ -1354,6 +1358,7 @@ for (n in names(vs4_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_vs_2",
       paste0("cluster_",
@@ -1529,7 +1534,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_2/`](..output/marker_genes/uniquely_up/cluster_2_vs_1/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_2/`](..output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_1/).
 
 :::
 
@@ -1571,10 +1576,10 @@ vs5_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs5_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_3_vs_4"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_3_vs_4"), recursive = TRUE)
 
 vs_pair <- c("3", "4")
 
@@ -1585,6 +1590,7 @@ for (n in names(vs5_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_3_vs_4",
       paste0("cluster_",
@@ -1760,7 +1766,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_3_vs_4/`](..output/marker_genes/uniquely_up/cluster_3_vs_4/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_3_vs_4/`](..output/marker_genes/whole_cell/uniquely_up/cluster_3_vs_4/).
 
 :::
 
@@ -1802,10 +1808,10 @@ vs6_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs6_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_2_vs_3"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_2_vs_3"), recursive = TRUE)
 
 vs_pair <- c("2", "3")
 
@@ -1816,6 +1822,7 @@ for (n in names(vs6_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_2_vs_3",
       paste0("cluster_",
@@ -1991,7 +1998,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_2_vs_3/`](..output/marker_genes/uniquely_up/cluster_2_vs_3/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_3/`](..output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_3/).
 
 :::
 
@@ -2033,10 +2040,10 @@ vs7_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs7_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_2_vs_4"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_2_vs_4"), recursive = TRUE)
 
 vs_pair <- c("2", "4")
 
@@ -2047,6 +2054,7 @@ for (n in names(vs7_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_2_vs_4",
       paste0("cluster_",
@@ -2222,7 +2230,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_2_vs_4/`](..output/marker_genes/uniquely_up/cluster_2_vs_4/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_4/`](..output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_4/).
 
 :::
 
@@ -2264,10 +2272,10 @@ vs8_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs8_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_3"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_3"), recursive = TRUE)
 
 vs_pair <- c("1", "3")
 
@@ -2278,6 +2286,7 @@ for (n in names(vs8_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_vs_3",
       paste0("cluster_",
@@ -2453,7 +2462,7 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_3/`](..output/marker_genes/uniquely_up/cluster_1_vs_3/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_3/`](..output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_3/).
 
 :::
 
@@ -2495,10 +2504,10 @@ vs9_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs9_uniquely_up,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "cluster_1_vs_4"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_4"), recursive = TRUE)
 
 vs_pair <- c("1", "4")
 
@@ -2509,6 +2518,7 @@ for (n in names(vs9_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
+      "whole_cell",
       "uniquely_up",
       "cluster_1_vs_4",
       paste0("cluster_",
@@ -2684,13 +2694,13 @@ plotHeatmap(
   fontsize = 7)
 ```
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/cluster_1_vs_4/`](..output/marker_genes/uniquely_up/cluster_1_vs_4/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_4/`](..output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_4/).
 
 :::
 
 ::::::
 
-## Cluster (selected pairwise comparisons - integrated)
+## Selected pairwise comparisons - integrated
 
 To have a comprehensive overview, the above analyses were summarized in the following heatmap per cluster:
 
@@ -2753,16 +2763,17 @@ BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected <- BDILP3_uniquely_up_noiseR_si
 # export DGE lists
 saveRDS(
   BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_3_integrated.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_3_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_3_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
     "output",
     "marker_genes",
+    "whole_cell",
     "uniquely_up",
     "integrated",
     paste0("cluster_3_integrated",
@@ -2891,16 +2902,17 @@ FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected <- FJNR4_uniquely_up_noiseR_sig_
 # export DGE lists
 saveRDS(
   FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_4_integrated.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_4_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_4_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
     "output",
     "marker_genes",
+    "whole_cell",
     "uniquely_up",
     "integrated",
     paste0("cluster_4_integrated",
@@ -3038,7 +3050,7 @@ plot_grid(
   ncol = 2)
 ```
 
-```{r qcplot-by-cluster-donor-linear, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear scale), number of expressed genes (linear scale), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", layout = "l-page", fig.asp = 0.7}
+```{r qcplot-by-cluster-donor-linear, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear), number of expressed genes (linear), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", layout = "l-page", fig.asp = 0.7}
 plot_grid(
   
   ggplot(
@@ -3127,16 +3139,17 @@ KMH2_uniquely_up_noiseR_sig_sort_uniq_selected <- KMH2_uniquely_up_noiseR_sig_so
 # export DGE lists
 saveRDS(
   KMH2_uniquely_up_noiseR_sig_sort_uniq_selected,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_2_integrated.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_2_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_2_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
     "output",
     "marker_genes",
+    "whole_cell",
     "uniquely_up",
     "integrated",
     paste0("cluster_2_integrated",
@@ -3249,16 +3262,17 @@ GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected <- GOQ1_uniquely_up_noiseR_sig_so
 # export DGE lists
 saveRDS(
   GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected,
-  here("data", "marker_genes", "C094_Pellicci.uniquely_up.cluster_1_integrated.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_integrated.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "uniquely_up", "integrated"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
 
 message("Writing 'uniquely_up (cluster_1_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
     "output",
     "marker_genes",
+    "whole_cell",
     "uniquely_up",
     "integrated",
     paste0("cluster_1_integrated",
@@ -3340,7 +3354,7 @@ Last but not least is NKG7, which is a factor essential for cytotoxic degranulat
 
 ::::::
 
-DGE lists of these comparisons are available in [`output/marker_genes/uniquely_up/integrated/`](..output/marker_genes/uniquely_up/integrated/).
+DGE lists of these comparisons are available in [`output/marker_genes/whole_cell/uniquely_up/integrated/`](..output/marker_genes/whole_cell/uniquely_up/integrated/).
 
 ## Supplemental info
 

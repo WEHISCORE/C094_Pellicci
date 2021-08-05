@@ -2174,8 +2174,8 @@ Supplementary files
 <ul>
 <li><a href="#using-pairwise-t-tests">Using pairwise <em>t</em>-tests</a></li>
 <li><a href="#cluster-1-vs.-2-vs.-3-vs.-4">Cluster <code>1</code> vs. <code>2</code> vs. <code>3</code> vs. <code>4</code></a></li>
-<li><a href="#cluster-selected-pairwise-comparisons">Cluster (selected pairwise comparisons)</a></li>
-<li><a href="#cluster-selected-pairwise-comparisons---integrated">Cluster (selected pairwise comparisons - integrated)</a></li>
+<li><a href="#selected-pairwise-comparisons">Selected pairwise comparisons</a></li>
+<li><a href="#selected-pairwise-comparisons---integrated">Selected pairwise comparisons - integrated</a></li>
 <li><a href="#supplemental-info">Supplemental info</a></li>
 </ul></li>
 <li><a href="#session-info">Session info</a></li>
@@ -2225,8 +2225,8 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>readRDS</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"SCEs"</span>, <span class='st'>"C094_Pellicci.single-cell.merge.whole_cell.SCE.rds"</span><span class='op'>)</span><span class='op'>)</span>
 
 <span class='co'># pre-create directories for saving export, or error (dir not exists)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='co'># remove "Unknown" (as it is not informative at all)</span>
 <span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span> <span class='op'>!=</span> <span class='st'>"Unknown"</span><span class='op'>]</span>
@@ -2430,10 +2430,10 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_2_vs_3_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_2_vs_3_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1"</span>, <span class='st'>"2"</span>, <span class='st'>"3"</span>, <span class='st'>"4"</span><span class='op'>)</span>
 
@@ -2444,6 +2444,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_vs_2_vs_3_vs_4"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -2876,11 +2877,11 @@ Figure 6: Heatmap of log-expression values in each sample for the top uniquely u
 </div>
 </section>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_vs_2_vs_3_vs_4/"><code>output/marker_genes/uniquely_up/cluster_1_vs_2_vs_3_vs_4/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_2_vs_3_vs_4/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_2_vs_3_vs_4/</code></a>.</p>
 <p><strong>Summary</strong>: Stemmed from the fact that the cluster <code>1</code>, <code>2</code>, and <code>4</code> are too similar to each other, except for cluster <code>3</code>, we cannot determine sufficient number of marker genes for characterizing each of these clusters.</p>
 <p>With this regard, apart from making “all pairwise comparisons” between “all clusters” to pinpoint DE unique to each cluster as above, we took an alternative path and determined the DE unique to only the “selected pairwise comparisons” between “clusters.” Say, for cluster <code>3</code>, we determine markers that is significantly up-regulated in <strong>at least one</strong> of these comparisons: cluster <code>1</code> vs. <code>3</code> <strong>or</strong> cluster <code>2</code> vs. <code>3</code> <strong>or</strong> cluster <code>4</code> vs. <code>3</code>.</p>
 <p>Besides, we also look into the the pairwise comparisons between the interesting “cluster-groups.” For instance, cluster <code>3</code> is the only cluster relatively distant from the main groups in the UMAP (Figure <a href="#fig:clusterplot-umap">1</a>), thus it would be interesting to know what drive cluster <code>3</code> from the merged group of cluster <code>1</code>, <code>2</code>, and <code>4</code>, or maybe cluster <code>1</code> and <code>2</code>.</p>
-<h2 id="cluster-selected-pairwise-comparisons">Cluster (selected pairwise comparisons)</h2>
+<h2 id="selected-pairwise-comparisons">Selected pairwise comparisons</h2>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2935,10 +2936,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs1_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_2_4_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_2_4_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1_2_4"</span>, <span class='st'>"3"</span><span class='op'>)</span>
 
@@ -2949,6 +2950,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_2_4_vs_3"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -3166,7 +3168,7 @@ Figure 8: Heatmap of log-expression values in each sample for the top uniquely u
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_2_4_vs_3/"><code>output/marker_genes/uniquely_up/cluster_1_2_4_vs_3/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_1_2_4_vs_3/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_2_4_vs_3/</code></a>.</p>
 </section>
 <section id="cluster_12_vs_cluster_3" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_1+2_vs_cluster_3</code></h4>
@@ -3209,10 +3211,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs2_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_2_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_2_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1_2"</span>, <span class='st'>"3"</span><span class='op'>)</span>
 
@@ -3223,6 +3225,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_2_vs_3"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -3440,7 +3443,7 @@ Figure 10: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_2_vs_3/"><code>output/marker_genes/uniquely_up/cluster_1_2_vs_3/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_3/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_3/</code></a>.</p>
 </section>
 <section id="cluster_12_vs_cluster_4" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_1+2_vs_cluster_4</code></h4>
@@ -3483,10 +3486,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs3_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_2_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_2_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1_2"</span>, <span class='st'>"4"</span><span class='op'>)</span>
 
@@ -3497,6 +3500,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_2_vs_4"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -3714,7 +3718,7 @@ Figure 12: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_2_vs_4/"><code>output/marker_genes/uniquely_up/cluster_1_2_vs_4/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_4/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_2_vs_4/</code></a>.</p>
 </section>
 <section id="cluster_1_vs_cluster_2" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_1_vs_cluster_2</code></h4>
@@ -3757,10 +3761,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs4_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_2"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_2"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1"</span>, <span class='st'>"2"</span><span class='op'>)</span>
 
@@ -3771,6 +3775,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_vs_2"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -3988,7 +3993,7 @@ Figure 14: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_2_vs_1/"><code>output/marker_genes/uniquely_up/cluster_1_vs_2/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_1/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_2/</code></a>.</p>
 </section>
 <section id="cluster_3_vs_cluster_4" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_3_vs_cluster_4</code></h4>
@@ -4031,10 +4036,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs5_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_3_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_3_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"3"</span>, <span class='st'>"4"</span><span class='op'>)</span>
 
@@ -4045,6 +4050,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_3_vs_4"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -4262,7 +4268,7 @@ Figure 16: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_3_vs_4/"><code>output/marker_genes/uniquely_up/cluster_3_vs_4/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_3_vs_4/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_3_vs_4/</code></a>.</p>
 </section>
 <section id="cluster_2_vs_cluster_3" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_2_vs_cluster_3</code></h4>
@@ -4305,10 +4311,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs6_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_2_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_2_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2"</span>, <span class='st'>"3"</span><span class='op'>)</span>
 
@@ -4319,6 +4325,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_2_vs_3"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -4536,7 +4543,7 @@ Figure 18: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_2_vs_3/"><code>output/marker_genes/uniquely_up/cluster_2_vs_3/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_3/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_3/</code></a>.</p>
 </section>
 <section id="cluster_2_vs_cluster_4" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_2_vs_cluster_4</code></h4>
@@ -4579,10 +4586,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs7_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_2_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_2_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2"</span>, <span class='st'>"4"</span><span class='op'>)</span>
 
@@ -4593,6 +4600,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_2_vs_4"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -4810,7 +4818,7 @@ Figure 20: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_2_vs_4/"><code>output/marker_genes/uniquely_up/cluster_2_vs_4/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_4/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_2_vs_4/</code></a>.</p>
 </section>
 <section id="cluster_1_vs_cluster_3" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_1_vs_cluster_3</code></h4>
@@ -4853,10 +4861,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs8_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_3"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1"</span>, <span class='st'>"3"</span><span class='op'>)</span>
 
@@ -4867,6 +4875,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_vs_3"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -5084,7 +5093,7 @@ Figure 22: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_vs_3/"><code>output/marker_genes/uniquely_up/cluster_1_vs_3/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_3/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_3/</code></a>.</p>
 </section>
 <section id="cluster_1_vs_cluster_4" class="panel-name panel">
 <h4 class="panel-name"><code>cluster_1_vs_cluster_4</code></h4>
@@ -5127,10 +5136,10 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>vs9_uniquely_up</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"cluster_1_vs_4"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='va'>vs_pair</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"1"</span>, <span class='st'>"4"</span><span class='op'>)</span>
 
@@ -5141,6 +5150,7 @@ Show code
     description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
       <span class='st'>"output"</span>,
       <span class='st'>"marker_genes"</span>,
+      <span class='st'>"whole_cell"</span>,
       <span class='st'>"uniquely_up"</span>,
       <span class='st'>"cluster_1_vs_4"</span>,
       <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_"</span>,
@@ -5358,10 +5368,10 @@ Figure 24: Heatmap of log-expression values in each sample for the top uniquely 
 </p>
 </div>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/cluster_1_vs_4/"><code>output/marker_genes/uniquely_up/cluster_1_vs_4/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_4/"><code>output/marker_genes/whole_cell/uniquely_up/cluster_1_vs_4/</code></a>.</p>
 </section>
 </div>
-<h2 id="cluster-selected-pairwise-comparisons---integrated">Cluster (selected pairwise comparisons - integrated)</h2>
+<h2 id="selected-pairwise-comparisons---integrated">Selected pairwise comparisons - integrated</h2>
 <p>To have a comprehensive overview, the above analyses were summarized in the following heatmap per cluster:</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -5431,16 +5441,17 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_3_integrated.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_3_integrated.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='fu'><a href='https://rdrr.io/r/base/message.html'>message</a></span><span class='op'>(</span><span class='st'>"Writing 'uniquely_up (cluster_3_integrated)' marker genes to file."</span><span class='op'>)</span>
 <span class='va'>gzout</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/connections.html'>gzfile</a></span><span class='op'>(</span>
   description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
     <span class='st'>"output"</span>,
     <span class='st'>"marker_genes"</span>,
+    <span class='st'>"whole_cell"</span>,
     <span class='st'>"uniquely_up"</span>,
     <span class='st'>"integrated"</span>,
     <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_3_integrated"</span>,
@@ -5577,16 +5588,17 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_4_integrated.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_4_integrated.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='fu'><a href='https://rdrr.io/r/base/message.html'>message</a></span><span class='op'>(</span><span class='st'>"Writing 'uniquely_up (cluster_4_integrated)' marker genes to file."</span><span class='op'>)</span>
 <span class='va'>gzout</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/connections.html'>gzfile</a></span><span class='op'>(</span>
   description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
     <span class='st'>"output"</span>,
     <span class='st'>"marker_genes"</span>,
+    <span class='st'>"whole_cell"</span>,
     <span class='st'>"uniquely_up"</span>,
     <span class='st'>"integrated"</span>,
     <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_4_integrated"</span>,
@@ -5792,9 +5804,9 @@ Show code
 </div>
 </details>
 <div class="figure"><span id="fig:qcplot-by-cluster-donor-linear"></span>
-<img src="C094_Pellicci.single-cell.annotate.whole_cell_files/qcplot-by-cluster-donor-linear-1.png" alt="Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear scale), number of expressed genes (linear scale), and proportion of reads mapped to spike-in transcripts or mitochondrial genes." width="624" />
+<img src="C094_Pellicci.single-cell.annotate.whole_cell_files/qcplot-by-cluster-donor-linear-1.png" alt="Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear), number of expressed genes (linear), and proportion of reads mapped to spike-in transcripts or mitochondrial genes." width="624" />
 <p class="caption">
-Figure 28: Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear scale), number of expressed genes (linear scale), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.
+Figure 28: Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear), number of expressed genes (linear), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.
 </p>
 </div>
 </div>
@@ -5845,16 +5857,17 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>KMH2_uniquely_up_noiseR_sig_sort_uniq_selected</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_2_integrated.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_2_integrated.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='fu'><a href='https://rdrr.io/r/base/message.html'>message</a></span><span class='op'>(</span><span class='st'>"Writing 'uniquely_up (cluster_2_integrated)' marker genes to file."</span><span class='op'>)</span>
 <span class='va'>gzout</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/connections.html'>gzfile</a></span><span class='op'>(</span>
   description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
     <span class='st'>"output"</span>,
     <span class='st'>"marker_genes"</span>,
+    <span class='st'>"whole_cell"</span>,
     <span class='st'>"uniquely_up"</span>,
     <span class='st'>"integrated"</span>,
     <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_2_integrated"</span>,
@@ -5983,16 +5996,17 @@ Show code
 <span class='co'># export DGE lists</span>
 <span class='fu'><a href='https://rdrr.io/r/base/readRDS.html'>saveRDS</a></span><span class='op'>(</span>
   <span class='va'>GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected</span>,
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_integrated.rds"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"data"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"C094_Pellicci.uniquely_up.cluster_1_integrated.rds"</span><span class='op'>)</span>,
   compress <span class='op'>=</span> <span class='st'>"xz"</span><span class='op'>)</span>
 
-<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"marker_genes"</span>, <span class='st'>"whole_cell"</span>, <span class='st'>"uniquely_up"</span>, <span class='st'>"integrated"</span><span class='op'>)</span>, recursive <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='fu'><a href='https://rdrr.io/r/base/message.html'>message</a></span><span class='op'>(</span><span class='st'>"Writing 'uniquely_up (cluster_1_integrated)' marker genes to file."</span><span class='op'>)</span>
 <span class='va'>gzout</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/connections.html'>gzfile</a></span><span class='op'>(</span>
   description <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span>
     <span class='st'>"output"</span>,
     <span class='st'>"marker_genes"</span>,
+    <span class='st'>"whole_cell"</span>,
     <span class='st'>"uniquely_up"</span>,
     <span class='st'>"integrated"</span>,
     <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"cluster_1_integrated"</span>,
@@ -6077,7 +6091,7 @@ Figure 30: Heatmap of log-expression values in each sample for the top uniquely 
 <p>Having said that these two clusters shared a number of similarities, they do show differences. In terms of <code>tissue</code> and <code>stage</code>, both cluster <code>1</code> and <code>2</code> are enriched by <code>S3</code> cells and the only recognizable difference between the two clusters is that, cluster <code>2</code> seems to be <code>S3</code>-mix contains more <code>thymus</code> cells, whilst cluster 1 is a <code>S3</code>-mix as well but with more cells from <code>blood.</code> In terms of DE, cluster <code>1</code> still contain a handful of markers highly expressed in cluster 1, but not in cluster <code>2</code>. This includes: CCL5, i.e. a chemokine that known to be involved in thymocyte trafficking [Oncotarget. 2017; 8:83-94] and capable to alter the coordinated maturation and migration of thymocytes [Cell Adhesion &amp; Migration 2010 4:3, 382-390]. EFHD2, a calcium binding adapter protein required for human T cell–mediated cytotoxicity [The Journal of Immunology, 2018, 201]. GNLY is a component of cytotoxic granules that cytotoxic granules that can cause lipid degradation secreted by NK and T cells [Innate Immunity Vol 24, Issue 8, 2018, pp452-465]. Last but not least is NKG7, which is a factor essential for cytotoxic degranulation and activation of proinflammatory responses triggered by T cells [Nature Immunology volume 21, pages 1139–1140 (2020)].</p>
 </section>
 </div>
-<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/uniquely_up/integrated/"><code>output/marker_genes/uniquely_up/integrated/</code></a>.</p>
+<p>DGE lists of these comparisons are available in <a href="..output/marker_genes/whole_cell/uniquely_up/integrated/"><code>output/marker_genes/whole_cell/uniquely_up/integrated/</code></a>.</p>
 <h2 id="supplemental-info">Supplemental info</h2>
 <p><strong>Comment</strong>: We have no idea how well the CELSeq protocol could capture the expression of the T-cell-receptor component and the suggested known markers, i.e. TRDV2, TRGV9, may not be a good candidate for defining whether a cluster contains cells relevant to gamma-delta T cells.</p>
 <div class="layout-chunk" data-layout="l-body">
