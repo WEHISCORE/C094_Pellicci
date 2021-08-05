@@ -639,11 +639,11 @@ colData(sce) <- droplevels(colData(sce))
 ```{r}
 saveRDS(
   sce,
-  here("data", "SCEs", "C094_Pellicci.single-cell.cell_selection.SCE.rds"),
+  here("data", "SCEs", "C094_Pellicci.single-cell.cell_selected.SCE.rds"),
   compress = "xz")
 ```
 
-The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.single-cell.cell_selection.SCE.rds`](../data/SCEs/C094_Pellicci.single-cell.cell_selection.SCE.rds)).
+The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.single-cell.cell_selected.SCE.rds`](../data/SCEs/C094_Pellicci.single-cell.cell_selected.SCE.rds)).
 This will be used in downstream analyses, e.g., identifying cluster marker genes and refining the cell labels.
 
 # Additional information {.appendix}

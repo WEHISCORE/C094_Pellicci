@@ -18,7 +18,7 @@ library(janitor)
 library(distill)
 source(here("code", "helper_functions.R"))
 
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.cell_selection.SCE.rds"))
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.cell_selected.SCE.rds"))
 
 # Some useful colours
 plate_number_colours <- setNames(

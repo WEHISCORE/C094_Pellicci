@@ -37,7 +37,7 @@ knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.merge.thymus_only_fi
 ```
 
 ```{r}
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.cell_selection.SCE.rds"))
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.cell_selected.SCE.rds"))
 
 # Some useful colours
 plate_number_colours <- setNames(
@@ -590,11 +590,11 @@ p6 <- ggcells(sce) +
 ```{r}
 saveRDS(
   sce,
-  here("data", "SCEs", "C094_Pellicci.single-cell.merge.thymus_only.SCE.rds"),
+  here("data", "SCEs", "C094_Pellicci.single-cell.merged.thymus_only.SCE.rds"),
   compress = "xz")
 ```
 
-The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.single-cell.merge.thymus_only.SCE.rds`](../data/SCEs/C094_Pellicci.single-cell.merge.thymus_only.SCE.rds)).
+The processed *SingleCellExperiment* object is available (see [`data/SCEs/C094_Pellicci.single-cell.merged.thymus_only.SCE.rds`](../data/SCEs/C094_Pellicci.single-cell.merged.thymus_only.SCE.rds)).
 This will be used in downstream analyses, e.g., identifying cluster marker genes and refining the cell labels.
 
 # Additional information {.appendix}
