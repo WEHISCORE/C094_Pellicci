@@ -1,6 +1,9 @@
-# EDA to look for best merge order (whole cell)
+# EDA to look for best merge order (thymus only)
 # William Ho
 # 05-08-2021
+
+
+
 
 
 
@@ -66,6 +69,16 @@ pseudogene_set <- rownames(sce)[
 # NOTE: get rid of psuedogene seems not to be good enough for HVG determination of this dataset
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+
+
+
+
+
+
+
+### Thymus only
+sce <- sce[, sce$tissue == "Thymus"]
+colData(sce) <- droplevels(colData(sce))
 
 
 
@@ -308,7 +321,7 @@ mnn_out_2 <- fastMNN(
   cos.norm = FALSE,
   d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = FALSE,
-  merge.order = list(list("LCE508", "LCE511", "LCE512", "LCE513", "LCE514"), "LCE509"),
+  merge.order = list(list(list(list("LCE514", "LCE513", "LCE512"), "LCE508"), "LCE511"), "LCE509"),
   subset.row = hvg)
 # manual merge 2
 # NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
@@ -318,6 +331,8 @@ mnn_out_3 <- fastMNN(
   cos.norm = FALSE,
   d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = FALSE,
+  # merge.order = list(list(list("LCE508", "LCE512", "LCE513", "LCE514"), "LCE509"), "LCE511"),
+  # merge.order = list(list("LCE512", "LCE513", "LCE514"), list("LCE511", "LCE508"), "LCE509"),
   merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
   subset.row = hvg)
 
@@ -384,6 +399,7 @@ cluster_colours_1 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_1))],
   levels(sce0$cluster_1))
 sce0$colours$cluster_colours_1 <- cluster_colours_1[sce0$cluster_1]
+
 set.seed(4759)
 snn_gr_2 <- buildSNNGraph(sce0, use.dimred = "corrected_2")
 clusters_2 <- igraph::cluster_louvain(snn_gr_2)
@@ -392,6 +408,7 @@ cluster_colours_2 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_2))],
   levels(sce0$cluster_2))
 sce0$colours$cluster_colours_2 <- cluster_colours_2[sce0$cluster_2]
+
 set.seed(4759)
 snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected_3")
 clusters_3 <- igraph::cluster_louvain(snn_gr_3)
@@ -461,98 +478,98 @@ p1 + p2 + p3 + p4 +
 umap_df <- makePerCellDF(sce0)
 bg <- dplyr::select(umap_df, -plate_number)
 plot_grid(
-ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
-  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~plate_number, ncol = 3) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  guides(colour = FALSE),
-ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = plate_number_colours, name = "plate_number") +
-  scale_colour_manual(values = plate_number_colours, name = "plate_number") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~plate_number, ncol = 3) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  guides(colour = FALSE),
-ncol= 2,
-align ="h"
+  ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+    geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+    geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+    scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+    scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+    theme_cowplot(font_size = 10) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    facet_wrap(~plate_number, ncol = 3) +
+    guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+    guides(colour = FALSE),
+  ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+    geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+    geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
+    scale_fill_manual(values = plate_number_colours, name = "plate_number") +
+    scale_colour_manual(values = plate_number_colours, name = "plate_number") +
+    theme_cowplot(font_size = 10) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    facet_wrap(~plate_number, ncol = 3) +
+    guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+    guides(colour = FALSE),
+  ncol= 2,
+  align ="h"
 )
 
 # breakdown by `stage`
 umap_df <- makePerCellDF(sce0)
 bg <- dplyr::select(umap_df, -stage)
 plot_grid(
-ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
-  scale_fill_manual(
-    values = stage_colours,
-    name = "stage") +
-  scale_colour_manual(
-    values = stage_colours,
-    name = "stage") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~stage, ncol = 3) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  guides(colour = FALSE),
-ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
-  scale_fill_manual(
-    values = stage_colours,
-    name = "stage") +
-  scale_colour_manual(
-    values = stage_colours,
-    name = "stage") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~stage, ncol = 3) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  guides(colour = FALSE),
-ncol= 2,
-align ="h"
+  ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+    geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+    geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
+    scale_fill_manual(
+      values = stage_colours,
+      name = "stage") +
+    scale_colour_manual(
+      values = stage_colours,
+      name = "stage") +
+    theme_cowplot(font_size = 10) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    facet_wrap(~stage, ncol = 3) +
+    guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+    guides(colour = FALSE),
+  ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+    geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+    geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
+    scale_fill_manual(
+      values = stage_colours,
+      name = "stage") +
+    scale_colour_manual(
+      values = stage_colours,
+      name = "stage") +
+    theme_cowplot(font_size = 10) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    facet_wrap(~stage, ncol = 3) +
+    guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+    guides(colour = FALSE),
+  ncol= 2,
+  align ="h"
 )
 
 # breakdown by `tissue`
 umap_df <- makePerCellDF(sce0)
 bg <- dplyr::select(umap_df, -tissue)
 plot_grid(
-ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = tissue_colours, name = "tissue") +
-  scale_colour_manual(values = tissue_colours, name = "tissue") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~tissue, ncol = 2) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  guides(colour = FALSE),
-ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
-  geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
-  geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
-  scale_fill_manual(values = tissue_colours, name = "tissue") +
-  scale_colour_manual(values = tissue_colours, name = "tissue") +
-  theme_cowplot(font_size = 10) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  facet_wrap(~tissue, ncol = 2) +
-  guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
-  guides(colour = FALSE),
-ncol= 2,
-align ="h"
+  ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
+    geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+    geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+    scale_fill_manual(values = tissue_colours, name = "tissue") +
+    scale_colour_manual(values = tissue_colours, name = "tissue") +
+    theme_cowplot(font_size = 10) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    facet_wrap(~tissue, ncol = 2) +
+    guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+    guides(colour = FALSE),
+  ggplot(aes(x = UMAP_corrected_3.1, y = UMAP_corrected_3.2), data = umap_df) +
+    geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
+    geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
+    scale_fill_manual(values = tissue_colours, name = "tissue") +
+    scale_colour_manual(values = tissue_colours, name = "tissue") +
+    theme_cowplot(font_size = 10) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    facet_wrap(~tissue, ncol = 2) +
+    guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) +
+    guides(colour = FALSE),
+  ncol= 2,
+  align ="h"
 )
 
 
