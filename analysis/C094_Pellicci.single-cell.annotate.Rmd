@@ -1,5 +1,5 @@
 ---
-title: "Annotating Pellicci gamma-delta T-cell single-cell dataset"
+title: "Annotating Pellicci gamma-delta T-cell single-cell dataset (whole cell)"
 description: |
 author:
   - name: William Ho
@@ -33,15 +33,15 @@ library(tidyr)
 library(ggrepel)
 library(magrittr)
 
-knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate_files/")
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate.whole_cell_files/")
 ```
 
 # Preparing the data
 
-We start from the cell selected *SingleCellExperiment* object created in ['Selection of biologically relevant cells for Pellicci gamma-delta T-cell dataset'](C094_Pellicci.cell_selection.html).
+We start from the cell selected *SingleCellExperiment* object created in ['Merging cells for Pellicci gamma-delta T-cell dataset (whole cell)'](C094_Pellicci.single-cell.merge.whole_cell.html).
 
 ```{r}
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.cells_selected.SCE.rds"))
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merge.whole_cell.SCE.rds"))
 
 # pre-create directories for saving export, or error (dir not exists)
 dir.create(here("data", "marker_genes"), recursive = TRUE)
@@ -2982,7 +2982,7 @@ An additional point-to-note is that we observe a number of `NPIPB`-related genes
 As we only perform 3'-tag sequencing and reads from any member of this gene family could potentially mis-aligned during the mapping step, which could in turn potentially lead to the variation of the gene expression we observed for cluster `4`.
 With this regard, we will need to be cautious and try not to make some critical statement or build any key hypothesis based on the NPIPB-related genes.
 
-```{r qcplot-by-cluster-donor, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes, number of expressed genes, and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", layout = "l-page", fig.asp = 0.7}
+```{r qcplot-by-cluster-donor, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (log10), number of expressed genes (log10), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", layout = "l-page", fig.asp = 0.7}
 plot_grid(
   
   ggplot(
@@ -3024,6 +3024,50 @@ plot_grid(
       short = unit(0.03, "cm"),
       mid = unit(0.06, "cm"),
       long = unit(0.09, "cm")),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = subsets_Mito_percent, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    ylim(0, 100) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ncol = 2)
+```
+
+```{r qcplot-by-cluster-donor-linear, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear scale), number of expressed genes (linear scale), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", layout = "l-page", fig.asp = 0.7}
+plot_grid(
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = sum, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = altexps_ERCC_percent, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    ylim(0, 100) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = detected, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
   
   ggplot(
     data = as.data.frame(colData(sce)),
