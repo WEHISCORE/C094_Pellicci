@@ -541,6 +541,101 @@ plotHeatmap(
 
 
 
+###############################################
+# Heatmap using minibulk sig markers as feature
+
+# laod package for read in csv.gz
+library(data.table)
+library(R.utils)
+
+# read in
+a <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S2_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
+b <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S3_vs_Blood.S3.aggregated_tech_reps.DEGs.csv.gz"))
+c <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S3_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
+d <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S3_vs_Thymus.S2.aggregated_tech_reps.DEGs.csv.gz"))
+
+# extract DEGlist (FDR < 0.05)
+minibulkDEG.a <- a$ENSEMBL.GENENAME[a$FDR<0.05]
+minibulkDEG.b <- b$ENSEMBL.GENENAME[b$FDR<0.05]
+minibulkDEG.c <- c$ENSEMBL.GENENAME[c$FDR<0.05]
+minibulkDEG.d <- d$ENSEMBL.GENENAME[d$FDR<0.05]
+
+# keep only unique markers
+uniq.minibulkDEG.a <- Reduce(setdiff, list(minibulkDEG.a,
+                                           minibulkDEG.b,
+                                           minibulkDEG.c,
+                                           minibulkDEG.d))
+uniq.minibulkDEG.b <- Reduce(setdiff, list(minibulkDEG.b,
+                                           minibulkDEG.a,
+                                           minibulkDEG.c,
+                                           minibulkDEG.d))
+uniq.minibulkDEG.c <- Reduce(setdiff, list(minibulkDEG.c,
+                                           minibulkDEG.a,
+                                           minibulkDEG.b,
+                                           minibulkDEG.d))
+uniq.minibulkDEG.d <- Reduce(setdiff, list(minibulkDEG.d,
+                                           minibulkDEG.a,
+                                           minibulkDEG.b,
+                                           minibulkDEG.c))
+
+# check number of unique minibulkDEG in each
+length(uniq.minibulkDEG.a)
+length(uniq.minibulkDEG.b)
+length(uniq.minibulkDEG.c)
+length(uniq.minibulkDEG.d)
+
+# keep only top50
+top.uniq.minibulkDEG.a <- if(length(uniq.minibulkDEG.a) >=50){uniq.minibulkDEG.a[1:50]} else {uniq.minibulkDEG.a}
+top.uniq.minibulkDEG.b <- if(length(uniq.minibulkDEG.b) >=50){uniq.minibulkDEG.b[1:50]} else {uniq.minibulkDEG.b}
+top.uniq.minibulkDEG.c <- if(length(uniq.minibulkDEG.c) >=50){uniq.minibulkDEG.c[1:50]} else {uniq.minibulkDEG.c}
+top.uniq.minibulkDEG.d <- if(length(uniq.minibulkDEG.d) >=50){uniq.minibulkDEG.d[1:50]} else {uniq.minibulkDEG.d}
+
+# feature
+minibulk_markers <- c(top.uniq.minibulkDEG.a,
+                      top.uniq.minibulkDEG.b,
+                      top.uniq.minibulkDEG.c,
+                      top.uniq.minibulkDEG.d)
+
+# plot heatmap
+plotHeatmap(
+  sce,
+  features = minibulk_markers,
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.d, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers),
+  main = "Row-normalized log expression of top unique markers from minibulk against different clusters",
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
 
 
 

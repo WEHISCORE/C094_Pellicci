@@ -41,7 +41,7 @@ knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate.whole_cell_
 We start from the cell selected *SingleCellExperiment* object created in ['Merging cells for Pellicci gamma-delta T-cell dataset (whole cell)'](C094_Pellicci.single-cell.merge.whole_cell.html).
 
 ```{r}
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merge.whole_cell.SCE.rds"))
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merged.whole_cell.SCE.rds"))
 
 # pre-create directories for saving export, or error (dir not exists)
 dir.create(here("data", "marker_genes", "whole_cell"), recursive = TRUE)
