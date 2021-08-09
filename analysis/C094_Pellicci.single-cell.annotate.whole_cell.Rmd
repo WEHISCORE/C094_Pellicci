@@ -32,7 +32,6 @@ library(dplyr)
 library(tidyr)
 library(ggrepel)
 library(magrittr)
-
 knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate.whole_cell_files/")
 ```
 
@@ -41,16 +40,13 @@ knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate.whole_cell_
 We start from the cell selected *SingleCellExperiment* object created in ['Merging cells for Pellicci gamma-delta T-cell dataset (whole cell)'](C094_Pellicci.single-cell.merge.whole_cell.html).
 
 ```{r}
-sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merge.whole_cell.SCE.rds"))
-
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merged.whole_cell.SCE.rds"))
 # pre-create directories for saving export, or error (dir not exists)
 dir.create(here("data", "marker_genes", "whole_cell"), recursive = TRUE)
 dir.create(here("output", "marker_genes", "whole_cell"), recursive = TRUE)
-
 # remove "Unknown" (as it is not informative at all)
 sce <- sce[, sce$stage != "Unknown"]
 colData(sce) <- droplevels(colData(sce))
-
 # Some useful colours
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
@@ -76,7 +72,6 @@ cluster_colours <- setNames(
   unique(sce$colours$cluster_colours),
   unique(names(sce$colours$cluster_colours)))
 cluster_colours <- cluster_colours[levels(sce$cluster)]
-
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -94,7 +89,6 @@ pseudogene_set <- rownames(sce)[
 # NOTE: not suggest to narrow down into protein coding genes (pcg) as it remove all significant candidate in most of the comparison !!!
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
-
 # # gene-of-interest (suggested by Dan at meeting on 15 Jul 2021)
 # interest <- c("KLRB1", "CD4", # QC
 #              "NKG7", "GNLY", "CCL5", # cluster 1 selected unique markers
@@ -205,7 +199,6 @@ For instance, unique markers of cluster `1` refer to the genes significantly up-
 ```{r}
 ###################################
 # cluster 1 (i.e. S3-mix more Blood) vs 2 (i.e. S3-mix more Thymus) vs 3 (i.e. mostly Thymus.S1 + .S2) vs 4 (i.e. mostly Thymus.S3)
-
 # find unique DE ./. clusters
 uniquely_up <- findMarkers(
   sce,
@@ -221,11 +214,8 @@ saveRDS(
   uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3_vs_4.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_2_vs_3_vs_4"), recursive = TRUE)
-
 vs_pair <- c("1", "2", "3", "4")
-
 message("Writing 'uniquely_up (cluster_1_vs_2_vs_3_vs_4)' marker genes to file.")
 for (n in names(uniquely_up)) {
   message(n)
@@ -278,17 +268,13 @@ xaringanExtra::use_panelset()
 # look at cluster 1 (i.e. S3-mix more Blood)
 chosen <- "1"
 cluster1_uniquely_up <- uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(S3-mix more Blood)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # cluster1_uniquely_up <- cluster1_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster1_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 cluster1_uniquely_up_noiseR <- cluster1_uniquely_up[setdiff(rownames(cluster1_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"),
@@ -296,7 +282,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
        cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- cluster1_uniquely_up_noiseR[1:25, ]
 ```
@@ -325,13 +310,13 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
-  annotation_row = data.frame(
-    Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      # TODO: temp trick to deal with the row-colouring problem
-      # levels = c("Yes", "No")),
-      levels = c("Yes")),
-    row.names = rownames(best_set)),
+  # annotation_row = data.frame(
+  #   Sig = factor(
+  #     ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+  #     # TODO: temp trick to deal with the row-colouring problem
+  #     # levels = c("Yes", "No")),
+  #     levels = c("No")),
+  #   row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x, " - \n",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
                 z[1], "_top ", z[2], "_significance: ", z[3]),
@@ -358,17 +343,13 @@ plotHeatmap(
 # look at cluster 2 (i.e. S3-mix more Thymus)
 chosen <- "2"
 cluster2_uniquely_up <- uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(S3-mix more Thymus)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # cluster2_uniquely_up <- cluster2_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster2_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 cluster2_uniquely_up_noiseR <- cluster2_uniquely_up[setdiff(rownames(cluster2_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(cluster2_uniquely_up_noiseR) %in% "CD4"),
@@ -376,7 +357,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"),
        cluster2_uniquely_up_noiseR[which(rownames(cluster2_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- cluster2_uniquely_up_noiseR[1:25, ]
 ```
@@ -438,17 +418,13 @@ plotHeatmap(
 # look at cluster 3 (i.e. mostly Thymus.S1 + .S2)
 chosen <- "3"
 cluster3_uniquely_up <- uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S1 + .S2)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # cluster3_uniquely_up <- cluster3_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster3_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 cluster3_uniquely_up_noiseR <- cluster3_uniquely_up[setdiff(rownames(cluster3_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(cluster3_uniquely_up_noiseR) %in% "CD4"),
@@ -456,7 +432,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"),
        cluster3_uniquely_up_noiseR[which(rownames(cluster3_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- cluster3_uniquely_up_noiseR[1:25, ]
 ```
@@ -518,17 +493,13 @@ plotHeatmap(
 # look at cluster 4 (i.e. mostly Thymus.S3)
 chosen <- "4"
 cluster4_uniquely_up <- uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # cluster4_uniquely_up <- cluster4_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster4_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 cluster4_uniquely_up_noiseR <- cluster4_uniquely_up[setdiff(rownames(cluster4_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"),
@@ -536,7 +507,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"),
        cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- cluster4_uniquely_up_noiseR[1:25, ]
 ```
@@ -601,6 +571,34 @@ Say, for cluster `3`, we determine markers that is significantly up-regulated in
 Besides, we also look into the the pairwise comparisons between the interesting "cluster-groups".
 For instance, cluster `3` is the only cluster relatively distant from the main groups in the UMAP (Figure \@ref(fig:clusterplot-umap)), thus it would be interesting to know what drive cluster `3` from the merged group of cluster `1`, `2`, and `4`, or maybe cluster `1` and `2`.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+knitr::knit_exit()
+```
+
+
+
+
+
+
+
 ## Selected pairwise comparisons
 
 ```{r, echo = FALSE}
@@ -621,22 +619,17 @@ xaringanExtra::use_panelset()
 #########
 # A vs B
 #########
-
 ##########################################################################
 # cluster 1 + 2 + 4 (i.e. mostly S3) vs cluster 3 (i.e. mostly S1 and S2)
-
 # checkpoint
 cp <- sce
-
 # classify cluster-group for comparison
 cp$vs1 <- factor(ifelse(cp$cluster == 1 | cp$cluster == 2 | cp$cluster == 4, "A", "B"))
-
 # set vs colours
 vs1_colours <- setNames(
   palette.colors(nlevels(cp$vs1), "Set1"),
   levels(cp$vs1))
 cp$colours$vs1_colours <- vs1_colours[cp$vs1]
-
 # find unique DE ./. cluster-groups
 vs1_uniquely_up <- findMarkers(
   cp,
@@ -644,17 +637,13 @@ vs1_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs1_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_2_4_vs_3.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_2_4_vs_3"), recursive = TRUE)
-
 vs_pair <- c("1_2_4", "3")
-
 message("Writing 'uniquely_up (cluster_1_2_4_vs_3)' marker genes to file.")
 for (n in names(vs1_uniquely_up)) {
   message(n)
@@ -689,17 +678,13 @@ for (n in names(vs1_uniquely_up)) {
 # look at cluster-group A / cluster 1+2+4 (i.e. mostly S3)
 chosen <- "A"
 A_uniquely_up <- vs1_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 1+2+4; mostly S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # A_uniquely_up_pcg <- A_uniquely_up[intersect(protein_coding_gene_set, rownames(A_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 A_uniquely_up_noiseR <- A_uniquely_up[setdiff(rownames(A_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(A_uniquely_up_noiseR) %in% "CD4"),
@@ -707,7 +692,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"),
        A_uniquely_up_noiseR[which(rownames(A_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- A_uniquely_up_noiseR[1:25, ]
 ```
@@ -766,17 +750,13 @@ plotHeatmap(
 # look at cluster-group B / cluster 3 (i.e. mostly S1 + S2)
 chosen <- "B"
 B_uniquely_up <- vs1_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 3; mostly S1 and S2)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # B_uniquely_up_pcg <- B_uniquely_up[intersect(protein_coding_gene_set, rownames(B_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 B_uniquely_up_noiseR <- B_uniquely_up[setdiff(rownames(B_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(B_uniquely_up_noiseR) %in% "CD4"),
@@ -784,7 +764,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"),
        B_uniquely_up_noiseR[which(rownames(B_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- B_uniquely_up_noiseR[1:25, ]
 ```
@@ -850,25 +829,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # C vs D
 #########
-
 ##########################################################################################
 # cluster 1 + 2 (i.e. mostly Blood.S3) vs cluster 3 (i.e. mostly Thymus.S1 and Thymus.S2)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster != "4"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs2 <- factor(ifelse(cp$cluster == 1 | cp$cluster == 2 , "C", "D"))
-
 # set vs colours
 vs2_colours <- setNames(
   palette.colors(nlevels(cp$vs2), "Set1"),
   levels(cp$vs2))
 cp$colours$vs2_colours <- vs2_colours[cp$vs2]
-
 # find unique DE ./. cluster-groups
 vs2_uniquely_up <- findMarkers(
   cp,
@@ -876,17 +850,13 @@ vs2_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs2_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_2_vs_3.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_2_vs_3"), recursive = TRUE)
-
 vs_pair <- c("1_2", "3")
-
 message("Writing 'uniquely_up (cluster_1_2_vs_3)' marker genes to file.")
 for (n in names(vs2_uniquely_up)) {
   message(n)
@@ -921,17 +891,13 @@ for (n in names(vs2_uniquely_up)) {
 # look at cluster-group C / cluster 1+2 (i.e. mostly Blood.S3)
 chosen <- "C"
 C_uniquely_up <- vs2_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 1+2; mostly Blood.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # C_uniquely_up_pcg <- C_uniquely_up[intersect(protein_coding_gene_set, rownames(C_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 C_uniquely_up_noiseR <- C_uniquely_up[setdiff(rownames(C_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(C_uniquely_up_noiseR) %in% "CD4"),
@@ -939,7 +905,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"),
        C_uniquely_up_noiseR[which(rownames(C_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- C_uniquely_up_noiseR[1:25, ]
 ```
@@ -998,17 +963,13 @@ plotHeatmap(
 # look at cluster-group D / cluster 3 (i.e. mostly Thymus.S1 and Thymus.S2)
 chosen <- "D"
 D_uniquely_up <- vs2_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 3; mostly Thymus.S1 and Thymus.S2)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # D_uniquely_up_pcg <- D_uniquely_up[intersect(protein_coding_gene_set, rownames(D_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 D_uniquely_up_noiseR <- D_uniquely_up[setdiff(rownames(D_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(D_uniquely_up_noiseR) %in% "CD4"),
@@ -1016,7 +977,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"),
        D_uniquely_up_noiseR[which(rownames(D_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- D_uniquely_up_noiseR[1:25, ]
 ```
@@ -1082,25 +1042,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # E vs F
 #########
-
 ##########################################################################
 # cluster 1 + 2 (i.e. mostly Blood.S3) vs cluster 4 (i.e. mostly Thymus.S3)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster != "3"]
 colData(cp) <- droplevels(colData(cp))
 # classify cluster-group for comparison
-
 cp$vs3 <- factor(ifelse(cp$cluster == 1 | cp$cluster == 2 , "E", "F"))
-
 # set vs colours
 vs3_colours <- setNames(
   palette.colors(nlevels(cp$vs3), "Set1"),
   levels(cp$vs3))
 cp$colours$vs3_colours <- vs3_colours[cp$vs3]
-
 # find unique DE ./. cluster-groups
 vs3_uniquely_up <- findMarkers(
   cp,
@@ -1108,17 +1063,13 @@ vs3_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs3_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_2_vs_4.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_2_vs_4"), recursive = TRUE)
-
 vs_pair <- c("1_2", "4")
-
 message("Writing 'uniquely_up (cluster_1_2_vs_4)' marker genes to file.")
 for (n in names(vs3_uniquely_up)) {
   message(n)
@@ -1153,17 +1104,13 @@ for (n in names(vs3_uniquely_up)) {
 # look at cluster-group E / cluster 1+2 (i.e. mostly Blood.S3)
 chosen <- "E"
 E_uniquely_up <- vs3_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 1+2; mostly Blood.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # E_uniquely_up_pcg <- E_uniquely_up[intersect(protein_coding_gene_set, rownames(E_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 E_uniquely_up_noiseR <- E_uniquely_up[setdiff(rownames(E_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(E_uniquely_up_noiseR) %in% "CD4"),
@@ -1171,7 +1118,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"),
        E_uniquely_up_noiseR[which(rownames(E_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- E_uniquely_up_noiseR[1:25, ]
 ```
@@ -1230,17 +1176,13 @@ plotHeatmap(
 # look at cluster-group F / cluster 4 (i.e. mostly Thymus.S3)
 chosen <- "F"
 F_uniquely_up <- vs3_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 4; mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # F_uniquely_up_pcg <- F_uniquely_up[intersect(protein_coding_gene_set, rownames(F_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 F_uniquely_up_noiseR <- F_uniquely_up[setdiff(rownames(F_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(F_uniquely_up_noiseR) %in% "CD4"),
@@ -1248,7 +1190,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"),
        F_uniquely_up_noiseR[which(rownames(F_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- F_uniquely_up_noiseR[1:25, ]
 ```
@@ -1314,25 +1255,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # G vs H
 #########
-
 ##########################################################################
 # cluster 1 (i.e. S3-mix more Blood) vs cluster 2 (i.e. S3-mix more Thymus)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster == "1" | cp$cluster == "2"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs4 <- factor(ifelse(cp$cluster == 1 , "G", "H"))
-
 # set vs colours
 vs4_colours <- setNames(
   palette.colors(nlevels(cp$vs4), "Set1"),
   levels(cp$vs4))
 cp$colours$vs4_colours <- vs4_colours[cp$vs4]
-
 # find unique DE ./. cluster-groups
 vs4_uniquely_up <- findMarkers(
   cp,
@@ -1340,17 +1276,13 @@ vs4_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs4_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_2"), recursive = TRUE)
-
 vs_pair <- c("1", "2")
-
 message("Writing 'uniquely_up (cluster_1_vs_2)' marker genes to file.")
 for (n in names(vs4_uniquely_up)) {
   message(n)
@@ -1385,17 +1317,13 @@ for (n in names(vs4_uniquely_up)) {
 # look at cluster-group G / cluster 1 (i.e. S3-mix more Blood)
 chosen <- "G"
 G_uniquely_up <- vs4_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 1; S3-mix more Blood)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # G_uniquely_up_pcg <- G_uniquely_up[intersect(protein_coding_genG_set, rownames(G_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 G_uniquely_up_noiseR <- G_uniquely_up[setdiff(rownames(G_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(G_uniquely_up_noiseR) %in% "CD4"),
@@ -1403,7 +1331,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"),
        G_uniquely_up_noiseR[which(rownames(G_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- G_uniquely_up_noiseR[1:25, ]
 ```
@@ -1462,17 +1389,13 @@ plotHeatmap(
 # look at cluster-group H / cluster 2 (i.e. S3-mix more Thymus)
 chosen <- "H"
 H_uniquely_up <- vs4_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 2; mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # H_uniquely_up_pcg <- H_uniquely_up[intersect(protein_coding_genG_set, rownames(H_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 H_uniquely_up_noiseR <- H_uniquely_up[setdiff(rownames(H_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(H_uniquely_up_noiseR) %in% "CD4"),
@@ -1480,7 +1403,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"),
        H_uniquely_up_noiseR[which(rownames(H_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- H_uniquely_up_noiseR[1:25, ]
 ```
@@ -1546,25 +1468,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # I vs J
 #########
-
 #################################################################################
 # cluster 3 (i.e. mostly Thymus.S1 and .S2) vs cluster 4 (i.e. mostly Thymus.S3)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster == "3" | cp$cluster == "4"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs5 <- factor(ifelse(cp$cluster == 3 , "I", "J"))
-
 # set vs colours
 vs5_colours <- setNames(
   palette.colors(nlevels(cp$vs5), "Set1"),
   levels(cp$vs5))
 cp$colours$vs5_colours <- vs5_colours[cp$vs5]
-
 # find unique DE ./. cluster-groups
 vs5_uniquely_up <- findMarkers(
   cp,
@@ -1572,17 +1489,13 @@ vs5_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs5_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_3_vs_4.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_3_vs_4"), recursive = TRUE)
-
 vs_pair <- c("3", "4")
-
 message("Writing 'uniquely_up (cluster_3_vs_4)' marker genes to file.")
 for (n in names(vs5_uniquely_up)) {
   message(n)
@@ -1617,17 +1530,13 @@ for (n in names(vs5_uniquely_up)) {
 # look at cluster-group I / cluster 3 (i.e. mostly Thymus.S1 and .S2)
 chosen <- "I"
 I_uniquely_up <- vs5_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 3; mostly Thymus.S1 and .S2)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # I_uniquely_up_pcg <- I_uniquely_up[intersect(protein_coding_genI_set, rownames(I_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 I_uniquely_up_noiseR <- I_uniquely_up[setdiff(rownames(I_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(I_uniquely_up_noiseR) %in% "CD4"),
@@ -1635,7 +1544,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"),
        I_uniquely_up_noiseR[which(rownames(I_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- I_uniquely_up_noiseR[1:25, ]
 ```
@@ -1694,17 +1602,13 @@ plotHeatmap(
 # look at cluster-group J / cluster 4  (i.e. mostly Thymus.S3)
 chosen <- "J"
 J_uniquely_up <- vs5_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 4; mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # J_uniquely_up_pcg <- J_uniquely_up[intersect(protein_coding_genI_set, rownames(J_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 J_uniquely_up_noiseR <- J_uniquely_up[setdiff(rownames(J_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(J_uniquely_up_noiseR) %in% "CD4"),
@@ -1712,7 +1616,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"),
        J_uniquely_up_noiseR[which(rownames(J_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- J_uniquely_up_noiseR[1:25, ]
 ```
@@ -1778,25 +1681,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # K vs L
 #########
-
 #################################################################################
 # cluster 2 (i.e. S3-mix more Thymus) vs cluster 3 (i.e. mostly Thymus.S1 + .S2)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster == "2" | cp$cluster == "3"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs6 <- factor(ifelse(cp$cluster == 2 , "K", "L"))
-
 # set vs colours
 vs6_colours <- setNames(
   palette.colors(nlevels(cp$vs6), "Set1"),
   levels(cp$vs6))
 cp$colours$vs6_colours <- vs6_colours[cp$vs6]
-
 # find unique DE ./. cluster-groups
 vs6_uniquely_up <- findMarkers(
   cp,
@@ -1804,17 +1702,13 @@ vs6_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs6_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_2_vs_3.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_2_vs_3"), recursive = TRUE)
-
 vs_pair <- c("2", "3")
-
 message("Writing 'uniquely_up (cluster_2_vs_3)' marker genes to file.")
 for (n in names(vs6_uniquely_up)) {
   message(n)
@@ -1849,17 +1743,13 @@ for (n in names(vs6_uniquely_up)) {
 # look at cluster-group K / cluster 2 (i.e. S3-mix more Thymus)
 chosen <- "K"
 K_uniquely_up <- vs6_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 2; S3-mix more Thymus)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # K_uniquely_up_pcg <- K_uniquely_up[intersect(protein_coding_genK_set, rownames(K_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 K_uniquely_up_noiseR <- K_uniquely_up[setdiff(rownames(K_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(K_uniquely_up_noiseR) %in% "CD4"),
@@ -1867,7 +1757,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(K_uniquely_up_noiseR) %in% "KLRB1"),
        K_uniquely_up_noiseR[which(rownames(K_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- K_uniquely_up_noiseR[1:25, ]
 ```
@@ -1926,17 +1815,13 @@ plotHeatmap(
 # look at cluster-group L / cluster 3  (i.e. mostly Thymus.S1 + .S2)
 chosen <- "L"
 L_uniquely_up <- vs6_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 3; mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # L_uniquely_up_pcg <- L_uniquely_up[intersect(protein_coding_genK_set, rownames(L_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 L_uniquely_up_noiseR <- L_uniquely_up[setdiff(rownames(L_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(L_uniquely_up_noiseR) %in% "CD4"),
@@ -1944,7 +1829,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(L_uniquely_up_noiseR) %in% "KLRB1"),
        L_uniquely_up_noiseR[which(rownames(L_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- L_uniquely_up_noiseR[1:25, ]
 ```
@@ -2010,25 +1894,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # M vs N
 #########
-
 #################################################################################
 # cluster 2 (i.e. S3-mix more Thymus) vs cluster 4 (i.e. mostly Thymus.S3)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster == "2" | cp$cluster == "4"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs7 <- factor(ifelse(cp$cluster == 2 , "M", "N"))
-
 # set vs colours
 vs7_colours <- setNames(
   palette.colors(nlevels(cp$vs7), "Set1"),
   levels(cp$vs7))
 cp$colours$vs7_colours <- vs7_colours[cp$vs7]
-
 # find unique DE ./. cluster-groups
 vs7_uniquely_up <- findMarkers(
   cp,
@@ -2036,17 +1915,13 @@ vs7_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs7_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_2_vs_4.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_2_vs_4"), recursive = TRUE)
-
 vs_pair <- c("2", "4")
-
 message("Writing 'uniquely_up (cluster_2_vs_4)' marker genes to file.")
 for (n in names(vs7_uniquely_up)) {
   message(n)
@@ -2081,17 +1956,13 @@ for (n in names(vs7_uniquely_up)) {
 # look at cluster-group M / cluster 2 (i.e. S3-mix more Thymus)
 chosen <- "M"
 M_uniquely_up <- vs7_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 2; S3-mix more Thymus)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # M_uniquely_up_pcg <- M_uniquely_up[intersect(protein_coding_genM_set, rownames(M_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 M_uniquely_up_noiseR <- M_uniquely_up[setdiff(rownames(M_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(M_uniquely_up_noiseR) %in% "CD4"),
@@ -2099,7 +1970,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(M_uniquely_up_noiseR) %in% "KLRB1"),
        M_uniquely_up_noiseR[which(rownames(M_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- M_uniquely_up_noiseR[1:25, ]
 ```
@@ -2158,17 +2028,13 @@ plotHeatmap(
 # look at cluster-group N / cluster 4  (i.e. mostly Thymus.S3)
 chosen <- "N"
 N_uniquely_up <- vs7_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 4; mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # N_uniquely_up_pcg <- N_uniquely_up[intersect(protein_coding_genM_set, rownames(N_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 N_uniquely_up_noiseR <- N_uniquely_up[setdiff(rownames(N_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(N_uniquely_up_noiseR) %in% "CD4"),
@@ -2176,7 +2042,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(N_uniquely_up_noiseR) %in% "KLRB1"),
        N_uniquely_up_noiseR[which(rownames(N_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- N_uniquely_up_noiseR[1:25, ]
 ```
@@ -2242,25 +2107,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # O vs P
 #########
-
 #################################################################################
 # cluster 1 (i.e. S3-mix more Blood) vs cluster 3 (i.e. mostly Thymus.S1 and .S2)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster == "1" | cp$cluster == "3"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs8 <- factor(ifelse(cp$cluster == 1 , "O", "P"))
-
 # set vs colours
 vs8_colours <- setNames(
   palette.colors(nlevels(cp$vs8), "Set1"),
   levels(cp$vs8))
 cp$colours$vs8_colours <- vs8_colours[cp$vs8]
-
 # find unique DE ./. cluster-groups
 vs8_uniquely_up <- findMarkers(
   cp,
@@ -2268,17 +2128,13 @@ vs8_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs8_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_3.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_3"), recursive = TRUE)
-
 vs_pair <- c("1", "3")
-
 message("Writing 'uniquely_up (cluster_1_vs_3)' marker genes to file.")
 for (n in names(vs8_uniquely_up)) {
   message(n)
@@ -2313,17 +2169,13 @@ for (n in names(vs8_uniquely_up)) {
 # look at cluster-group O / cluster 1 (i.e. S3-mix more Blood)
 chosen <- "O"
 O_uniquely_up <- vs8_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 1; S3-mix more Blood)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # O_uniquely_up_pcg <- O_uniquely_up[intersect(protein_coding_genO_set, rownames(O_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 O_uniquely_up_noiseR <- O_uniquely_up[setdiff(rownames(O_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(O_uniquely_up_noiseR) %in% "CD4"),
@@ -2331,7 +2183,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(O_uniquely_up_noiseR) %in% "KLRB1"),
        O_uniquely_up_noiseR[which(rownames(O_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- O_uniquely_up_noiseR[1:25, ]
 ```
@@ -2390,17 +2241,13 @@ plotHeatmap(
 # look at cluster-group P / cluster 3  (i.e. mostly Thymus.S1 and .S2)
 chosen <- "P"
 P_uniquely_up <- vs8_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 3; mostly Thymus.S1 and .S2)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # P_uniquely_up_pcg <- P_uniquely_up[intersect(protein_coding_genO_set, rownames(P_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 P_uniquely_up_noiseR <- P_uniquely_up[setdiff(rownames(P_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(P_uniquely_up_noiseR) %in% "CD4"),
@@ -2408,7 +2255,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(P_uniquely_up_noiseR) %in% "KLRB1"),
        P_uniquely_up_noiseR[which(rownames(P_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- P_uniquely_up_noiseR[1:25, ]
 ```
@@ -2474,25 +2320,20 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 #########
 # Q vs R
 #########
-
 #################################################################################
 # cluster 1 (i.e. S3-mix more Blood) vs cluster 4 (i.e. mostly Thymus.S3)
-
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
 cp <- cp[, cp$cluster == "1" | cp$cluster == "4"]
 colData(cp) <- droplevels(colData(cp))
-
 # classify cluster-group for comparison
 cp$vs9 <- factor(ifelse(cp$cluster == 1 , "Q", "R"))
-
 # set vs colours
 vs9_colours <- setNames(
   palette.colors(nlevels(cp$vs9), "Set1"),
   levels(cp$vs9))
 cp$colours$vs9_colours <- vs9_colours[cp$vs9]
-
 # find unique DE ./. cluster-groups
 vs9_uniquely_up <- findMarkers(
   cp,
@@ -2500,17 +2341,13 @@ vs9_uniquely_up <- findMarkers(
   block = cp$block,
   pval.type = "all",
   direction = "up")
-
 # export DGE lists
 saveRDS(
   vs9_uniquely_up,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_4.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_4"), recursive = TRUE)
-
 vs_pair <- c("1", "4")
-
 message("Writing 'uniquely_up (cluster_1_vs_4)' marker genes to file.")
 for (n in names(vs9_uniquely_up)) {
   message(n)
@@ -2545,17 +2382,13 @@ for (n in names(vs9_uniquely_up)) {
 # look at cluster-group Q / cluster 1 (i.e. S3-mix more Blood)
 chosen <- "Q"
 Q_uniquely_up <- vs9_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 1; S3-mix more Blood)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # Q_uniquely_up_pcg <- Q_uniquely_up[intersect(protein_coding_genQ_set, rownames(Q_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 Q_uniquely_up_noiseR <- Q_uniquely_up[setdiff(rownames(Q_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(Q_uniquely_up_noiseR) %in% "CD4"),
@@ -2563,7 +2396,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(Q_uniquely_up_noiseR) %in% "KLRB1"),
        Q_uniquely_up_noiseR[which(rownames(Q_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- Q_uniquely_up_noiseR[1:25, ]
 ```
@@ -2622,17 +2454,13 @@ plotHeatmap(
 # look at cluster-group R / cluster 4  (i.e. mostly Thymus.S3)
 chosen <- "R"
 R_uniquely_up <- vs9_uniquely_up[[chosen]]
-
 # add description for the chosen cluster-group
 x <- "(cluster 4; mostly Thymus.S3)"
-
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
 # R_uniquely_up_pcg <- R_uniquely_up[intersect(protein_coding_genQ_set, rownames(R_uniquely_up)), ]
-
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
 R_uniquely_up_noiseR <- R_uniquely_up[setdiff(rownames(R_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
-
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(R_uniquely_up_noiseR) %in% "CD4"),
@@ -2640,7 +2468,6 @@ y <- c("CD4",
 z <- c("KLRB1/CD161",
        which(rownames(R_uniquely_up_noiseR) %in% "KLRB1"),
        R_uniquely_up_noiseR[which(rownames(R_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
-
 # top25 only + gene-of-interest
 best_set <- R_uniquely_up_noiseR[1:25, ]
 ```
@@ -2722,12 +2549,9 @@ xaringanExtra::use_panelset()
 ############
 # cluster 3
 ############
-
 chosen <- "3"
-
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S1 and Thymus.S2)"
-
 # retain only significant markers (FDR<0.05) + keep only required output columns
 B_uniquely_up_noiseR_sig <- B_uniquely_up_noiseR[B_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 D_uniquely_up_noiseR_sig <- D_uniquely_up_noiseR[D_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
@@ -2735,7 +2559,6 @@ I_uniquely_up_noiseR_sig <- I_uniquely_up_noiseR[I_uniquely_up_noiseR$FDR<0.05,]
 L_uniquely_up_noiseR_sig <- L_uniquely_up_noiseR[L_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 P_uniquely_up_noiseR_sig <- P_uniquely_up_noiseR[P_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 cluster3_uniquely_up_noiseR_sig <- cluster3_uniquely_up_noiseR[cluster3_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
-
 # add top column
 B_uniquely_up_noiseR_sig$top <- 1:nrow(B_uniquely_up_noiseR_sig)
 D_uniquely_up_noiseR_sig$top <- 1:nrow(D_uniquely_up_noiseR_sig)
@@ -2743,7 +2566,6 @@ I_uniquely_up_noiseR_sig$top <- 1:nrow(I_uniquely_up_noiseR_sig)
 L_uniquely_up_noiseR_sig$top <- 1:nrow(L_uniquely_up_noiseR_sig)
 P_uniquely_up_noiseR_sig$top <- 1:nrow(P_uniquely_up_noiseR_sig)
 cluster3_uniquely_up_noiseR_sig$top <- 1:nrow(cluster3_uniquely_up_noiseR_sig)
-
 # unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
 BDILP3_uniquely_up_noiseR_sig <- rbind2(B_uniquely_up_noiseR_sig,
                                         D_uniquely_up_noiseR_sig,
@@ -2751,23 +2573,18 @@ BDILP3_uniquely_up_noiseR_sig <- rbind2(B_uniquely_up_noiseR_sig,
                                         L_uniquely_up_noiseR_sig,
                                         P_uniquely_up_noiseR_sig,
                                         cluster3_uniquely_up_noiseR_sig)
-
 BDILP3_uniquely_up_noiseR_sig_sort <- BDILP3_uniquely_up_noiseR_sig[with(BDILP3_uniquely_up_noiseR_sig, order(top, FDR)), ]
 BDILP3_uniquely_up_noiseR_sig_sort_uniq <- BDILP3_uniquely_up_noiseR_sig_sort[unique(rownames(BDILP3_uniquely_up_noiseR_sig_sort)), ]
-
 # # de-select unannotated/ not well-characterised genes
 # deselected <- c("NPIPB13", "NPIPB3", "NPIPB11", "NPIPB5", "NPIPB4", "EEF1A1", "ACTG1", "ACTB", "IFITM1")
 deselected <- c()
 BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected <- BDILP3_uniquely_up_noiseR_sig_sort_uniq[!(rownames(BDILP3_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
-
 # export DGE lists
 saveRDS(
   BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_3_integrated.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
-
 message("Writing 'uniquely_up (cluster_3_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
@@ -2779,7 +2596,6 @@ gzout <- gzfile(
     paste0("cluster_3_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
-
 write.table(
   x = BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected %>%
     as.data.frame() %>%
@@ -2790,7 +2606,6 @@ write.table(
   row.names = FALSE,
   col.names = TRUE)
 close(gzout)
-
 # top only + gene-of-interest
 best_set <- BDILP3_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
 ```
@@ -2864,49 +2679,39 @@ For example, TRDC is the T cell receptor delta chain and is higher in expression
 ############
 # cluster 4
 ############
-
 chosen <- "4"
-
 # add description for the chosen cluster-group
 x <- "(mostly Thymus.S3)"
-
 # retain only significant markers (FDR<0.05) + keep only required output columns
 F_uniquely_up_noiseR_sig <- F_uniquely_up_noiseR[F_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 J_uniquely_up_noiseR_sig <- J_uniquely_up_noiseR[J_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 N_uniquely_up_noiseR_sig <- N_uniquely_up_noiseR[N_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 R_uniquely_up_noiseR_sig <- R_uniquely_up_noiseR[R_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 cluster4_uniquely_up_noiseR_sig <- cluster4_uniquely_up_noiseR[cluster4_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
-
 # add top column
 F_uniquely_up_noiseR_sig$top <- 1:nrow(F_uniquely_up_noiseR_sig)
 J_uniquely_up_noiseR_sig$top <- 1:nrow(J_uniquely_up_noiseR_sig)
 N_uniquely_up_noiseR_sig$top <- 1:nrow(N_uniquely_up_noiseR_sig)
 R_uniquely_up_noiseR_sig$top <- 1:nrow(R_uniquely_up_noiseR_sig)
 cluster4_uniquely_up_noiseR_sig$top <- 1:nrow(cluster4_uniquely_up_noiseR_sig)
-
 # unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
 FJNR4_uniquely_up_noiseR_sig <- rbind2(F_uniquely_up_noiseR_sig,
                                        J_uniquely_up_noiseR_sig,
                                        N_uniquely_up_noiseR_sig,
                                        R_uniquely_up_noiseR_sig,
                                        cluster4_uniquely_up_noiseR_sig)
-
 FJNR4_uniquely_up_noiseR_sig_sort <- FJNR4_uniquely_up_noiseR_sig[with(FJNR4_uniquely_up_noiseR_sig, order(top, FDR)), ]
 FJNR4_uniquely_up_noiseR_sig_sort_uniq <- FJNR4_uniquely_up_noiseR_sig_sort[unique(rownames(FJNR4_uniquely_up_noiseR_sig_sort)), ]
-
 # # de-select unannotated/ not well-characterised genes
 # deselected <- c("MTRNR1L12", "MTRNR2L8", "NPIPB12", "NPIPB4", "NPIPB3", "NPIPB13", "NPIPB11", "NPIPB15", "MALAT1")
 deselected <- c()
 FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected <- FJNR4_uniquely_up_noiseR_sig_sort_uniq[!(rownames(FJNR4_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
-
 # export DGE lists
 saveRDS(
   FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_4_integrated.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
-
 message("Writing 'uniquely_up (cluster_4_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
@@ -2918,7 +2723,6 @@ gzout <- gzfile(
     paste0("cluster_4_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
-
 write.table(
   x = FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected %>%
     as.data.frame() %>%
@@ -2929,7 +2733,6 @@ write.table(
   row.names = FALSE,
   col.names = TRUE)
 close(gzout)
-
 # top only + gene-of-interest
 best_set <- FJNR4_uniquely_up_noiseR_sig_sort_uniq_selected[1:18, ]
 ```
@@ -3104,46 +2907,36 @@ plot_grid(
 ############
 # cluster 2
 ############
-
 chosen <- "2"
-
 # add description for the chosen cluster-group
 x <- "(S3-mix more Thymus)"
-
 # retain only significant markers (FDR<0.05) + keep only required output columns
 K_uniquely_up_noiseR_sig <- K_uniquely_up_noiseR[K_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 M_uniquely_up_noiseR_sig <- M_uniquely_up_noiseR[M_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 H_uniquely_up_noiseR_sig <- H_uniquely_up_noiseR[H_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 cluster2_uniquely_up_noiseR_sig <- cluster2_uniquely_up_noiseR[cluster2_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
-
 # add top column
 K_uniquely_up_noiseR_sig$top <- 1:nrow(K_uniquely_up_noiseR_sig)
 M_uniquely_up_noiseR_sig$top <- 1:nrow(M_uniquely_up_noiseR_sig)
 # TODO: fix error - exclude list from rbind2 if empty
 # H_uniquely_up_noiseR_sig$top <- 1:nrow(H_uniquely_up_noiseR_sig)
 # cluster2_uniquely_up_noiseR_sig$top <- 1:nrow(cluster2_uniquely_up_noiseR_sig)
-
 # unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
 KMH2_uniquely_up_noiseR_sig <- rbind2(K_uniquely_up_noiseR_sig,
                                       M_uniquely_up_noiseR_sig,
                                       H_uniquely_up_noiseR_sig,
                                       cluster2_uniquely_up_noiseR_sig)
-
 KMH2_uniquely_up_noiseR_sig_sort <- KMH2_uniquely_up_noiseR_sig[with(KMH2_uniquely_up_noiseR_sig, order(top, FDR)), ]
 KMH2_uniquely_up_noiseR_sig_sort_uniq <- KMH2_uniquely_up_noiseR_sig_sort[unique(rownames(KMH2_uniquely_up_noiseR_sig_sort)), ]
-
 # # de-select unannotated/ not well-characterised genes
 deselected <- c()
 KMH2_uniquely_up_noiseR_sig_sort_uniq_selected <- KMH2_uniquely_up_noiseR_sig_sort_uniq[!(rownames(KMH2_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
-
 # export DGE lists
 saveRDS(
   KMH2_uniquely_up_noiseR_sig_sort_uniq_selected,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_2_integrated.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
-
 message("Writing 'uniquely_up (cluster_2_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
@@ -3155,7 +2948,6 @@ gzout <- gzfile(
     paste0("cluster_2_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
-
 write.table(
   x = KMH2_uniquely_up_noiseR_sig_sort_uniq_selected %>%
     as.data.frame() %>%
@@ -3166,7 +2958,6 @@ write.table(
   row.names = FALSE,
   col.names = TRUE)
 close(gzout)
-
 # top only + gene-of-interest
 best_set <- KMH2_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
 ```
@@ -3228,45 +3019,35 @@ plotHeatmap(
 ############
 # cluster 1
 ############
-
 chosen <- "1"
-
 # add description for the chosen cluster-group
 x <- "(S3-mix more Blood)"
-
 # retain only significant markers (FDR<0.05) + keep only required output columns
 G_uniquely_up_noiseR_sig <- G_uniquely_up_noiseR[G_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 O_uniquely_up_noiseR_sig <- O_uniquely_up_noiseR[O_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 Q_uniquely_up_noiseR_sig <- Q_uniquely_up_noiseR[Q_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
 cluster1_uniquely_up_noiseR_sig <- cluster1_uniquely_up_noiseR[cluster1_uniquely_up_noiseR$FDR<0.05,][ ,c(1:3)]
-
 # add top column
 G_uniquely_up_noiseR_sig$top <- 1:nrow(G_uniquely_up_noiseR_sig)
 O_uniquely_up_noiseR_sig$top <- 1:nrow(O_uniquely_up_noiseR_sig)
 Q_uniquely_up_noiseR_sig$top <- 1:nrow(Q_uniquely_up_noiseR_sig)
 cluster1_uniquely_up_noiseR_sig$top <- 1:nrow(cluster1_uniquely_up_noiseR_sig)
-
 # unify S4 objects, sort by top (ascending) then FDR (ascending), keep only first unique entry for each marker
 GOQ1_uniquely_up_noiseR_sig <- rbind2(G_uniquely_up_noiseR_sig,
                                       O_uniquely_up_noiseR_sig,
                                       Q_uniquely_up_noiseR_sig,
                                       cluster1_uniquely_up_noiseR_sig)
-
 GOQ1_uniquely_up_noiseR_sig_sort <- GOQ1_uniquely_up_noiseR_sig[with(GOQ1_uniquely_up_noiseR_sig, order(top, FDR)), ]
 GOQ1_uniquely_up_noiseR_sig_sort_uniq <- GOQ1_uniquely_up_noiseR_sig_sort[unique(rownames(GOQ1_uniquely_up_noiseR_sig_sort)), ]
-
 # # de-select unannotated/ not well-characterised genes
 deselected <- c()
 GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected <- GOQ1_uniquely_up_noiseR_sig_sort_uniq[!(rownames(GOQ1_uniquely_up_noiseR_sig_sort_uniq) %in% deselected), ]
-
 # export DGE lists
 saveRDS(
   GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected,
   here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_integrated.rds"),
   compress = "xz")
-
 dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "integrated"), recursive = TRUE)
-
 message("Writing 'uniquely_up (cluster_1_integrated)' marker genes to file.")
 gzout <- gzfile(
   description = here(
@@ -3278,7 +3059,6 @@ gzout <- gzfile(
     paste0("cluster_1_integrated",
            ".uniquely_up.csv.gz")),
   open = "wb")
-
 write.table(
   x = GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected %>%
     as.data.frame() %>%
@@ -3289,7 +3069,6 @@ write.table(
   row.names = FALSE,
   col.names = TRUE)
 close(gzout)
-
 # top only + gene-of-interest
 best_set <- GOQ1_uniquely_up_noiseR_sig_sort_uniq_selected[1:50, ]
 ```
@@ -3363,7 +3142,6 @@ DGE lists of these comparisons are available in [`output/marker_genes/whole_cell
 ```{r}
 ############################################
 # Sanity check (TRDV2 and TRGV9 expression)
-
 assay(sce, "log2cpm") <- edgeR::cpm(
   counts(sce),
   log = TRUE,

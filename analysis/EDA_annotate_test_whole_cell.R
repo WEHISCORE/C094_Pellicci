@@ -146,25 +146,26 @@ cluster_colours_1 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_1))],
   levels(sce0$cluster_1))
 sce0$colours$cluster_colours_1 <- cluster_colours_1[sce0$cluster_1]
-# number of cluster = 4 (default)
+# number of cluster = 4
 set.seed(4759)
-snn_gr_2 <- buildSNNGraph(sce0, use.dimred = "corrected", k=10)
+snn_gr_2 <- buildSNNGraph(sce0, use.dimred = "corrected", k=11)
 clusters_2 <- igraph::cluster_louvain(snn_gr_2)
 sce0$cluster_2 <- factor(clusters_2$membership)
 cluster_colours_2 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_2))],
   levels(sce0$cluster_2))
 sce0$colours$cluster_colours_2 <- cluster_colours_2[sce0$cluster_2]
-# number of cluster = 5
+# number of cluster = 5 (default)
 set.seed(4759)
-snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected", k=5)
+snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected", k=10)
 clusters_3 <- igraph::cluster_louvain(snn_gr_3)
 sce0$cluster_3 <- factor(clusters_3$membership)
 cluster_colours_3 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_3))],
   levels(sce0$cluster_3))
 sce0$colours$cluster_colours_3 <- cluster_colours_3[sce0$cluster_3]
-# number of cluster = 6
+# number of cluster = 7
+# NOTE: try out anything between k=4 to k=5, nothing can achieve "ncluster = 6"
 set.seed(4759)
 snn_gr_4 <- buildSNNGraph(sce0, use.dimred = "corrected", k=4)
 clusters_4 <- igraph::cluster_louvain(snn_gr_4)
@@ -202,14 +203,14 @@ p11 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 
 p12 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = stage_colours, name = "stage")
 
-# p13 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
-# p14 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
-# p15 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
-# p16 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
+p13 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p14 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p15 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p16 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
 
 p17 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = donor_colours, name = "donor")
@@ -245,7 +246,7 @@ p28 <- ggcells(sce0) + geom_bar(aes(x = cluster_4, fill = cluster_4)) + coord_fl
 p1 + p2 + p3 + p4 +
   p5 + p6 + p7 + p8 +
   p9 + p10 + p11 + p12 +
-  # p13 + p14 + p15 + p16 +
+  p13 + p14 + p15 + p16 +
   p17 + p18 + p19 + p20 +
   p21 + p22 + p23 + p24 +
   p25 + p26 + p27 + p28 +
@@ -253,7 +254,7 @@ p1 + p2 + p3 + p4 +
 
 # comment:
 # we expect there are at least 4-6 groups in this subset: thymus.s1, thymus.s2, thymus.s3, blood.s1, blood.s2, blood.s3
-# based on the `group` pattern, there should only be this number of unique group
+# but based on the `group` pattern, there should only be this number of unique group
 3
 
 ###############################
@@ -275,7 +276,7 @@ sce$colours$cluster_colours <- cluster_colours[sce$cluster]
 
 
 ###################################
-# cluster 1 (i.e. S3-mix, more blood) vs 2 (i.e. mostly thymus S1 & S2) vs 3 (i.e. S3-mix, more thymus)
+# cluster 1 (i.e. ) vs 2 (i.e. ) vs 3 (i.e. )
 
 # find unique DE ./. clusters
 uniquely_up <- findMarkers(
@@ -288,10 +289,10 @@ uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   uniquely_up,
-  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3.rds"),
+  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_1_vs_2_vs_3.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_1_vs_2_vs_3"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_1_vs_2_vs_3"), recursive = TRUE)
 
 vs_pair <- c("1", "2", "3")
 
@@ -311,6 +312,8 @@ for (n in names(uniquely_up)) {
              vs_pair[-which(names(uniquely_up) %in% n)][1],
              "_vs_",
              vs_pair[-which(names(uniquely_up) %in% n)][2],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][3],
              ".uniquely_up.csv.gz")),
     open = "wb")
   write.table(
@@ -326,12 +329,12 @@ for (n in names(uniquely_up)) {
 }
 
 ##########################################
-# look at cluster 1 (i.e. S3-mix, more blood)
+# look at cluster 1 (i.e. )
 chosen <- "1"
 cluster1_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(S3-mix, more blood)"
+x <- "()"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -343,10 +346,10 @@ cluster1_uniquely_up_noiseR <- cluster1_uniquely_up[setdiff(rownames(cluster1_un
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
        which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"),
-       cluster_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+       cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
 z <- c("KLRB1/CD161",
        which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
-       cluster_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+       cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only
 best_set <- cluster1_uniquely_up_noiseR[1:25, ]
@@ -396,12 +399,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################
-# look at cluster 2 (i.e. mostly thymus S1 & S2)
+# look at cluster 2 (i.e. )
 chosen <- "2"
 cluster2_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(mostly thymus S1 & S2)"
+x <- "()"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -466,12 +469,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################
-# look at cluster 3 (i.e. S3-mix, more thymus)
+# look at cluster 3 (i.e. )
 chosen <- "3"
 cluster3_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(S3-mix, more thymus)"
+x <- "()"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -534,8 +537,6 @@ plotHeatmap(
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
-
-
 
 
 

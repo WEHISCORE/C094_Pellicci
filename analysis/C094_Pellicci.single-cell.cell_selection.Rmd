@@ -630,7 +630,7 @@ Also, after our online discussion with Dan and Stuart on 30 June 2021, we confir
 # remove `cell line` and cells from cluster
 sce <- sce[, !(sce$tissue=="SKW3")]
 sce <- sce[, !(sce$cluster=="5")]
-# sce <- sce[, !(sce$stage=="Unknown")]
+sce <- sce[, !(sce$stage=="Unknown")]
 colData(sce) <- droplevels(colData(sce))
 ```
 

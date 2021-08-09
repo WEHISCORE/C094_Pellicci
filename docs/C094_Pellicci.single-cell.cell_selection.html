@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-08-05"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-08-05"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-08-07"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-08-07"/>
   <meta name="article:author" content="William Ho"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -112,7 +112,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-05"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-07"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2057,7 +2057,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-05T00:00:00.000+10:00","citationText":"Ho, 2021"}
+{"title":"Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-07T00:00:00.000+10:00","citationText":"Ho, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2159,7 +2159,7 @@ Supplementary files
 <div class="d-byline">
   William Ho  (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-08-05
+<br/>2021-08-07
 </div>
 
 <div class="d-article">
@@ -2982,7 +2982,7 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># remove `cell line` and cells from cluster</span>
 <span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='op'>!</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span><span class='op'>==</span><span class='st'>"SKW3"</span><span class='op'>)</span><span class='op'>]</span>
 <span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='op'>!</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>==</span><span class='st'>"5"</span><span class='op'>)</span><span class='op'>]</span>
-<span class='co'># sce &lt;- sce[, !(sce$stage=="Unknown")]</span>
+<span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='op'>!</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span><span class='op'>==</span><span class='st'>"Unknown"</span><span class='op'>)</span><span class='op'>]</span>
 <span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/droplevels.html'>droplevels</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>
 </code></pre>
 </div>
@@ -3035,7 +3035,7 @@ Show code
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Australia/Melbourne         
- date     2021-08-05                  
+ date     2021-08-07                  
 
 ─ Packages ─────────────────────────────────────────────────────────
  ! package                * version  date       lib source        
