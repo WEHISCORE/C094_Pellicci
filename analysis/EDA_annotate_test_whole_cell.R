@@ -202,14 +202,14 @@ p11 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 
 p12 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = stage_colours, name = "stage")
 
-# p13 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
-# p14 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
-# p15 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
-# p16 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = tissue_colours, name = "tissue")
+p13 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p14 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p15 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p16 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
 
 p17 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = donor_colours, name = "donor")
@@ -245,7 +245,7 @@ p28 <- ggcells(sce0) + geom_bar(aes(x = cluster_4, fill = cluster_4)) + coord_fl
 p1 + p2 + p3 + p4 +
   p5 + p6 + p7 + p8 +
   p9 + p10 + p11 + p12 +
-  # p13 + p14 + p15 + p16 +
+  p13 + p14 + p15 + p16 +
   p17 + p18 + p19 + p20 +
   p21 + p22 + p23 + p24 +
   p25 + p26 + p27 + p28 +

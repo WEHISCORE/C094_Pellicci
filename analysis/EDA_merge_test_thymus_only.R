@@ -85,7 +85,7 @@ colData(sce) <- droplevels(colData(sce))
 
 
 
-### Re-processing (whole cell)
+### Re-processing
 sce$batch <- sce$plate_number
 var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
 hvg <- getTopHVGs(var_fit, var.threshold = 0)

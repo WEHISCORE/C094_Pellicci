@@ -207,16 +207,16 @@ p9 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "cluster_4", theme_size
 p10 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "cluster_5", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = cluster_colours_5, name = "cluster_5")
 
-# p11 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = stage_colours, name = "stage")
-# p12 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = stage_colours, name = "stage")
-# p13 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = stage_colours, name = "stage")
-# p14 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = stage_colours, name = "stage")
-# p15 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
-#   scale_colour_manual(values = stage_colours, name = "stage")
+p11 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = stage_colours, name = "stage")
+p12 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = stage_colours, name = "stage")
+p13 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = stage_colours, name = "stage")
+p14 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = stage_colours, name = "stage")
+p15 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) +
+  scale_colour_manual(values = stage_colours, name = "stage")
 
 p16 <- plotReducedDim(sce0, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = tissue_colours, name = "tissue")
@@ -267,9 +267,9 @@ p35 <- ggcells(sce0) + geom_bar(aes(x = cluster_5, fill = cluster_5)) + coord_fl
   theme_cowplot(font_size = 8) + scale_fill_manual(values = cluster_colours_5) +
   geom_text(stat='count', aes(x = cluster_5, label=..count..), hjust=1.5, size=2)
 
-p1 + p2 + p3 + p4 + p5
+p1 + p2 + p3 + p4 + p5 +
   p6 + p7 + p8 + p9 + p10 +
-  # p11 + p12 + p13 + p14 + p15 +
+  p11 + p12 + p13 + p14 + p15 +
   p16 + p17 + p18 + p19 + p20 +
   p21 + p22 + p23 + p24 + p25 +
   p26 + p27 + p28 + p29 + p30 +
