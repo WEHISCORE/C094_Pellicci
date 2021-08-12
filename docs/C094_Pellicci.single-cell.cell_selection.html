@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-08-05"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-08-05"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-08-12"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-08-12"/>
   <meta name="article:author" content="William Ho"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -112,7 +112,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-05"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-12"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2057,7 +2057,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-05T00:00:00.000+10:00","citationText":"Ho, 2021"}
+{"title":"Selection of biologically relevant cells for Pellicci gamma-delta T-cell single-cell dataset","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-12T00:00:00.000+10:00","citationText":"Ho, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2159,7 +2159,7 @@ Supplementary files
 <div class="d-byline">
   William Ho  (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-08-05
+<br/>2021-08-12
 </div>
 
 <div class="d-article">
@@ -2184,6 +2184,7 @@ Supplementary files
 <li><a href="#investigation-of-cluster-1">Investigation of cluster <code>1</code></a></li>
 <li><a href="#cluster-specific-upregulated-genes-1">Cluster-specific upregulated genes</a></li>
 <li><a href="#cell-line-guided-batch-correction">Cell line-guided batch correction</a></li>
+<li><a href="#investigation-of-cluster-4-after-merging">Investigation of cluster <code>4</code> (after merging)</a></li>
 </ul></li>
 <li><a href="#concluding-remarks">Concluding remarks</a></li>
 <li><a href="#additional-information">Additional information</a></li>
@@ -2718,7 +2719,7 @@ Figure 5: Heatmap of log-expression values in our dataset at the cell-level for 
 </div>
 </div>
 <h2 id="cluster-specific-upregulated-genes">Cluster-specific upregulated genes</h2>
-<p>Further, we also look for genes that are specifically upregulated in cluster <code>5</code> compared to all other clusters, so as to help determine the exact identity of the cluster.</p>
+<p>Further, we also look for genes that are specifically upregulated in cluster <code>5</code> compared to all other clusters, so as to help determine if <code>intermediate monocyte</code> is the exact identity of this cluster.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2895,6 +2896,7 @@ Show code
 </div>
 <h2 id="cell-line-guided-batch-correction">Cell line-guided batch correction</h2>
 <p>Further, we also investigate the usefulness of the control cell line <code>SKW3</code> in cluster <code>1</code> for purpose of batch correction. The cell line alone, unfortunately, seems not be sufficient to help with the batch correction, but either exacerbated or leave the batch impact unresolved in this scenario (Figure <a href="#fig:umap-plate-number-cell-line-guided-MNN">8</a>).</p>
+<p>Again, the <code>SKW3</code> cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the <code>Thymus</code> cells and form a standalone cluster.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2971,8 +2973,7 @@ Figure 8: UMAP plot of the dataset. Each point represents a cell and each panel 
 </p>
 </div>
 </div>
-<p>Notably, the <code>SKW3</code> cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the <code>Thymus</code> cells and form a standalone cluster.</p>
-<p><strong>NOTE</strong>: Taken all of these evidences together, we decide to remove the <code>Cell line</code> proceed the analyses with only the sample cells. Also, after our online discussion with Dan and Stuart on 30 June 2021, we confirmed that cells in cluster <code>5</code> are contaminants. <!-- Together with the cells with `Unknown` stage, all should be removed from the the subsequent analyses as well. --></p>
+<p><strong>NOTE</strong>: Taken all of these evidences together, we decide to remove the <code>Cell line</code> proceed the analyses with only the sample cells. Also, after our online discussion with Dan and Stuart on 30 June 2021, we confirmed that cells in cluster <code>5</code> are contaminants.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2982,7 +2983,373 @@ Show code
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># remove `cell line` and cells from cluster</span>
 <span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='op'>!</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span><span class='op'>==</span><span class='st'>"SKW3"</span><span class='op'>)</span><span class='op'>]</span>
 <span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='op'>!</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>==</span><span class='st'>"5"</span><span class='op'>)</span><span class='op'>]</span>
-<span class='co'># sce &lt;- sce[, !(sce$stage=="Unknown")]</span>
+<span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/droplevels.html'>droplevels</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+</div>
+<h2 id="investigation-of-cluster-4-after-merging">Investigation of cluster <code>4</code> (after merging)</h2>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># HVG determination</span>
+<span class='va'>sce</span><span class='op'>$</span><span class='va'>batch</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span>
+<span class='va'>var_fit</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/modelGeneVarWithSpikes.html'>modelGeneVarWithSpikes</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"ERCC"</span>, block <span class='op'>=</span> <span class='va'>sce</span><span class='op'>$</span><span class='va'>batch</span><span class='op'>)</span>
+<span class='va'>hvg</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/getTopHVGs.html'>getTopHVGs</a></span><span class='op'>(</span><span class='va'>var_fit</span>, var.threshold <span class='op'>=</span> <span class='fl'>0</span><span class='op'>)</span>
+<span class='va'>hvg</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/sets.html'>intersect</a></span><span class='op'>(</span><span class='va'>hvg</span>, <span class='va'>protein_coding_gene_set</span><span class='op'>)</span>
+
+<span class='co'># PCA</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>67726</span><span class='op'>)</span>
+<span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/denoisePCA.html'>denoisePCA</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>, 
+  <span class='va'>var_fit</span>, 
+  subset.row <span class='op'>=</span> <span class='va'>hvg</span>,
+  BSPARAM <span class='op'>=</span> <span class='fu'>BiocSingular</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/BiocSingular/man/BiocSingularParam.html'>IrlbaParam</a></span><span class='op'>(</span>deferred <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># UMAP (unmerged)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>853</span><span class='op'>)</span>
+<span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/runUMAP.html'>runUMAP</a></span><span class='op'>(</span><span class='va'>sce</span>, dimred <span class='op'>=</span> <span class='st'>"PCA"</span><span class='op'>)</span>
+
+<span class='co'># clustering (unmerged)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>4759</span><span class='op'>)</span>
+<span class='va'>snn_gr</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/buildSNNGraph.html'>buildSNNGraph</a></span><span class='op'>(</span><span class='va'>sce</span>, use.dimred <span class='op'>=</span> <span class='st'>"PCA"</span><span class='op'>)</span>
+<span class='va'>clusters</span> <span class='op'>&lt;-</span> <span class='fu'>igraph</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/igraph/man/cluster_louvain.html'>cluster_louvain</a></span><span class='op'>(</span><span class='va'>snn_gr</span><span class='op'>)</span>
+<span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='va'>clusters</span><span class='op'>$</span><span class='va'>membership</span><span class='op'>)</span>
+<span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
+  <span class='fu'>scater</span><span class='fu'>:::</span><span class='fu'>.get_palette</span><span class='op'>(</span><span class='st'>"tableau10medium"</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span><span class='op'>]</span>,
+  <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='va'>cluster_colours</span><span class='op'>[</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># MNN correction</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'>batchelor</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1819</span><span class='op'>)</span>
+<span class='va'>mnn_out</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/batchelor/man/fastMNN.html'>fastMNN</a></span><span class='op'>(</span>
+  <span class='fu'><a href='https://rdrr.io/pkg/batchelor/man/multiBatchNorm.html'>multiBatchNorm</a></span><span class='op'>(</span><span class='va'>sce</span>, batch <span class='op'>=</span> <span class='va'>sce</span><span class='op'>$</span><span class='va'>batch</span><span class='op'>)</span>,
+  batch <span class='op'>=</span> <span class='va'>sce</span><span class='op'>$</span><span class='va'>batch</span>,
+  cos.norm <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  d <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html'>reducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"PCA"</span><span class='op'>)</span><span class='op'>)</span>,
+  auto.merge <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  merge.order <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='st'>"LCE513"</span>, <span class='st'>"LCE514"</span>, <span class='st'>"LCE509"</span><span class='op'>)</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='st'>"LCE508"</span>, <span class='st'>"LCE511"</span>, <span class='st'>"LCE512"</span><span class='op'>)</span><span class='op'>)</span>,
+  subset.row <span class='op'>=</span> <span class='va'>hvg</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html'>reducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"corrected"</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html'>reducedDim</a></span><span class='op'>(</span><span class='va'>mnn_out</span>, <span class='st'>"corrected"</span><span class='op'>)</span>
+
+<span class='co'># UMAP (merged)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1248</span><span class='op'>)</span>
+<span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/runUMAP.html'>runUMAP</a></span><span class='op'>(</span><span class='va'>sce</span>, dimred <span class='op'>=</span> <span class='st'>"corrected"</span>, name <span class='op'>=</span> <span class='st'>"UMAP_corrected"</span><span class='op'>)</span>
+
+<span class='co'># clustering (merged)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>4759</span><span class='op'>)</span>
+<span class='va'>snn_gr</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/buildSNNGraph.html'>buildSNNGraph</a></span><span class='op'>(</span><span class='va'>sce</span>, use.dimred <span class='op'>=</span> <span class='st'>"corrected"</span><span class='op'>)</span>
+<span class='va'>clusters</span> <span class='op'>&lt;-</span> <span class='fu'>igraph</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/igraph/man/cluster_louvain.html'>cluster_louvain</a></span><span class='op'>(</span><span class='va'>snn_gr</span><span class='op'>)</span>
+<span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='va'>clusters</span><span class='op'>$</span><span class='va'>membership</span><span class='op'>)</span>
+<span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
+  <span class='fu'>scater</span><span class='fu'>:::</span><span class='fu'>.get_palette</span><span class='op'>(</span><span class='st'>"tableau10medium"</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span><span class='op'>]</span>,
+  <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>sce</span><span class='op'>$</span><span class='va'>colours</span><span class='op'>$</span><span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='va'>cluster_colours</span><span class='op'>[</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<p>Figure <a href="#fig:batch-correction-vs">9</a> shows an overview of comparisons between the unmerged and merged data broken down by different experimental factors. After the MNN correction, we obtained <em>four</em> different clusters, in which, the cluster <code>4</code> drawn our particular attention.</p>
+<div class="layout-chunk" data-layout="l-page">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>p1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP"</span>, colour_by <span class='op'>=</span> <span class='st'>"plate_number"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span>, name <span class='op'>=</span> <span class='st'>"plate_number"</span><span class='op'>)</span>
+<span class='va'>p2</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP_corrected"</span>, colour_by <span class='op'>=</span> <span class='st'>"plate_number"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>plate_number_colours</span>, name <span class='op'>=</span> <span class='st'>"plate_number"</span><span class='op'>)</span>
+
+<span class='va'>p3</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP"</span>, colour_by <span class='op'>=</span> <span class='st'>"cluster"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>
+<span class='va'>p4</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP_corrected"</span>, colour_by <span class='op'>=</span> <span class='st'>"cluster"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>
+
+<span class='va'>p5</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP"</span>, colour_by <span class='op'>=</span> <span class='st'>"stage"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span>, name <span class='op'>=</span> <span class='st'>"stage"</span><span class='op'>)</span>
+<span class='va'>p6</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP_corrected"</span>, colour_by <span class='op'>=</span> <span class='st'>"stage"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>stage_colours</span>, name <span class='op'>=</span> <span class='st'>"stage"</span><span class='op'>)</span>
+
+<span class='va'>p7</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP"</span>, colour_by <span class='op'>=</span> <span class='st'>"tissue"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span>, name <span class='op'>=</span> <span class='st'>"tissue"</span><span class='op'>)</span>
+<span class='va'>p8</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP_corrected"</span>, colour_by <span class='op'>=</span> <span class='st'>"tissue"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>tissue_colours</span>, name <span class='op'>=</span> <span class='st'>"tissue"</span><span class='op'>)</span>
+
+<span class='va'>p9</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP"</span>, colour_by <span class='op'>=</span> <span class='st'>"donor"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span>, name <span class='op'>=</span> <span class='st'>"donor"</span><span class='op'>)</span>
+<span class='va'>p10</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP_corrected"</span>, colour_by <span class='op'>=</span> <span class='st'>"donor"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span>, name <span class='op'>=</span> <span class='st'>"donor"</span><span class='op'>)</span>
+
+<span class='va'>p11</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP"</span>, colour_by <span class='op'>=</span> <span class='st'>"group"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>group_colours</span>, name <span class='op'>=</span> <span class='st'>"group"</span><span class='op'>)</span>
+<span class='va'>p12</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotReducedDim.html'>plotReducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"UMAP_corrected"</span>, colour_by <span class='op'>=</span> <span class='st'>"group"</span>, theme_size <span class='op'>=</span> <span class='fl'>7</span>, point_size <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>group_colours</span>, name <span class='op'>=</span> <span class='st'>"group"</span><span class='op'>)</span>
+
+<span class='va'>p1</span> <span class='op'>+</span> <span class='va'>p2</span> <span class='op'>+</span> <span class='va'>p3</span> <span class='op'>+</span> <span class='va'>p4</span> <span class='op'>+</span> 
+  <span class='va'>p5</span> <span class='op'>+</span> <span class='va'>p6</span> <span class='op'>+</span> <span class='va'>p7</span> <span class='op'>+</span> <span class='va'>p8</span> <span class='op'>+</span> 
+  <span class='va'>p9</span> <span class='op'>+</span> <span class='va'>p10</span> <span class='op'>+</span> <span class='va'>p11</span> <span class='op'>+</span> <span class='va'>p12</span> <span class='op'>+</span> 
+  <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_layout.html'>plot_layout</a></span><span class='op'>(</span>ncol <span class='op'>=</span> <span class='fl'>2</span>, guides <span class='op'>=</span> <span class='st'>"collect"</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:batch-correction-vs"></span>
+<img src="C094_Pellicci.single-cell.cell_selection_files/batch-correction-vs-1.png" alt="Comparison between batch-uncorrected data (left column) and -corrected data by manual merge orders (right column)." width="624" />
+<p class="caption">
+Figure 9: Comparison between batch-uncorrected data (left column) and -corrected data by manual merge orders (right column).
+</p>
+</div>
+</div>
+<p>If we look into the distribution of the cluster <code>4</code> cells on each plate (Figure <a href="#fig:cluster-4-vs-layout">10</a>), there is perhaps a bias towards cells being in cluster <code>4</code> when they are near the edges of the plate, specifically towards columns 1-3 and in particular on plate LCE514.</p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>p</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>lapply</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>, <span class='kw'>function</span><span class='op'>(</span><span class='va'>p</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='va'>z</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span>, <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span> <span class='op'>==</span> <span class='va'>p</span><span class='op'>]</span>
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotPlatePosition.html'>plotPlatePosition</a></span><span class='op'>(</span>
+    <span class='va'>z</span>,
+    <span class='fu'><a href='https://rdrr.io/r/base/character.html'>as.character</a></span><span class='op'>(</span><span class='va'>z</span><span class='op'>$</span><span class='va'>well_position</span><span class='op'>)</span>,
+    point_size <span class='op'>=</span> <span class='fl'>2</span>,
+    point_alpha <span class='op'>=</span> <span class='fl'>1</span>,
+    theme_size <span class='op'>=</span> <span class='fl'>5</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ggtitle</a></span><span class='op'>(</span><span class='va'>p</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>
+      legend.text <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>size <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span>,
+      legend.title <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>size <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/guides.html'>guides</a></span><span class='op'>(</span>
+      colour <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/guide_legend.html'>guide_legend</a></span><span class='op'>(</span>override.aes <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>size <span class='op'>=</span> <span class='fl'>4</span><span class='op'>)</span><span class='op'>)</span>,
+      shape <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/guide_legend.html'>guide_legend</a></span><span class='op'>(</span>override.aes <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>size <span class='op'>=</span> <span class='fl'>4</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
+<span class='op'>}</span><span class='op'>)</span>
+
+<span class='fu'><a href='https://patchwork.data-imaginist.com/reference/wrap_plots.html'>wrap_plots</a></span><span class='op'>(</span><span class='va'>p</span>, ncol <span class='op'>=</span> <span class='fl'>3</span><span class='op'>)</span> <span class='op'>+</span> <span class='fu'><a href='https://patchwork.data-imaginist.com/reference/plot_layout.html'>plot_layout</a></span><span class='op'>(</span>guides <span class='op'>=</span> <span class='st'>"collect"</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:cluster-4-vs-layout"></span>
+<img src="C094_Pellicci.single-cell.cell_selection_files/cluster-4-vs-layout-1.png" alt="Distribution of cluster 4 cells against well position of each plate." width="624" />
+<p class="caption">
+Figure 10: Distribution of cluster 4 cells against well position of each plate.
+</p>
+</div>
+</div>
+<p>In Figure <a href="#fig:cluster-4-vs-column">11</a>, <em>blue</em> line is the median proportion and <em>red</em> line is median of cluster <code>4</code> cell on that plate. We can see that, on the whole, LCE508 and LCE514 have the most cluster <code>4</code> cells. In which, plate LCE508 has more cluster 4 cells if considering all columns, whilst columns 1-3 on plate LCE514 have way more cluster 4 cells on average. We speculate that this type of bias could arise due to issues with plate alignment whereby the columns near the edge do not quite get the cell in the middle of the well and so we get less RNA from these libraries.</p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='va'>p</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/proportions.html'>proportions</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>, <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/substr.html'>substr</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>well_position</span>, <span class='fl'>2</span>, <span class='fl'>3</span><span class='op'>)</span>, <span class='fl'>1</span><span class='op'>:</span><span class='fl'>24</span><span class='op'>)</span>, <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>, <span class='fl'>2</span><span class='op'>:</span><span class='fl'>3</span><span class='op'>)</span>
+
+<span class='fu'><a href='https://rdrr.io/r/graphics/par.html'>par</a></span><span class='op'>(</span>mfrow <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2</span>, <span class='fl'>3</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/invisible.html'>invisible</a></span><span class='op'>(</span>
+  <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>lapply</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>, <span class='kw'>function</span><span class='op'>(</span><span class='va'>k</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='fu'><a href='https://rdrr.io/r/graphics/plot.default.html'>plot</a></span><span class='op'>(</span><span class='va'>p</span><span class='op'>[</span><span class='fl'>4</span>, , <span class='va'>k</span><span class='op'>]</span>, ylim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>1</span><span class='op'>)</span>, type <span class='op'>=</span> <span class='st'>"b"</span>, main <span class='op'>=</span> <span class='va'>k</span>, ylab <span class='op'>=</span> <span class='st'>"prop. cluster 4"</span>, xlab <span class='op'>=</span> <span class='st'>"column"</span><span class='op'>)</span>
+  <span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>h <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/median.html'>median</a></span><span class='op'>(</span><span class='va'>p</span><span class='op'>[</span><span class='fl'>4</span>, , <span class='op'>]</span><span class='op'>)</span>, col <span class='op'>=</span> <span class='st'>"blue"</span><span class='op'>)</span>
+  <span class='fu'><a href='https://rdrr.io/r/graphics/abline.html'>abline</a></span><span class='op'>(</span>h <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/median.html'>median</a></span><span class='op'>(</span><span class='va'>p</span><span class='op'>[</span><span class='fl'>4</span>, , <span class='va'>k</span><span class='op'>]</span><span class='op'>)</span>, col <span class='op'>=</span> <span class='st'>"red"</span><span class='op'>)</span>
+<span class='op'>}</span><span class='op'>)</span>
+<span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:cluster-4-vs-column"></span>
+<img src="C094_Pellicci.single-cell.cell_selection_files/cluster-4-vs-column-1.png" alt="Distribution of cluster 4 cells by column of each plate. Blue and red line indicate the median proportion and median of cluster `4` cell on that plate, respectively." width="624" />
+<p class="caption">
+Figure 11: Distribution of cluster 4 cells by column of each plate. Blue and red line indicate the median proportion and median of cluster <code>4</code> cell on that plate, respectively.
+</p>
+</div>
+</div>
+<p>Together with the fact that the cells from cluster <code>4</code> tend to have smaller library size (Figure <a href="#fig:qcplot-by-cluster-donor-linear">12</a>) and marker gene with undetermined cell-type (Figure <a href="#fig:heat-uniquely-up-logExp-cluster-4">13</a>), after our discussion with Dan and Louis on 10 Aug 2021 online, we decide to exclude cells cluster <code>4</code> from the dataset for clarity of the results.</p>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://wilkelab.org/cowplot/reference/plot_grid.html'>plot_grid</a></span><span class='op'>(</span>
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>sum</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>altexps_ERCC_percent</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/lims.html'>ylim</a></span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>100</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>detected</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>,
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span><span class='op'>(</span>x <span class='op'>=</span> <span class='va'>cluster</span>, y <span class='op'>=</span> <span class='va'>subsets_Mito_percent</span>, colour <span class='op'>=</span> <span class='va'>donor</span>, fill <span class='op'>=</span> <span class='va'>donor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_violin.html'>geom_violin</a></span><span class='op'>(</span>scale <span class='op'>=</span> <span class='st'>"width"</span>, width <span class='op'>=</span> <span class='fl'>0.8</span>, alpha <span class='op'>=</span> <span class='fl'>0.2</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/lims.html'>ylim</a></span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>100</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://wilkelab.org/cowplot/reference/theme_cowplot.html'>theme_cowplot</a></span><span class='op'>(</span>font_size <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span> 
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_fill_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>donor_colours</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span>,
+  
+  ncol <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:qcplot-by-cluster-donor-linear"></span>
+<img src="C094_Pellicci.single-cell.cell_selection_files/qcplot-by-cluster-donor-linear-1.png" alt="Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear), number of expressed genes (linear), and proportion of reads mapped to spike-in transcripts or mitochondrial genes." width="624" />
+<p class="caption">
+Figure 12: Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear), number of expressed genes (linear), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.
+</p>
+</div>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># find unique DE ./. clusters</span>
+<span class='va'>uniquely_up</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/findMarkers.html'>findMarkers</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  groups <span class='op'>=</span> <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+  block <span class='op'>=</span> <span class='va'>sce</span><span class='op'>$</span><span class='va'>block</span>,
+  pval.type <span class='op'>=</span> <span class='st'>"all"</span>,
+  direction <span class='op'>=</span> <span class='st'>"up"</span><span class='op'>)</span>
+
+<span class='va'>chosen</span> <span class='op'>&lt;-</span> <span class='st'>"4"</span>
+<span class='va'>cluster4_uniquely_up</span> <span class='op'>&lt;-</span> <span class='va'>uniquely_up</span><span class='op'>[[</span><span class='va'>chosen</span><span class='op'>]</span><span class='op'>]</span>
+
+<span class='co'># add description for the chosen cluster-group</span>
+<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='st'>"(mostly Thymus.S3)"</span>
+
+<span class='co'># look only at protein coding gene (pcg)</span>
+<span class='co'># NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR &lt;&lt; 0.05) !</span>
+<span class='co'># cluster4_uniquely_up &lt;- cluster4_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster4_uniquely_up)), ]</span>
+
+<span class='co'># get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in</span>
+<span class='va'>cluster4_uniquely_up_noiseR</span> <span class='op'>&lt;-</span> <span class='va'>cluster4_uniquely_up</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/sets.html'>setdiff</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up</span><span class='op'>)</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>pseudogene_set</span>, <span class='va'>mito_set</span>, <span class='va'>ribo_set</span>, <span class='va'>sex_set</span><span class='op'>)</span><span class='op'>)</span>, <span class='op'>]</span>
+
+<span class='co'># see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR &lt;0.05)</span>
+<span class='va'>y</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"CD4"</span>,
+       <span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"CD4"</span><span class='op'>)</span>,
+       <span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"CD4"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
+<span class='va'>z</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"KLRB1/CD161"</span>,
+       <span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>,
+       <span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>)</span> <span class='op'>%in%</span> <span class='st'>"KLRB1"</span><span class='op'>)</span>, <span class='op'>]</span><span class='op'>$</span><span class='va'>FDR</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span><span class='op'>)</span>
+
+<span class='co'># top25 only + gene-of-interest</span>
+<span class='va'>best_set</span> <span class='op'>&lt;-</span> <span class='va'>cluster4_uniquely_up_noiseR</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span>, <span class='op'>]</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/order.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"cluster"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"group"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    Sig <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span>
+      <span class='fu'><a href='https://rdrr.io/r/base/ifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>[</span>, <span class='st'>"FDR"</span><span class='op'>]</span> <span class='op'>&lt;</span> <span class='fl'>0.05</span>, <span class='st'>"Yes"</span>, <span class='st'>"No"</span><span class='op'>)</span>,
+      <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+      <span class='co'># levels = c("Yes", "No")),</span>
+      levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"Yes"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>best_set</span><span class='op'>)</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span><span class='op'>(</span><span class='st'>"Cluster: "</span>, <span class='va'>chosen</span>, <span class='st'>" "</span>, <span class='va'>x</span>, <span class='st'>" - \n"</span>,
+                <span class='va'>y</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>]</span>, <span class='st'>"_top "</span>, <span class='va'>y</span><span class='op'>[</span><span class='fl'>2</span><span class='op'>]</span>, <span class='st'>"_significance: "</span>, <span class='va'>y</span><span class='op'>[</span><span class='fl'>3</span><span class='op'>]</span>, <span class='st'>" ; \n"</span>,
+                <span class='va'>z</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>]</span>, <span class='st'>"_top "</span>, <span class='va'>z</span><span class='op'>[</span><span class='fl'>2</span><span class='op'>]</span>, <span class='st'>"_significance: "</span>, <span class='va'>z</span><span class='op'>[</span><span class='fl'>3</span><span class='op'>]</span><span class='op'>)</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    <span class='co'># Sig = c("Yes" = "red", "No" = "lightgrey"),</span>
+    cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-uniquely-up-logExp-cluster-4"></span>
+<img src="C094_Pellicci.single-cell.cell_selection_files/heat-uniquely-up-logExp-cluster-4-1.png" alt="Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title." width="624" />
+<p class="caption">
+Figure 13: Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR &lt; 0.05) are provided in the title.
+</p>
+</div>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># removal of cluster 4 cells from SCE</span>
+<span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='va'>sce</span><span class='op'>[</span> ,<span class='op'>!</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>==</span><span class='st'>"4"</span><span class='op'>)</span><span class='op'>]</span>
 <span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/droplevels.html'>droplevels</a></span><span class='op'>(</span><span class='fu'>colData</span><span class='op'>(</span><span class='va'>sce</span><span class='op'>)</span><span class='op'>)</span>
 </code></pre>
 </div>
@@ -3035,7 +3402,7 @@ Show code
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Australia/Melbourne         
- date     2021-08-05                  
+ date     2021-08-12                  
 
 ─ Packages ─────────────────────────────────────────────────────────
  ! package                * version  date       lib source        

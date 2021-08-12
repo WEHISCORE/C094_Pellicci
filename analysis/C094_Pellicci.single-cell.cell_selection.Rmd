@@ -431,7 +431,7 @@ plotHeatmap(
 
 ## Cluster-specific upregulated genes
 
-Further, we also look for genes that are specifically upregulated in cluster `5` compared to all other clusters, so as to help determine the exact identity of the cluster.
+Further, we also look for genes that are specifically upregulated in cluster `5` compared to all other clusters, so as to help determine if `intermediate monocyte` is the  exact identity of this cluster.
 
 ```{r}
 cluster_markers <- findMarkers(
@@ -564,6 +564,8 @@ for (n in names(cluster_markers)) {
 Further, we also investigate the usefulness of the control cell line `SKW3` in cluster `1` for purpose of batch correction.
 The cell line alone, unfortunately, seems not be sufficient to help with the batch correction, but either exacerbated or leave the batch impact unresolved in this scenario (Figure \@ref(fig:umap-plate-number-cell-line-guided-MNN)).
 
+Again, the `SKW3` cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the `Thymus` cells and form a standalone cluster.
+
 ```{r, results = "hide"}
 tmp <- sce
 tmp$batch <- tmp$plate_number
@@ -620,17 +622,299 @@ align ="h"
 )
 ```
 
-Notably, the `SKW3` cell line also seems to affect the grouping of some of the sample cells (where cells of cell line were grouped with those from the `Thymus` cells and form a standalone cluster.
-
 **NOTE**: Taken all of these evidences together, we decide to remove the `Cell line` proceed the analyses with only the sample cells.
 Also, after our online discussion with Dan and Stuart on 30 June 2021, we confirmed that cells in cluster `5` are contaminants.
-<!-- Together with the cells with `Unknown` stage, all should be removed from the the subsequent analyses as well. -->
 
 ```{r}
 # remove `cell line` and cells from cluster
 sce <- sce[, !(sce$tissue=="SKW3")]
 sce <- sce[, !(sce$cluster=="5")]
-# sce <- sce[, !(sce$stage=="Unknown")]
+colData(sce) <- droplevels(colData(sce))
+```
+
+
+
+
+
+
+
+
+
+
+## Investigation of cluster `4` (after merging)
+
+```{r}
+# HVG determination
+sce$batch <- sce$plate_number
+var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
+hvg <- getTopHVGs(var_fit, var.threshold = 0)
+hvg <- intersect(hvg, protein_coding_gene_set)
+
+# PCA
+set.seed(67726)
+sce <- denoisePCA(
+  sce, 
+  var_fit, 
+  subset.row = hvg,
+  BSPARAM = BiocSingular::IrlbaParam(deferred = TRUE))
+```
+
+```{r}
+# UMAP (unmerged)
+set.seed(853)
+sce <- runUMAP(sce, dimred = "PCA")
+
+# clustering (unmerged)
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce, use.dimred = "PCA")
+clusters <- igraph::cluster_louvain(snn_gr)
+sce$cluster <- factor(clusters$membership)
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
+  levels(sce$cluster))
+sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+```
+
+```{r}
+# MNN correction
+library(batchelor)
+set.seed(1819)
+mnn_out <- fastMNN(
+  multiBatchNorm(sce, batch = sce$batch),
+  batch = sce$batch,
+  cos.norm = FALSE,
+  d = ncol(reducedDim(sce, "PCA")),
+  auto.merge = FALSE,
+  merge.order = list(list("LCE513", "LCE514", "LCE509"), list("LCE508", "LCE511", "LCE512")),
+  subset.row = hvg)
+reducedDim(sce, "corrected") <- reducedDim(mnn_out, "corrected")
+
+# UMAP (merged)
+set.seed(1248)
+sce <- runUMAP(sce, dimred = "corrected", name = "UMAP_corrected")
+
+# clustering (merged)
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce, use.dimred = "corrected")
+clusters <- igraph::cluster_louvain(snn_gr)
+sce$cluster <- factor(clusters$membership)
+cluster_colours <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
+  levels(sce$cluster))
+sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+```
+
+Figure \@ref(fig:batch-correction-vs) shows an overview of comparisons between the unmerged and merged data broken down by different experimental factors.
+After the MNN correction, we obtained *four* different clusters, in which, the cluster `4` drawn our particular attention.
+
+```{r batch-correction-vs, fig.cap = "Comparison between batch-uncorrected data (left column) and -corrected data by manual merge orders (right column).", fig.asp = 2, layout="l-page"}
+
+p1 <- plotReducedDim(sce, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+
+p3 <- plotReducedDim(sce, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+
+p5 <- plotReducedDim(sce, "UMAP", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = stage_colours, name = "stage")
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = stage_colours, name = "stage")
+
+p7 <- plotReducedDim(sce, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p8 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+
+p9 <- plotReducedDim(sce, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+p10 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = donor_colours, name = "donor")
+
+p11 <- plotReducedDim(sce, "UMAP", colour_by = "group", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = group_colours, name = "group")
+p12 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = group_colours, name = "group")
+
+p1 + p2 + p3 + p4 + 
+  p5 + p6 + p7 + p8 + 
+  p9 + p10 + p11 + p12 + 
+  plot_layout(ncol = 2, guides = "collect")
+```
+
+If we look into the distribution of the cluster `4` cells on each plate (Figure \@ref(fig:cluster-4-vs-layout)), there is perhaps a bias towards cells being in cluster `4` when they are near the edges of the plate, specifically towards columns 1-3 and in particular on plate LCE514.
+
+```{r cluster-4-vs-layout, fig.cap = "Distribution of cluster 4 cells against well position of each plate.", fig.asp = 3/4}
+p <- lapply(levels(sce$plate_number), function(p) {
+  z <- sce[, sce$plate_number == p]
+  plotPlatePosition(
+    z,
+    as.character(z$well_position),
+    point_size = 2,
+    point_alpha = 1,
+    theme_size = 5,
+    colour_by = "cluster") +
+    ggtitle(p) +
+    theme(
+      legend.text = element_text(size = 6),
+      legend.title = element_text(size = 6)) +
+    guides(
+      colour = guide_legend(override.aes = list(size = 4)),
+      shape = guide_legend(override.aes = list(size = 4)))
+})
+
+wrap_plots(p, ncol = 3) + plot_layout(guides = "collect")
+```
+
+In Figure \@ref(fig:cluster-4-vs-column), *blue* line is the median proportion and *red* line is median of cluster `4` cell on that plate.
+We can see that, on the whole, LCE508 and LCE514 have the most cluster `4` cells.
+In which, plate LCE508 has more cluster 4 cells if considering all columns, whilst columns 1-3 on plate LCE514 have way more cluster 4 cells on average.
+We speculate that this type of bias could arise due to issues with plate alignment whereby the columns near the edge do not quite get the cell in the middle of the well and so we get less RNA from these libraries.
+
+```{r cluster-4-vs-column, fig.cap = "Distribution of cluster 4 cells by column of each plate. Blue and red line indicate the median proportion and median of cluster `4` cell on that plate, respectively.", fig.asp = 3/4}
+p <- proportions(table(sce$cluster, factor(substr(sce$well_position, 2, 3), 1:24), sce$plate_number), 2:3)
+
+par(mfrow = c(2, 3))
+invisible(
+  lapply(levels(sce$plate_number), function(k) {
+  plot(p[4, , k], ylim = c(0, 1), type = "b", main = k, ylab = "prop. cluster 4", xlab = "column")
+  abline(h = median(p[4, , ]), col = "blue")
+  abline(h = median(p[4, , k]), col = "red")
+})
+)
+```
+
+Together with the fact that the cells from cluster `4` tend to have smaller library size (Figure \@ref(fig:qcplot-by-cluster-donor-linear)) and marker gene with undetermined cell-type (Figure \@ref(fig:heat-uniquely-up-logExp-cluster-4)), after our discussion with Dan and Louis on 10 Aug 2021 online, we decide to exclude cells cluster `4` from the dataset for clarity of the results.
+
+```{r qcplot-by-cluster-donor-linear, fig.cap = "Distributions of various QC metrics for all single cells in the dataset, stratified by cluster and donor This includes the library sizes (linear), number of expressed genes (linear), and proportion of reads mapped to spike-in transcripts or mitochondrial genes.", fig.asp = 0.7}
+plot_grid(
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = sum, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = altexps_ERCC_percent, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    ylim(0, 100) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = detected, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ggplot(
+    data = as.data.frame(colData(sce)),
+    aes(x = cluster, y = subsets_Mito_percent, colour = donor, fill = donor)) +
+    geom_violin(scale = "width", width = 0.8, alpha = 0.2) +
+    ylim(0, 100) +
+    theme_cowplot(font_size = 7) +
+    scale_colour_manual(values = donor_colours) + 
+    scale_fill_manual(values = donor_colours) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)),
+  
+  ncol = 2)
+```
+
+```{r}
+# find unique DE ./. clusters
+uniquely_up <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "all",
+  direction = "up")
+
+chosen <- "4"
+cluster4_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly Thymus.S3)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster4_uniquely_up <- cluster4_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster4_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster4_uniquely_up_noiseR <- cluster4_uniquely_up[setdiff(rownames(cluster4_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"),
+       cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster4_uniquely_up_noiseR[which(rownames(cluster4_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only + gene-of-interest
+best_set <- cluster4_uniquely_up_noiseR[1:25, ]
+```
+
+```{r heat-uniquely-up-logExp-cluster-4, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title.", fig.asp = 1.2, layout="l-body-outset"}
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster: ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+```{r}
+# removal of cluster 4 cells from SCE
+sce <- sce[ ,!(sce$cluster=="4")]
 colData(sce) <- droplevels(colData(sce))
 ```
 
