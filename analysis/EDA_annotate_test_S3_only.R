@@ -563,7 +563,7 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################
-# look at cluster 3 (i.e. S3-mix, high blood)
+# look at cluster C (i.e. S3-mix, high blood)
 chosen <- "C"
 clusterC_uniquely_up <- uniquely_up[[chosen]]
 
