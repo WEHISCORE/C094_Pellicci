@@ -77,7 +77,7 @@ protein_coding_gene_set <- rownames(sce)[
 
 
 
-### Thymus only
+### S3 only
 sce <- sce[, sce$stage == "S3 (CD4-/CD161+)"]
 colData(sce) <- droplevels(colData(sce))
 

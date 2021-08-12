@@ -312,6 +312,7 @@ mnn_out_1 <- fastMNN(
   cos.norm = FALSE,
   d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = TRUE,
+  # NOTE: my deduced auto merge order: merge.order = list(list(list(list("LCE514", "LCE513", "LCE512"), "LCE508"), "LCE511"), "LCE509"),
   subset.row = hvg)
 # manual merge 1
 # NOTE: order defined based on the similarities in cell number between plates for each`sample_name`
@@ -321,7 +322,7 @@ mnn_out_2 <- fastMNN(
   cos.norm = FALSE,
   d = ncol(reducedDim(sce0, "PCA")),
   auto.merge = FALSE,
-  merge.order = list(list(list(list("LCE514", "LCE513", "LCE512"), "LCE508"), "LCE511"), "LCE509"),
+  merge.order = list(list("LCE508", "LCE509"), list("LCE511", "LCE512"), list("LCE513", "LCE514")),
   subset.row = hvg)
 # manual merge 2
 # NOTE: to reduced var loss of LCE509, which contained different proportion of cells from each sample, I decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)

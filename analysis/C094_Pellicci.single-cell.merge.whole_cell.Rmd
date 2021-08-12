@@ -83,7 +83,7 @@ protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 ```
 
-# Re-processing (whole cell)
+# Re-processing
 
 We re-process the *whole cell* remained in the dataset.
 
@@ -106,21 +106,21 @@ set.seed(853)
 sce <- runUMAP(sce, dimred = "PCA")
 
 set.seed(4759)
-snn_gr <- buildSNNGraph(sce, use.dimred = "PCA")
-clusters <- igraph::cluster_louvain(snn_gr)
-sce$cluster <- factor(clusters$membership)
-cluster_colours <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
-  levels(sce$cluster))
-sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+snn_gr_0 <- buildSNNGraph(sce, use.dimred = "PCA")
+clusters_0 <- igraph::cluster_louvain(snn_gr_0)
+sce$cluster_0 <- factor(clusters_0$membership)
+cluster_colours_0 <- setNames(
+  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster_0))],
+  levels(sce$cluster_0))
+sce$colours$cluster_colours_0 <- cluster_colours_0[sce$cluster_0]
 ```
 
-There are `r nlevels(sce$cluster)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-reprocessed) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-reprocessed).
+There are `r nlevels(sce$cluster_0)` clusters detected, shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-reprocessed) and broken down by experimental factors in Figure \@ref(fig:cluster-barplot-reprocessed).
 
-```{r clusterplot-umap-reprocessed, fig.cap = "UMAP plot, where each point represents a droplet and is coloured according to the legend.", fig.asp = 1.25}
+```{r clusterplot-umap-reprocessed, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
 p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
-  geom_point(aes(colour = cluster), size = 0.25) +
-  scale_colour_manual(values = cluster_colours) + 
+  geom_point(aes(colour = cluster_0), size = 0.25) +
+  scale_colour_manual(values = cluster_colours_0) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
@@ -165,16 +165,16 @@ p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
 
 ```{r cluster-barplot-reprocessed, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
 p1 <- ggcells(sce) + 
-  geom_bar(aes(x = cluster, fill = cluster)) +
+  geom_bar(aes(x = cluster_0, fill = cluster_0)) +
   coord_flip() +
   ylab("Number of samples") +
   theme_cowplot(font_size = 8) +
-  scale_fill_manual(values = cluster_colours) +
-  geom_text(stat='count', aes(x = cluster, label=..count..), hjust=1.5, size=2)
+  scale_fill_manual(values = cluster_colours_0) +
+  geom_text(stat='count', aes(x = cluster_0, label=..count..), hjust=1.5, size=2)
 
 p2 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = stage),
+    aes(x = cluster_0, fill = stage),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
@@ -183,7 +183,7 @@ p2 <- ggcells(sce) +
 
 p3 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = plate_number),
+    aes(x = cluster_0, fill = plate_number),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
@@ -192,7 +192,7 @@ p3 <- ggcells(sce) +
 
 p4 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = tissue),
+    aes(x = cluster_0, fill = tissue),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
@@ -201,7 +201,7 @@ p4 <- ggcells(sce) +
 
 p5 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = donor),
+    aes(x = cluster_0, fill = donor),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
@@ -210,7 +210,7 @@ p5 <- ggcells(sce) +
 
 p6 <- ggcells(sce) + 
   geom_bar(
-    aes(x = cluster, fill = group),
+    aes(x = cluster_0, fill = group),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
   ylab("Frequency") +
@@ -307,7 +307,6 @@ We treat each plate as a batch and also test to manually provide the merge order
 ```{r, results = "hide"}
 library(batchelor)
 set.seed(1819)
-
 # manual merge
 # NOTE: we tried a merge order (list(list("LCE508", "LCE511", "LCE512", "LCE513", "LCE514"), "LCE509")), which led to significant variance loss; to reduced var loss of LCE509, which contained different proportion of cells from each sample, we decide to merge LCE509 after the merge of LCE503 + LCE504 (as indicated in the auto-merge)
 mnn_out <- fastMNN(
@@ -362,8 +361,8 @@ p1 <- plotReducedDim(sce, "UMAP", colour_by = "plate_number", theme_size = 7, po
 p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
 
-p3 <- plotReducedDim(sce, "UMAP", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
-  scale_colour_manual(values = cluster_colours, name = "cluster")
+p3 <- plotReducedDim(sce, "UMAP", colour_by = "cluster_0", theme_size = 7, point_size = 0.2) + 
+  scale_colour_manual(values = cluster_colours_0, name = "cluster_0")
 p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours, name = "cluster")
 
@@ -390,7 +389,8 @@ p12 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7
 p1 + p2 + p3 + p4 + 
   p5 + p6 + p7 + p8 + 
   p9 + p10 + p11 + p12 + 
-  plot_layout(ncol = 2, guides = "collect")
+  # plot_layout(ncol = 2, guides = "collect")
+  plot_layout(ncol = 2)
 ```
 
 To get an insight, here we focus on the uncorrected and the corrected data by the *manual merge*, then break down the UMAP plot above further by `plate_number` (Figure \@ref(fig:umap-plate-number-vs)), `stage` (Figure \@ref(fig:umap-stage-vs)), and `tissue` (Figure \@ref(fig:umap-tissue-vs)).
@@ -613,6 +613,61 @@ p6 <- ggcells(sce) +
   theme_cowplot(font_size = 8)
 
 (p1 | p2) / (p3 | p4) / (p5 | p6) 
+```
+
+Figure \@ref(fig:umap-with-facs) overlays the index sorting data on the UMAP plots.
+
+```{r umap-with-facs, fig.width = 8, fig.height = 9, fig.cap = "Overlay of index sorting data on UMAP plot. For each marker, the left-hand plot shows the 'raw' or 'pseudo-logged' fluorescence intensity and the right-side plots the 'scaled rank' of the raw intensity. The pseudo-log transformation is a transformation mapping numbers to a signed logarithmic scale with a smooth transition to linear scale around 0. This transformation is commonly used when plotting fluorescence intensities from FACS. The scaled rank is applied within each mouse and assigns the maximum fluorescence intensity a value of one and the minimum fluorescence intensities a value of zero. It can be thought of as a crude normalization of the FACS data that allows us to compare fluorescence intensities from different mice.", fig.asp = 6}
+tmp <- sce
+colData(tmp) <- cbind(colData(tmp), t(assays(altExp(tmp, "FACS"))$raw))
+
+facs_markers <- grep("^F|^S|^V|^B|^R|^V", colnames(colData(tmp)), value = TRUE)
+
+corrected_umap <- cbind(
+  data.frame(
+    UMAP.1 = reducedDim(tmp, "UMAP_corrected")[, 1],
+    UMAP.2 = reducedDim(tmp, "UMAP_corrected")[, 2]),
+  as.data.frame(colData(tmp)))
+
+p <- lapply(facs_markers, function(m) {
+  p1 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = corrected_umap) +
+    geom_point(aes_string(colour = m, fill = m), alpha = 1, size = 1) +
+    scale_fill_viridis_c(trans = ifelse(
+      grepl("^FSC|^SSC", m), 
+      "identity",
+      scales::pseudo_log_trans(sigma = 150 / 2)),
+      name = "") +
+    scale_colour_viridis_c(trans = ifelse(
+      grepl("^FSC|^SSC", m), 
+      "identity",
+      scales::pseudo_log_trans(sigma = 150 / 2)),
+      name = "") +
+    theme_cowplot(font_size = 10) + 
+    xlab("Dimension 1") + 
+    ylab("Dimension 2") + 
+    ggtitle(ifelse(grepl("^FSC|^SSC", m), "Raw", "Pseudo-logged"), m)
+  
+  corrected_umap$scaled_rank <- corrected_umap %>%
+    dplyr::group_by(plate_number) %>%
+    dplyr::mutate(
+      rank = rank(!!sym(m), na.last = "keep"),
+      max_rank = max(rank, na.rm = TRUE),
+      scaled_rank = rank / max_rank) %>%
+    dplyr::pull(scaled_rank)
+  
+  p2 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = corrected_umap) +
+    geom_point(aes(colour = scaled_rank, fill = scaled_rank), alpha = 1, size = 1) +
+    scale_fill_viridis_c(name = "") +
+    scale_colour_viridis_c(name = "") +
+    theme_cowplot(font_size = 10) + 
+    xlab("Dimension 1") + 
+    ylab("Dimension 2") + 
+    ggtitle("Scaled rank", m)
+  list(p1, p2)
+})
+multiplot(
+  plotlist = unlist(p, recursive = FALSE),
+  layout = matrix(seq_len(length(p) * 2), ncol = 2, byrow = TRUE))
 ```
 
 # Concluding remarks

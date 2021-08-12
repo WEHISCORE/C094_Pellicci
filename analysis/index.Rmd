@@ -20,7 +20,7 @@ In this analysis, we study a dataset of human gamma-delta T cells collected by F
 This dataset contains 1496 cells that were assayed on four 384-well plates using the CEL-Seq2 scRNA-seq platform.
 Cells come from one of four mouse strains (ALB TPO, C57BL/6, Mpl, and Tmem68) and both male and female mice.
 
-After sequencing, expression was quantified by counting the number of UMIs mapped to each gene using `r Biocpkg("scPipe")`[@tian2018scpipe].
+After sequencing, expression was quantified by counting the number of UMIs mapped to each gene using scPipe [@tian2018scpipe].
 Count data for all endogenous genes (GENCODE Release vM18: GRCm38.p6) and spike-in transcripts (ERCC) are available in this repository.
 
 This analysis is adapted from the `r BiocStyle::Biocpkg("simpleSingleCell")` workflow as well as the [**Orchestrating Single-Cell Analysis with Bioconductor book**](https://osca.bioconductor.org).
