@@ -78,6 +78,14 @@ pseudogene_set <- rownames(sce)[
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 
+# include FACS data
+facs <- t(assays(altExp(sce, "FACS"))$pseudolog)
+facs_markers <- grep("V525_50_A_CD4_BV510|B530_30_A_CD161_FITC", colnames(facs), value = TRUE)
+facs_selected <- facs[,facs_markers]
+head(facs_selected)
+colnames(facs_selected) <- c("CD161", "CD4")
+colData(sce) <- cbind(colData(sce), facs_selected)
+
 # summary - UMAP
 p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) +
   scale_colour_manual(values = cluster_colours, name = "cluster")
@@ -379,6 +387,8 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
+    sce$CD4,
+    sce$CD161,
     sce$stage,
     sce$tissue,
     sce$donor,
@@ -386,6 +396,8 @@ plotHeatmap(
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
+    "CD4",
+    "CD161",
     "stage",
     "tissue",
     "donor",
@@ -449,6 +461,8 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
+    sce$CD4,
+    sce$CD161,
     sce$stage,
     sce$tissue,
     sce$donor,
@@ -456,6 +470,8 @@ plotHeatmap(
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
+    "CD4",
+    "CD161",
     "stage",
     "tissue",
     "donor",
@@ -519,6 +535,8 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
+    sce$CD4,
+    sce$CD161,
     sce$stage,
     sce$tissue,
     sce$donor,
@@ -526,6 +544,8 @@ plotHeatmap(
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
+    "CD4",
+    "CD161",
     "stage",
     "tissue",
     "donor",
@@ -589,6 +609,8 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
+    sce$CD4,
+    sce$CD161,
     sce$stage,
     sce$tissue,
     sce$donor,
@@ -596,6 +618,8 @@ plotHeatmap(
     sce$plate_number),
   colour_columns_by = c(
     "cluster",
+    "CD4",
+    "CD161",
     "stage",
     "tissue",
     "donor",
@@ -612,7 +636,7 @@ plotHeatmap(
   #     # TODO: temp trick to deal with the row-colouring problem
   #     # levels = c("Yes", "No")),
   #     levels = c("Yes")),
-  # row.names = rownames(best_set)),
+  #   row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x, " - \n",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
                 z[1], "_top ", z[2], "_significance: ", z[3]),
@@ -626,7 +650,6 @@ plotHeatmap(
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
-
 
 
 
