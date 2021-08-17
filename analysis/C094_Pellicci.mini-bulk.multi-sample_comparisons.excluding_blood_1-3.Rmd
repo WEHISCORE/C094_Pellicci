@@ -42,7 +42,9 @@ source(here("code/helper_functions.R"))
 ```{r}
 sce <- readRDS(
   here("data", "SCEs", "C094_Pellicci.mini-bulk.preprocessed.SCE.rds"))
-# NOTE: Reorder samples for plots (e.g., heatmaps).
+# NOTE: Reorder samples for plots (e.g., heatmaps). Dan requested that the 
+#       samples be ordered Thymus.S1, Thymus.S2, Thymus.S3, Blood.S3.
+sce$tissue <- relevel(sce$tissue, "Thymus")
 sce <- sce[, order(sce$tissue, sce$stage, sce$donor)]
 
 # NOTE: Abbreviate stage
