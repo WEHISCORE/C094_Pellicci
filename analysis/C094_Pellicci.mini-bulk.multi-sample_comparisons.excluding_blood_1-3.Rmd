@@ -883,6 +883,95 @@ pheatmap(
 
 :::::
 
+### Violin plots
+
+```{r}
+se <- SingleCellExperiment(
+  assays = list(
+    logCPM = cpm(y, log = TRUE), 
+    `batch-corrected logCPM` = removeBatchEffect(
+    cpm(y, log = TRUE),
+    batch = y$samples$donor,
+    design = model.matrix(~group, y$samples))),
+  colData = y$samples,
+  rowData = y$genes)
+
+genes <- c(
+  # TFs
+  "BCL11B", "LEF1", "TBET" = "TBX21", "EOMES", 
+  # Chemokines
+  "CCR5", "CCR9", "CXCR3", "CXCR6", "CCR6" = "CD196",
+  # Surface molecules
+  "CD28", "CD44", "CD26" = "DPP4", "CD94" = "KLRD1", "IL18RAP",
+  # Markers used for gating.
+  "CD4", "CD161" = "KLRB1")
+```
+
+Dan requested violin plots of specific genes (email 2021-08-12), listed below.
+I've added in *CD4* and *KLRB1* (*CD161*) for good measure.
+
+```{r}
+genes_df <- data.frame(
+  `Gene name supplied by Dan` = ifelse(names(genes) == "", genes, names(genes)),
+  `Gene name in dataset` = unname(genes),
+  Detected = genes %in% rownames(y),
+  check.names = FALSE)
+knitr::kable(
+  genes_df,
+  caption = "Genes requested by Dan for violin plots, their corresponding name in the dataset, and whether they are sufficiently expressed for DE analysis (`Detected`).")
+```
+
+Figures \@ref(fig:dan-logcpm) and \@ref(fig:dan-batch-corrected-logcpm) show the expression of the `Detected` genes, either as $log(CPM)$ or as batch-corrected $log(CPM)$.
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### logCPM {.panel-name}
+
+```{r dan-logcpm, fig.cap = "Expression of Dan's requested genes."}
+scater::plotExpression(
+  se,
+  features = intersect(genes_df$`Gene name in dataset`, rownames(y)),
+  x = "group",
+  exprs_values = "logCPM",
+  scales = "free_y",
+  ncol = 4,
+  colour_by = "group") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+```
+
+:::
+
+::: {.panel}
+
+#### Batch-corrected logCPM {.panel-name}
+
+
+```{r dan-batch-corrected-logcpm, fig.cap = "Expression of Dan's requested genes."}
+scater::plotExpression(
+  se,
+  features = intersect(genes_df$`Gene name in dataset`, rownames(y)),
+  x = "group",
+  exprs_values = "batch-corrected logCPM",
+  scales = "free_y",
+  ncol = 4,
+  colour_by = "group") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+```
+
+:::
+
+:::::
+
 # Session info {.appendix}
 
 <summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
