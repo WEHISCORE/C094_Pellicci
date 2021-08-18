@@ -91,8 +91,15 @@ embedded <- embedCurves(sce.sling, "UMAP")
 embedded <- slingCurves(embedded)[[1]] # only 1 path.
 embedded <- data.frame(embedded$s[embedded$ord, ])
 
-plotUMAP(sce.sling, colour_by = "slingPseudotime_1") +
-  geom_path(data = embedded, aes(x = Dim.1, y = Dim.2), size = 1.2)
+plotUMAP(
+  sce.sling,
+  colour_by = "slingPseudotime_1",
+  point_alpha = 1,
+  point_size = 0.5) +
+  geom_path(data = embedded, aes(x = Dim.1, y = Dim.2), size = 1.2) +
+  plotUMAP(sce.sling, colour_by = "stage", point_alpha = 1, point_size = 0.5) +
+  plotUMAP(sce.sling, colour_by = "tissue", point_alpha = 1, point_size = 0.5) +
+  plot_layout(ncol = 2)
 
 # Changes along a trajectory ---------------------------------------------------
 
@@ -182,8 +189,15 @@ plotHeatmap(
   order_columns_by = "slingPseudotime_1",
   # colour_columns_by = "label",
   colour_columns_by = c("stage", "tissue"),
-  features = head(rownames(res[res$FDR < 0.05, ]), 50),
+  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 50),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"))
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 8)
+
+write.csv(
+  res,
+  here("tmp/C094_Pellicci.tradeSeq_results.csv"),
+  row.names = TRUE,
+  quote = FALSE)
