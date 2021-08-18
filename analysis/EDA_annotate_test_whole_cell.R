@@ -736,7 +736,7 @@ plotHeatmap(
 # cluster is again showing NPIPB family as marker, but there are some other genes seems to be unique but cells not enouhg (combine with other cluster ?)
 # but it is also unexpectedly to see cluster 1 has no unique gene
 #
-# CONCLUSION:
+# THOUGHT:
 # cluster 5: unique, should keep alone
 # cluster 4: NPIPB family only, but with potential, need combine
 # cluster 3, 2 strong markers, should be kept alone
@@ -1492,7 +1492,7 @@ chosen <- "G"
 G_uniquely_up <- vs4_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 1; S3-mix, higher thymus)"
+x <- "(cluster 3; S3-mix, with blood (special))"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -2505,6 +2505,71 @@ plotHeatmap(
 
 
 
+
+
+# CONCLUSION:
+
+# cluster 1 (i.e. S3-mix, higher thymus
+# cluster 2_4 (i.e. S3-mix, with blood
+# cluster 3 (i.e. S3-mix, with blood (special)
+# cluster 5 (i.e. mostly S1 and S2
+
+########################################
+# fx: how 3 S3-mix different from S1-S2
+
+# 1 vs 5 (I vs J)
+# cluster 1 (S3-mix, higher thymus) >>> thymus.s3 got lots of clear markers (including HLA, interleukin, interferon, etc.) that S1-S2-mix does not have
+# cluster 5 (mostly S1 and S2) >>> lots of clear marker
+# COMMENT: consistent with the mini-bulk result, thymus.s3 got lots of difference when compared to S1-S2-mix
+
+# 2_3_4 vs 5 (O vs P)
+# cluster 2_3_4 (S3-mix, with blood, special or not) >>> lots of markers (including HLA, interleukin-related genes, etc)
+# cluster 5 (mostly S1 and S2) >>> also lots of clear markers
+# COMMENT: same is true for blood.s3.bulk, which is clearly different from S1-S2-mix
+
+# 3 vs 5 (K vs L)
+# cluster 3 (S3-mix, with blood (special)) >>> quite some markers (including HLA, interleukin-, interferon-related genes, etc.)
+# cluster 5 (mostly S1 and S2) >>> lots of markers
+# COMMENT: in subset of blood.s3.bulk, blood.s3.special is clearly different from S1-S2-mix
+
+# 2_4 vs 5 (M vs N)
+# cluster 2_4 (S3-mix, with blood) >>> lots of clear markers (including HLA, interleukin-, but NOT interferon-related genes in the top list)
+# cluster 5 (mostly S1 and S2) >>> also lots of clear markers
+# COMMENT: in another subset, blood.s3.normal is also clearly different from S1-S2-mix
+# but then you may ask, how would these subset of S3 cells different from one and other ?
+
+################################
+# fx: difference between S3-mix
+
+# 1 vs 2_3_4 (E vs F)
+# cluster 1 (S3-mix, higher thymus)  >>> no marker except MALAT1, i.e. null
+# cluster 2_3_4 (S3-mix, with blood, special or not) >>> lots of markers; may looks inconsistent again, but cluster 1/thymus mostly dont have these expression
+# COMMENT: when compare in blood.s3.bulk with thymus.s3, no marker found for thymus.s3, and only blood.s3.bulk show unique markers
+
+# 1 vs 2_4 (C vs D)
+# cluster 1 (S3-mix, higher thymus) >>> 1 marker only (IL7R), but quite clear and sig
+# cluster 2_4 (S3-mix, with blood) >>> lots of markers; may looks inconsistent, but cluster indeed do not have much expression
+# COMMENT: but in this comparison, blood.s3.normal is indeed different from thymus.s3; (esp blood.s3.normal with sig "lower" IL7R expression, whilst blood.s3.special is "higher" !)
+# where these small change cannot be revealed in mini-bulk, but only when unsupervised cluster single cells based on their transcriptomes
+
+# 1 vs 3 (A vs B)
+# cluster 1 (S3-mix, higher thymus) >>> (? questionably higher CCL5)
+# cluster 3 (S3-mix, with blood (special)) >>> 4-6 up-regulated DE, including the special: IL7R, LTB that spotted in raw unique
+# COMMENT: although thymus.s3 and blood.s3.special are quite similar, but do show weak but sig markers in blood.s3 (special), which could indicate that it is closer to thymus.s3 in terms of developmental stage ?
+
+###################################
+# fx: how special is 3 in blood.s3
+
+# 3 vs 2_4 (G vs H)
+# cluster 3 (S3-mix, with blood (special)) >>> 7 markers (esp IL7R clearly has higher expression)
+# cluster 2_4 (S3-mix, with blood) >>> lots of marker, which are lowly expressed in "special"
+# COMMENT: the blood.s3.special do stand out from the blood.s3.normal distinguished by number of DE
+
+# SUMMARY:
+# consistent with the mini-bulk outcome, single cell dataset shows that S3 cells (from either thymus or blood) is sig different from S1-S2-mix
+# for the S3 cells, besides the thymus.s3 cells, we provide evidence to support that blood.s3 can be subdivided into 2 subgroups, blood.s3.normal and blood.s3.special, that distiguished by the expression of several marker genes (esp. IL7R)
+# also, blood.s3.special is quite similar to thymus.s3, which could suggest they are closer in terms of developmental stage
+# this info cannot be provided by looking only at the mini-bulk outcome
 
 
 
