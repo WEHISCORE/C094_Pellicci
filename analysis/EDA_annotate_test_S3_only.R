@@ -3629,15 +3629,15 @@ plotHeatmap(
 
 # CONCLUSION:
 # as there is no standout feature in terms of experimental group for each cluster,
-# all of them are S3-mix (with mostly thymus.s3 with some blood.s3)
-# though, as in the minibulk with 20 DE only and we cannot tell difference between thymus.s3 and blood.s3
-# it may indicate in both thymus and blood, they got maybe 4 sub-stages of S3 that are in common
+# all of them are S3 cells with mixed tissue origins and are with mostly thymus.s3 together with some blood.s3
+# As in the minibulk with only 20 DE, although we cannot tell difference between thymus.s3 and blood.s3
+# it may indicate in both thymus and blood, there has got maybe 4 sub-stages of S3 that are in common
 #
 # based on pairwise DE detection, the peripheral cluster (i.e. cluster 1, 2, 3) do have unique makers up-regulated and drive them apart
-# e.g. cluster 1 (IL7R and LTB), cluster 2 (CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood), cluster 3 (CCL5 for blood),
+# e.g. cluster 1 (IL7R and LTB; that could be the "blood.s3.special" found in the whole cell analysis), cluster 2 (CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood), cluster 3 (CCL5 for blood),
 # whilst for the centre cluster, i.e. cluster 4
 # it does not have any marker when compared to to any other peripheral cluster (1,2, or 3)
-# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a multipotent stem cells/ S3 cells lineage parent in stage S3 ??
+# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a multipotent stem cells/ S3 cells lineage parent/progenitor in stage S3 ??
 #
 # and this hypothesis is being double confirmed when compare either 1_2, 2_3, 1_3 and 1_2_3 with 4
 

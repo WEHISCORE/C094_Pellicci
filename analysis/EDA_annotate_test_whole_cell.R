@@ -2565,11 +2565,16 @@ plotHeatmap(
 # cluster 2_4 (S3-mix, with blood) >>> lots of marker, which are lowly expressed in "special"
 # COMMENT: the blood.s3.special do stand out from the blood.s3.normal distinguished by number of DE
 
-# SUMMARY:
+
+
+
+
+
+# CONCLUSION:
 # consistent with the mini-bulk outcome, single cell dataset shows that S3 cells (from either thymus or blood) is sig different from S1-S2-mix
 # for the S3 cells, besides the thymus.s3 cells, we provide evidence to support that blood.s3 can be subdivided into 2 subgroups, blood.s3.normal and blood.s3.special, that can be distinguished by the expression of several marker genes (esp. IL7R, with higher expression in "special")
 # also, blood.s3.special is quite similar to thymus.s3, which could suggest they are closer in terms of developmental stage
-# this info cannot be provided by looking only at the mini-bulk outcome
+# this info cannot be provided by looking only at the mini-bulk outcome alone
 
 
 

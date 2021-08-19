@@ -576,11 +576,26 @@ plotHeatmap(
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
-# NOTE: while cluster 1 and 2 could show some useful markers
-# cluster 3 does not; as cluster 2 and 3 are both thymus S1-S2-mix but just with more/less blood
-# therefore:
-# perform pairwise comparison for cluster 2 (mostly thymus.S1.S2, less blood) vs cluster 1 (pure thymus s1.s2)
-# + pool cluster 2 and 3 as cluster B to increase the statistical power then compare to cluster 1 or A to find unique marker for each
+
+
+# COMMENT:
+
+# cluster 1 (i.e. pure thymus.s1.s2
+# cluster 2 (i.e. mostly thymus.s1.s2, more blood
+# cluster 3 (i.e. mostly thymus.s1.s2, less blood
+
+# for global unique markers
+# cluster 1: clear ACTG1, ACTB, GAPDH, MIR1244-3 and H3F3A expression as global unique markers
+# cluster 2: clear HLA, CCL5, NKG7 expression as global unique markers (mostly independent of tissue)
+# cluster 3: statistically no, but visually yes
+# although they are mostly indistinguishable thymus.s1s2 cells with more/less/none blood.s1s2 cells
+# this point out clearly at least cluster 1 and 2 are different clusters (and cluster 3 uniqueness may also show in pairwise unique)
+
+
+
+
+
+
 
 
 
@@ -1258,7 +1273,7 @@ cp <- cp[, cp$cluster == "2" | cp$cluster == "3"]
 colData(cp) <- droplevels(colData(cp))
 
 # classify cluster-group for comparison
-cp$vs4 <- factor(ifelse(cp$cluster == 1, "G", "H"))
+cp$vs4 <- factor(ifelse(cp$cluster == 2, "G", "H"))
 
 # set vs colours
 vs4_colours <- setNames(
@@ -1462,27 +1477,42 @@ plotHeatmap(
 
 
 
+# COMMENT:
+#
+# fx: how is thymus.s1s2.alike.by.more.blood is different with pure thymus.s1.s2 cells
+#
+# 1 vs 2 (A vs B)
+# cluster 1 (pure thymus.s1.s2 >>> lots of marker up-regulated in cluster 1; in which, say STMN1 and MIR1244-4, seems to be more highly expression in S1 than S2
+# cluster 2 (mostly thymus.s1.s2, more blood >>> number of unique marker found (say, IL7R, , LTB, CCL5, NKG7. etc)
+# COMMENT: cluster 1 and 2 are 2 separated clusters
+#
+# 1 vs 3 (C vs D)
+# cluster 1 (pure thymus.s1.s2 >>> 7 markers only, i.e. PTMA, MIR1244-2, and GAPDH, etc; maybe cluster 1 is more similar to 3, than to 2 ; related to amount of blood cells? 3 = less blood, 2 = more blood ???)
+# cluster 3 (mostly thymus.s1.s2, less blood >>> with markers like LTB, and the more frequently expressed DGKA, EPB41
+# COMMENT: except for LTB, there seems to have little number of genes in common between the pairwisely unique of 2 and 3, 2 and 3 supposed not to be the same
+#
+# 1 vs 2_3 (E vs F)
+# cluster 1 (pure thymus.s1.s2 >>> got number of markers, eg ACTG1, GAPDH, PTMA, etc
+# cluster 2_3 (mostly thymus.s1.s2 with more or less blood >>> also got lots of DE, eg.HLA, LTB, TXNIP; other markers like up-regulation of CCL5 and ILR7 clearly associated with cluster 2 only
+# COMMENT: cluster 1 is clearly distinctive from cluster 2_3
+#
+# fx: how is thymus.s1s2.alike.by.more.blood and thymus.s1s2.alike.by.less.blood different from one and other
+#
+# 2 vs 3 (G vs H)
+# cluster 2 (mostly thymus.s1.s2, more blood >>> got number of good markers, e.g. class 1 HLA, IFITM family, NKG7, which are all more frequently expressed in 2
+# cluster 3 (mostly thymus.s1.s2, less blood >>> got another set of unique markers, eg. BCL11B, DGKA, FYB1, etc. for cluster 3
+# COMMENT: there are clearly 2 distinct subtypes (though both are mostly thymus.s1.s2 with blood),
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# CONCLUSION
+# S1 and S2 cells are basically inseparable as in terms of transcriptomes, they are highly overlapped
+# having said so, we do find some clues about the key marker driven the S1 and S2 apart (e.g. STMN1 and MIR1244-4 seems to be more highly expression in S1 than S2; eg2 up-regulation of CCL5 and ILR7 clearly associated with cluster 2 only)
+# also, we are able to spot the 3 unique transcriptional subtype of cells within the S1-S2 mix
+# from cluster 1, we can identify markers true for pure thymus.s1.s2 (i.e. found in thymus only)
+# for the thymus.s1.s2.alike.blood.bulk, it can be subdivided into 2 subtypes, of which their unique markers can be found in cluster2 and 3 (ie found in both thymus and blood)
 
 
 
