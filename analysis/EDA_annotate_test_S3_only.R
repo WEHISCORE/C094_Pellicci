@@ -280,8 +280,9 @@ p1 + p2 + p3 + p4 +
 # in default setting, we got 6 clusters, almost all clusters are dominant by cells in thymus.s3
 # I cannot see how it could tell a difference unless we group cluster by ourselves based on 6 clusters
 # NOTE: tried to group: i.e. cluster 1, 2, 3 as 1 group, 4 and 5 form another group, and cluster 6 on its own > but no significant result
-# as the clusting algorithm seems to be struggle in forming cluster except the "3 cluster"
-# + need around 100 cells for GLM > so pick 4 clusters !
+# as the clustering algorithm seems to be struggle in forming cluster except the "3 cluster"
+# + need around 100 cells for GLM
+# also for the 4 cluster setting, found IL7R that is quite clear and unique in cluster 1, so pick 4 clusters !
 3
 
 # selected the best `number of cluster` (colours) and replace the ones saved in SCE
@@ -653,6 +654,16 @@ plotHeatmap(
   fontsize = 7)
 
 # COMMENT:
+# cluster 1: quite clear to have unique IL7R expression
+# cluster 2: got a few markers (excluding NPBIB, got AC009022.1); also visually, CCL5 seems also be a marker
+# cluster 3: no statistically sig marker; but viusally, SOX4 could be a candidate if pairwise compare
+# cluster 4: no sig marker, but perhaps because it is at center
+
+# thus, they can be annotated as:
+# cluster 1 (i.e. S3-mix more thymus, peripheral IL7R driven
+# cluster 2 (i.e. S3-mix more thymus, peripheral may CCL5 driven
+# cluster 3 (i.e. S3-mix more thymus, peripheral may SOX4 drive
+# cluster 4 (i.e. S3-mix more thymus, center
 
 
 
@@ -2349,7 +2360,7 @@ chosen <- "P"
 P_uniquely_up <- vs8_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 3; S3-mix, set 3)"
+x <- "(cluster 1; S3-mix, set 1)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -2716,7 +2727,7 @@ chosen <- "S"
 S_uniquely_up <- vs10_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 2_3; S3-mix, set 2_3)"
+x <- "(cluster 1_2; S3-mix, set 1_2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -2789,7 +2800,7 @@ chosen <- "T"
 T_uniquely_up <- vs10_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 2; S3-mix, set 2)"
+x <- "(cluster 4; S3-mix, set 4)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -3156,7 +3167,7 @@ chosen <- "W"
 W_uniquely_up <- vs12_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 2_3; S3-mix, set 2_3)"
+x <- "(cluster 1_3; S3-mix, set 1_3)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -3522,130 +3533,115 @@ plotHeatmap(
 
 
 
+# cluster 1 (i.e. S3-mix more thymus, peripheral IL7R driven
+# cluster 2 (i.e. S3-mix more thymus, peripheral may CCL5 driven
+# cluster 3 (i.e. S3-mix more thymus, peripheral may SOX4 drive
+# cluster 4 (i.e. S3-mix more thymus, center
+
+# as there is no standout feature in terms of experimental group for each cluster,
+# all of them are S3-mix (with mostly thymus.s3 with some blood.s3)
+# though, as in the minibulk with 20 DE only and we cannot tell difference between thymus.s3 and blood.s3
+# it may indicate in both thymus and blood, they got maybe 4 sub-stages of S3 that are in common
+#
+# thus I start comparing all combination of single cluster to narrow down
+
+# fx: per cluster compare
+
+# 1 vs 2 (A vs B)
+# cluster 1 (S3-mix more thymus, peripheral IL7R driven >>> IL7R and LTB as markers; DE not associated with tissue
+# cluster 2 (S3-mix more thymus, peripheral may CCL5 driven >>> besides NPIPB family, number of markers found (e.g. CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood)
+# COMMENT: with ref to cluster 1, these are 2 separated subtype thymus.s3 (esp cluster 1: IL7R driven)
+
+# 1 vs 3 (C vs D)
+# cluster 1 (S3-mix more thymus, peripheral IL7R driven >>> besides NPIPB family, IL7R, IFITM3, etc shown as clear markers
+# cluster 3 (S3-mix more thymus, peripheral may SOX4 drive >>> CCL5 as only unique makers (may look more highly expressed in "blood" cells)
+# COMMENT: with ref to cluster 1, these are 2 separated subtype thymus.s3 (esp cluster 1 is IL7R IFITM3 driven, cluster 3 is CCL5 driven
+
+# 1 vs 4 (E vs F)
+# cluster 1 (S3-mix more thymus, peripheral IL7R driven >>> cluster 1 does show a number of cells more frequently expressed with lots of markers (not assocaited with tissue)
+# cluster 4 (S3-mix more thymus, center >>> no sig marker found, though visually, there maybe some
+# COMMENT: compared to cluster4, cluster 1 does have a number of genes more frequently express in 1 only, but not in 4; needed to keep them apart
+
+# 2 vs 3 (G vs H)
+# cluster 2 (S3-mix more thymus, peripheral may CCL5 driven >>> besides NPIPB, SYNE2 and AC009022.1 are clear marker
+# cluster 3 (S3-mix more thymus, peripheral may SOX4 drive >>> statistically no, visually yes *may have some more frequently expressed genes
+# COMMENT: SYNE2 and AC009022.1 (and maybe NPIPB) may driven cluster 2 from 3
+
+# 2 vs 4 (I vs J)
+# cluster 2 (S3-mix more thymus, peripheral may CCL5 driven >>> besides NPIPB, got number of markers (esp ACTG1)
+# cluster 4 (S3-mix more thymus, center >>> statistically no, visually yes
+# COMMENT: ACTG1 etc gene drove cluster 2 away from 4
+
+# 3 vs 4 (K vs L)
+# cluster 3 (S3-mix more thymus, peripheral may SOX4 drive >>> got lots of genes statistically sig express in cluster 3 only, e.g. ACTG1
+# cluster 4 (S3-mix more thymus, center >>> statistically no, visually yes
+# COMMENT: cluster 3 got number of unique markers (e.g. ACTG1) more frequently express and drove cluster 3 from 4
 
 
 
 
 
 
+# fx: combine peripheral cluster compare with each peripheral cluster
+# I: not necessary !?
+
+# 1_2 vs 3 (M vs N)
+# cluster 1_2 (S3-mix more thymus, peripheral, IL7R driven + may CCL5 driven >>> statistically no; also no visual marker with expression level common to both cluster 1 2, and 3
+# cluster 3 (S3-mix more thymus, peripheral may SOX4 drive >>> statistically no, visually yes
+# COMMENT: cluster 1 and 2 are too different; when compare something that is internally different with another cluster will not have enough statistical power ?
+
+# 2_3 vs 1 (O vs P)
+# cluster 2_3 (S3-mix more thymus, peripheral, may CCL5 and SOX4 driven >>> got several marker more frequently express in cluster 2 and 3 (e.g CCL5, EFHD2, CST7)
+# cluster 1 (S3-mix more thymus, peripheral IL7R driven >>> got several marker as well (e.g. IL7R, LRRC75A; for LTB, IFITM3 and IFITM1, they seems to have higher expression in donor 3)
+# COMMENT: cluster 1 clearly separated from 2_3, where 2 and 3 could be more similar; also explain why cluster 1 partner with 2 show no difference when compare to 3
+
+# 1_3 vs 2 (Q vs R)
+# cluster 1_3 (S3-mix more thymus, peripheral, IL7R driven + may SOX4 driven >>> lots of markers more frequent express in 1_3
+# cluster 2 (S3-mix more thymus, peripheral may CCL5 driven >>> besides NPIPB, got CCL5, SYNE2 and AC009022.1 as markers
+# COMMENT: if cluster 3 is in the combination, there will be DE (?); this means ... cluster 3 is more different from cluster 1 or 2 ?
 
 
 
 
 
+# fx: combine peripheral cluster compare with core/center cluster
+
+# 1_2 vs 4 (S vs T)
+# cluster 1_2 (S3-mix more thymus, peripheral, IL7R driven + may CCL5 driven >>> lot of markers more frequently express in 1_2
+# cluster 4 (i.e. S3-mix more thymus, center >>> statistically no, visually yes
+# COMMENT: consistently, 4 show no marker, uniqueness is from cluster 1_2
+
+# 2_3 vs 4 (U vs V)
+# cluster 2_3 (S3-mix more thymus, peripheral, may CCL5 and SOX4 driven >>> lots of marker more frequently expressed in 2_3
+# cluster 4 (i.e. S3-mix more thymus, center >>> statistically no, visually yes
+# COMMENT: consistently, 4 show no marker, uniqueness is from cluster 2_3
+
+# 1_3 vs 4 (W vs X)
+# cluster 1_3 (S3-mix more thymus, peripheral, IL7R driven + may SOX4 driven >>> lots of marker more frequently expressed in 1_3
+# cluster 4 (i.e. S3-mix more thymus, center >>> statistically no, visually yes
+# COMMENT: consistently, 4 show no marker, uniqueness is from cluster 1_3
+
+# 1_2_3 vs 4 (Y vs Z)
+# cluster 1_2_3 (S3-mix more thymus, peripheral, IL7R driven + may SOX4, CCL5 driven >>> lots of marker more frequently expressed in 1_2_3
+# cluster 4 (i.e. S3-mix more thymus, center >>> statistically no, visually yes
+# COMMENT: consistently, 4 show no marker, uniqueness is from cluster 1_2_3
 
 
+# CONCLUSION:
+# as there is no standout feature in terms of experimental group for each cluster,
+# all of them are S3-mix (with mostly thymus.s3 with some blood.s3)
+# though, as in the minibulk with 20 DE only and we cannot tell difference between thymus.s3 and blood.s3
+# it may indicate in both thymus and blood, they got maybe 4 sub-stages of S3 that are in common
+#
+# based on pairwise DE detection, the peripheral cluster (i.e. cluster 1, 2, 3) do have unique makers up-regulated and drive them apart
+# e.g. cluster 1 (IL7R and LTB), cluster 2 (CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood), cluster 3 (CCL5 for blood),
+# whilst for the centre cluster, i.e. cluster 4
+# it does not have any marker when compared to to any other peripheral cluster (1,2, or 3)
+# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a multipotent stem cells/ S3 cells lineage parent in stage S3 ??
+#
+# and this hypothesis is being double confirmed when compare either 1_2, 2_3, 1_3 and 1_2_3 with 4
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###############################################
-# Heatmap using minibulk sig markers as feature
-
-# laod package for read in csv.gz
-library(data.table)
-library(R.utils)
-
-# read in
-a <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S2_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
-b <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S3_vs_Blood.S3.aggregated_tech_reps.DEGs.csv.gz"))
-c <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S3_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
-d <- fread(here("output", "DEGs", "excluding_blood_1-3", "Thymus.S3_vs_Thymus.S2.aggregated_tech_reps.DEGs.csv.gz"))
-
-# extract DEGlist (FDR < 0.05)
-minibulkDEG.a <- a$ENSEMBL.GENENAME[a$FDR<0.05]
-minibulkDEG.b <- b$ENSEMBL.GENENAME[b$FDR<0.05]
-minibulkDEG.c <- c$ENSEMBL.GENENAME[c$FDR<0.05]
-minibulkDEG.d <- d$ENSEMBL.GENENAME[d$FDR<0.05]
-
-# keep only unique markers
-uniq.minibulkDEG.a <- Reduce(setdiff, list(minibulkDEG.a,
-                                           minibulkDEG.b,
-                                           minibulkDEG.c,
-                                           minibulkDEG.d))
-uniq.minibulkDEG.b <- Reduce(setdiff, list(minibulkDEG.b,
-                                           minibulkDEG.a,
-                                           minibulkDEG.c,
-                                           minibulkDEG.d))
-uniq.minibulkDEG.c <- Reduce(setdiff, list(minibulkDEG.c,
-                                           minibulkDEG.a,
-                                           minibulkDEG.b,
-                                           minibulkDEG.d))
-uniq.minibulkDEG.d <- Reduce(setdiff, list(minibulkDEG.d,
-                                           minibulkDEG.a,
-                                           minibulkDEG.b,
-                                           minibulkDEG.c))
-
-# check number of unique minibulkDEG in each
-length(uniq.minibulkDEG.a)
-length(uniq.minibulkDEG.b)
-length(uniq.minibulkDEG.c)
-length(uniq.minibulkDEG.d)
-
-# keep only top50
-top.uniq.minibulkDEG.a <- if(length(uniq.minibulkDEG.a) >=50){uniq.minibulkDEG.a[1:50]} else {uniq.minibulkDEG.a}
-top.uniq.minibulkDEG.b <- if(length(uniq.minibulkDEG.b) >=50){uniq.minibulkDEG.b[1:50]} else {uniq.minibulkDEG.b}
-top.uniq.minibulkDEG.c <- if(length(uniq.minibulkDEG.c) >=50){uniq.minibulkDEG.c[1:50]} else {uniq.minibulkDEG.c}
-top.uniq.minibulkDEG.d <- if(length(uniq.minibulkDEG.d) >=50){uniq.minibulkDEG.d[1:50]} else {uniq.minibulkDEG.d}
-
-# feature
-minibulk_markers <- c(top.uniq.minibulkDEG.a,
-                      top.uniq.minibulkDEG.b,
-                      top.uniq.minibulkDEG.c,
-                      top.uniq.minibulkDEG.d)
-
-# plot heatmap
-plotHeatmap(
-  sce,
-  features = minibulk_markers,
-  columns = order(
-    sce$cluster,
-    sce$stage,
-    sce$tissue,
-    sce$donor,
-    sce$group,
-    sce$plate_number),
-  colour_columns_by = c(
-    "cluster",
-    "stage",
-    "tissue",
-    "donor",
-    "group",
-    "plate_number"),
-  cluster_cols = FALSE,
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  # TODO: temp trick to deal with the row-colouring problem
-  annotation_row = data.frame(
-    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
-    thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
-    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
-    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.d, "DE", "not DE"), levels = c("DE")),
-    row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different clusters",
-  column_annotation_colors = list(
-    cluster = cluster_colours,
-    stage = stage_colours,
-    tissue = tissue_colours,
-    donor = donor_colours,
-    group = group_colours,
-    plate_number = plate_number_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 7)
 
 
 

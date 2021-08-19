@@ -2754,7 +2754,7 @@ plotHeatmap(
 # by DE detection, cluster 3 and 4 shows no difference and should be grouped
 # then when comparing the grouped 3_4 to 1, we see a number of markers more frequently express in 3_4 only
 # on one hand, as 3_4 does contain a small amount of S2, that may explain why the gene expression of those markers are not consistently expressed throughout all cells int he cluster
-# on the other hand, it also indicate cluster 1 is a transition or interim cell group found with thymus that transit from S1-S2 to S3, with increasing expression of these markers found on 3_4/S3 only in thymus
+# on the other hand, it also indicate cluster 1 is a transition or interim cell group (new subgroup !) found with thymus that transit from S1-S2 to S3, with increasing expression of these markers found on 3_4/S3 only in thymus
 #
 # also one important point to note is that
 # although gene family (like the NPIPB here) appeared as sig marker may not be optimal (as the "variance" detected could be due to mapping artifect becasue of their sequence conservation of this gene family 3')
