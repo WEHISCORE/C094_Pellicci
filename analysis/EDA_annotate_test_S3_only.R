@@ -3558,7 +3558,7 @@ plotHeatmap(
 # COMMENT: with ref to cluster 1, these are 2 separated subtype thymus.s3 (esp cluster 1 is IL7R IFITM3 driven, cluster 3 is CCL5 driven
 
 # 1 vs 4 (E vs F)
-# cluster 1 (S3-mix more thymus, peripheral IL7R driven >>> cluster 1 does show a number of cells more frequently expressed with lots of markers (not assocaited with tissue)
+# cluster 1 (S3-mix more thymus, peripheral IL7R driven >>> cluster 1 does show a number of cells more frequently expressed with lots of markers (not associated with tissue)
 # cluster 4 (S3-mix more thymus, center >>> no sig marker found, though visually, there maybe some
 # COMMENT: compared to cluster4, cluster 1 does have a number of genes more frequently express in 1 only, but not in 4; needed to keep them apart
 
@@ -3583,7 +3583,7 @@ plotHeatmap(
 
 
 # fx: combine peripheral cluster compare with each peripheral cluster
-# I: not necessary !?
+# I: these 3 are not necessary !?
 
 # 1_2 vs 3 (M vs N)
 # cluster 1_2 (S3-mix more thymus, peripheral, IL7R driven + may CCL5 driven >>> statistically no; also no visual marker with expression level common to both cluster 1 2, and 3
@@ -3630,14 +3630,15 @@ plotHeatmap(
 # CONCLUSION:
 # as there is no standout feature in terms of experimental group for each cluster,
 # all of them are S3 cells with mixed tissue origins and are with mostly thymus.s3 together with some blood.s3
-# As in the minibulk with only 20 DE, although we cannot tell difference between thymus.s3 and blood.s3
-# it may indicate in both thymus and blood, there has got maybe 4 sub-stages of S3 that are in common
+# As in the minibulk with only 20 DE, although we cannot tell the difference between thymus.s3 and blood.s3
+# it may indicate inthymus and blood, there are 4 sub-stages of S3 cell and can be found in both tissue
 #
-# based on pairwise DE detection, the peripheral cluster (i.e. cluster 1, 2, 3) do have unique makers up-regulated and drive them apart
-# e.g. cluster 1 (IL7R and LTB; that could be the "blood.s3.special" found in the whole cell analysis), cluster 2 (CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood), cluster 3 (CCL5 for blood),
+# based on the pairwise DE detection, the peripheral cluster (i.e. cluster 1, 2, 3) do have unique makers up-regulated and drive them apart
+# e.g. cluster 1 (IL7R and LTB; that is proven to be comprising the "blood.s3.special" found in the whole cell analysis; ref: script: "EDA_annotate_test_cluster1_whole_equivalent_cluster1_S3only.R"),
+# cluster 2 (CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood), cluster 3 (CCL5 for blood),
 # whilst for the centre cluster, i.e. cluster 4
 # it does not have any marker when compared to to any other peripheral cluster (1,2, or 3)
-# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a multipotent stem cells/ S3 cells lineage parent/progenitor in stage S3 ??
+# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a S3 progenitor cells (?)
 #
 # and this hypothesis is being double confirmed when compare either 1_2, 2_3, 1_3 and 1_2_3 with 4
 
