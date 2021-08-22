@@ -1043,7 +1043,7 @@ chosen <- "D"
 D_uniquely_up <- vs2_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 2; S3-mix, set 2)"
+x <- "(cluster 3; S3-mix, set 3)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -3631,14 +3631,14 @@ plotHeatmap(
 # as there is no standout feature in terms of experimental group for each cluster,
 # all of them are S3 cells with mixed tissue origins and are with mostly thymus.s3 together with some blood.s3
 # As in the minibulk with only 20 DE, although we cannot tell the difference between thymus.s3 and blood.s3
-# it may indicate inthymus and blood, there are 4 sub-stages of S3 cell and can be found in both tissue
+# it may indicate in thymus and blood, there are 4 sub-stages of S3 cell and can be found in both tissue
 #
-# based on the pairwise DE detection, the peripheral cluster (i.e. cluster 1, 2, 3) do have unique makers up-regulated and drive them apart
+# based on the pairwise DE detection, the peripheral cluster (i.e. cluster 1, 2, 3) do have unique markers up-regulated and drive them apart
 # e.g. cluster 1 (IL7R and LTB; that is proven to be comprising the "blood.s3.special" found in the whole cell analysis; ref: script: "EDA_annotate_test_cluster1_whole_equivalent_cluster1_S3only.R"),
 # cluster 2 (CCL5 for both tissues; KLRD1 and EFHD2 mostly for blood), cluster 3 (CCL5 for blood),
 # whilst for the centre cluster, i.e. cluster 4
 # it does not have any marker when compared to to any other peripheral cluster (1,2, or 3)
-# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a S3 progenitor cells (?)
+# it means in could be a cluster have all feature common to cluster 1,2 and 3;  could be a group of progenitor for S3 cells (?)
 #
 # and this hypothesis is being double confirmed when compare either 1_2, 2_3, 1_3 and 1_2_3 with 4
 

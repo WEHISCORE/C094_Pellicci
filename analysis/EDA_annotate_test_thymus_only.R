@@ -2742,24 +2742,25 @@ plotHeatmap(
 # COMMENT: cluster 3 and 4 together, they does have number of unique markers in common that separate them out from cluster 1 (including AC009022.1)
 
 # 2 vs 3_4 (Q vs R)
-# cluster 2 (mostly thymus S1, S2 >>>
-# cluster 3_4 (mostly thymus S3, with almost only S2 >>>
-# COMMENT:
+# cluster 2 (mostly thymus S1, S2 >>> lot of clear markers detected
+# cluster 3_4 (mostly thymus S3, with almost only S2 >>> lot of clear markers detected
+# COMMENT: cluster 3_4 is also strongly differed from cluster 2
 
 
 
 # CONCLUSION:
+#
 # consistent with minibulk, thymus.s1.s2.mix is strongly different from any component of the thymus.s3.bulk
 #
-# by DE detection, cluster 3 and 4 shows no difference and should be grouped
-# then when comparing the grouped 3_4 to 1, we see a number of markers more frequently express in 3_4 only
-# on one hand, as 3_4 does contain a small amount of S2, that may explain why the gene expression of those markers are not consistently expressed throughout all cells int he cluster
-# on the other hand, it also indicate cluster 1 is a transition or interim cell group (new subgroup !) found with thymus that transit from S1-S2 to S3, with increasing expression of these markers found on 3_4/S3 only in thymus
+# by pairwise DE detection, cluster 3 and 4 shows no difference and should be grouped
+# then when comparing the grouped 3_4 to 1, we see a number of markers that are sig more frequently express in 3_4 only
+# on one hand, as 3_4 does contain a small amount of S2, that may explain why the gene expression of those markers are not consistently expressed throughout all cells in the cluster
+# on the other hand, it may also indicate cluster 1 is a transition or interim cell group (new subgroup !) found with thymus that transit from S1-S2 to S3, with increasing expression of these markers found on 3_4/S3 only in thymus
 #
 # also one important point to note is that
-# although gene family (like the NPIPB here) appeared as sig marker may not be optimal (as the "variance" detected could be due to mapping artifect becasue of their sequence conservation of this gene family 3')
+# although gene family (like the NPIPB here) appeared as sig marker may not be optimal (as the "variance" detected could be due to mapping artifact due to their sequence conservation of this gene family 3')
 # but there are tonnes of gene family in human and I believe number of them have 3' sequence conservancy,
-# if it is a common problem true for all gene family, then they should all appear as DE, but not only NPIPB - which show a strong and clear expression in cluster 4 only, and this must noit be neglected ! (novelty !)
+# if it is a common problem true for all gene family, then they should all appear as DE, but not only NPIPB - which show a strong and clear expression in cluster 4 only, and this must not be neglected ! (novelty !)
 # but one point that is true is, which marker is the actual DE is not definite and I agree that we need to be cautious !
 
 
