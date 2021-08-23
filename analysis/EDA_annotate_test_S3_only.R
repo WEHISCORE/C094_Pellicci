@@ -3628,6 +3628,8 @@ plotHeatmap(
 
 
 # CONCLUSION:
+# by default setting, this cluster has 6 clusters, but based on the UMAP, the clustering algorithm seems struggling thus I see 4 clusters is sufficient
+#
 # as there is no standout feature in terms of experimental group for each cluster,
 # all of them are S3 cells with mixed tissue origins and are with mostly thymus.s3 together with some blood.s3
 # As in the minibulk with only 20 DE, although we cannot tell the difference between thymus.s3 and blood.s3

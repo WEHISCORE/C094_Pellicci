@@ -1508,6 +1508,8 @@ plotHeatmap(
 
 
 # CONCLUSION
+# by default SNN setting, there are 4 clusters, but after testing, I found out 2 cluster show no sig difference, thus I pick 3 cluster for this subset
+#
 # S1 and S2 cells are basically inseparable as in terms of transcriptomes, they are highly overlapped
 # having said so, we do find some clues about the key marker driven the S1 and S2 apart (e.g. STMN1 and MIR1244-4 seems to be more highly expression in S1 than S2; eg2 up-regulation of CCL5 and ILR7 clearly associated with cluster 2 only)
 # also, we are able to spot the 3 unique transcriptional subtype of cells within the S1-S2 mix

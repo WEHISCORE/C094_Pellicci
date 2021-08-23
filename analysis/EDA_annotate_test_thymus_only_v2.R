@@ -504,6 +504,9 @@ plotHeatmap(
 
 
 # CONCLUSION:
+# by default setting of SNN, the number of cluster is 3
+# but as cluster 2 has only 2 cells, I don;t pay trust on this clustering and thus one can either go for 2 or 3 clusters
+#
 # we did try to aim for higher number of clusters (i.e. 4 clusters, where the "mostly.thymus.S3" was further subdivided into three clusters (i.e. cluster 1, 3, 4) with reasonable number of cells each),
 # however, two of the clusters, i.e. cluster 3 and 4 shows no significant difference between the two (ref: EDA_annotate_test_thymus_only.R)
 # unless we consider cluster 3 and 4 as one cluster (i.e. 3_4) where 3_4 does show number of DE that cluster 1 don't have, whilst cluster 1 show no statistical difference UP when compared to 3_4 (ref O vs P)
