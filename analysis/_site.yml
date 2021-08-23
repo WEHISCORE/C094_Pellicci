@@ -19,22 +19,24 @@ navbar:
       menu:
         - text: "Single cell (whole cell)"
           href: C094_Pellicci.single-cell.merge.whole_cell.html
-        - text: "Single cell (thymus only)"
-          href: C094_Pellicci.single-cell.merge.thymus_only.html
-        - text: "Single cell (S3 only)"
-          href: C094_Pellicci.single-cell.merge.S3_only.html
         - text: "Single cell (S1 and S2 only)"
           href: C094_Pellicci.single-cell.merge.S1_S2_only.html
+        - text: "Single cell (S3 only)"
+          href: C094_Pellicci.single-cell.merge.S3_only.html
+        - text: "Single cell (thymus only)"
+          href: C094_Pellicci.single-cell.merge.thymus_only.html
+
     - text: "Annotating cells"
       menu:
         - text: "Single cell (whole cell)"
           href: C094_Pellicci.single-cell.annotate.whole_cell.html
-        - text: "Single cell (thymus only)"
-          href: C094_Pellicci.single-cell.annotate.thymus_only.html
-        - text: "Single cell (S3 only)"
-          href: C094_Pellicci.single-cell.annotate.S3_only.html
         - text: "Single cell (S1 and S2 only)"
           href: C094_Pellicci.single-cell.annotate.S1_S2_only.html
+        - text: "Single cell (S3 only)"
+          href: C094_Pellicci.single-cell.annotate.S3_only.html
+        - text: "Single cell (thymus only)"
+          href: C094_Pellicci.single-cell.annotate.thymus_only.html
+
     - text: "Mini-bulk differential analyses"
       menu:
         - text: "All samples"

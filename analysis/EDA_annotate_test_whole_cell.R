@@ -3744,6 +3744,7 @@ plotHeatmap(
 #
 # in comparison, for cluster 1 (S3.mix.higher.thymus): no obvious distinguishing feature and expression of most genes are sitting in the middle; interim development stage mostly in thymus ? (IFTIM3, GZMK)
 
+# I: check if same conclusion can be drawn in S3 subset ! (expectation: signal should be similar in whole cell, but not as strong as "S3 only" subset)
 
 
 
@@ -3836,51 +3837,4 @@ plotExpression(
   scale_colour_manual(values = cluster_colours, name = "cluster"),
 
 ncol = 2)
-
-
-
-
-
-
-
-
-
-
-# CONCLUSION:
-# consistent with the mini-bulk outcome, single cell dataset shows that S3 cells (from either thymus or blood) is sig different from S1-S2-mix
-# for the S3 cells, besides the thymus.s3 cells, we provide evidence to support that blood.s3 can be subdivided into 2 subgroups, blood.s3.normal and blood.s3.special,
-# that can be distinguished by the expression of several marker genes (esp. IL7R, with higher expression in "special")
-# also, blood.s3.special is quite similar to thymus.s3, which could suggest they are closer in terms of developmental stage
-# this insight cannot be provided by looking only at the mini-bulk outcome alone
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
