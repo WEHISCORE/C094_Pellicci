@@ -293,19 +293,24 @@ p1 + p2 + p3 + p4 +
 # thus, for this subset, it seems that we can only go for 2 cluster
 2
 
-# selected the best `number of cluster` (colours) and replace the ones saved in SCE
+###############################
+# selected the best `number of cluster`
 sce$cluster <- factor(clusters_1$membership)
-cluster_colours <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
-  levels(sce$cluster))
-sce$colours$cluster_colours <- cluster_colours[sce$cluster]
+# re-numbering of cluster according to collaborators' request
+sce$cluster <- factor(
+  dplyr::case_when(
+    sce$cluster == "1" ~ "13",
+    sce$cluster == "2" ~ "14"), levels = c("13", "14"))
 
+cluster_colours <- setNames(
+  palette.colors(nlevels(sce$cluster), "R4"),
+  levels(sce$cluster))
 
 
 ###################################
 # (M1) raw unique
 #
-# cluster 1 (i.e. mostly thymus.S1.S2.mix) vs 2 (i.e. mostly thymus.S3)
+# cluster 13 (i.e. mostly thymus.S1.S2.mix) vs 14 (i.e. mostly thymus.S3)
 
 # find unique DE ./. clusters
 uniquely_up <- findMarkers(
@@ -318,14 +323,14 @@ uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   uniquely_up,
-  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_1_vs_2.rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_13_vs_14.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_1_vs_2"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_13_vs_14"), recursive = TRUE)
 
-vs_pair <- c("1", "2")
+vs_pair <- c("13", "14")
 
-message("Writing 'uniquely_up (cluster_1_vs_2)' marker genes to file.")
+message("Writing 'uniquely_up (cluster_13_vs_14)' marker genes to file.")
 for (n in names(uniquely_up)) {
   message(n)
   gzout <- gzfile(
@@ -334,7 +339,7 @@ for (n in names(uniquely_up)) {
       "marker_genes",
       "thymus_only",
       "uniquely_up",
-      "cluster_1_vs_2",
+      "cluster_13_vs_14",
       paste0("cluster_",
              vs_pair[which(names(uniquely_up) %in% n)],
              "_vs_",
@@ -354,8 +359,8 @@ for (n in names(uniquely_up)) {
 }
 
 ##########################################
-# look at cluster 1 (i.e. mostly thymus.S1.S2.mix)
-chosen <- "1"
+# look at cluster 13 (i.e. mostly thymus.S1.S2.mix)
+chosen <- "13"
 cluster1_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
@@ -385,22 +390,22 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
-    sce$CD4,
-    sce$CD161,
     sce$stage,
     sce$tissue,
     sce$donor,
     sce$group,
-    sce$plate_number),
+    sce$plate_number,
+    sce$CD4,
+    sce$CD161),
   colour_columns_by = c(
     "cluster",
-    "CD4",
-    "CD161",
     "stage",
     "tissue",
     "donor",
     "group",
-    "plate_number"),
+    "plate_number",
+    "CD4",
+    "CD161"),
   cluster_cols = FALSE,
   center = TRUE,
   symmetric = TRUE,
@@ -428,8 +433,8 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################
-# look at cluster 2 (i.e. mostly thymus.S3)
-chosen <- "2"
+# look at cluster 14 (i.e. mostly thymus.S3)
+chosen <- "14"
 cluster2_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
@@ -459,22 +464,22 @@ plotHeatmap(
   features = rownames(best_set),
   columns = order(
     sce$cluster,
-    sce$CD4,
-    sce$CD161,
     sce$stage,
     sce$tissue,
     sce$donor,
     sce$group,
-    sce$plate_number),
+    sce$plate_number,
+    sce$CD4,
+    sce$CD161),
   colour_columns_by = c(
     "cluster",
-    "CD4",
-    "CD161",
     "stage",
     "tissue",
     "donor",
     "group",
-    "plate_number"),
+    "plate_number",
+    "CD4",
+    "CD161"),
   cluster_cols = FALSE,
   center = TRUE,
   symmetric = TRUE,

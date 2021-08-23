@@ -617,11 +617,11 @@ p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7,
 
 Figure \@ref(fig:umap-with-facs) overlays the index sorting data on the UMAP plots.
 
-```{r umap-with-facs, fig.width = 8, fig.height = 9, fig.cap = "Overlay of index sorting data on UMAP plot. For each marker, the left-hand plot shows the 'raw' or 'pseudo-logged' fluorescence intensity and the right-side plots the 'scaled rank' of the raw intensity. The pseudo-log transformation is a transformation mapping numbers to a signed logarithmic scale with a smooth transition to linear scale around 0. This transformation is commonly used when plotting fluorescence intensities from FACS. The scaled rank is applied within each mouse and assigns the maximum fluorescence intensity a value of one and the minimum fluorescence intensities a value of zero. It can be thought of as a crude normalization of the FACS data that allows us to compare fluorescence intensities from different mice.", fig.asp = 1}
+```{r umap-with-facs, fig.width = 8, fig.height = 9, fig.cap = "Overlay of index sorting data on UMAP plot. For each marker, the left-hand plot shows the 'raw' or 'pseudo-logged' fluorescence intensity and the right-side plots the 'scaled rank' of the raw intensity. The pseudo-log transformation is a transformation mapping numbers to a signed logarithmic scale with a smooth transition to linear scale around 0. This transformation is commonly used when plotting fluorescence intensities from FACS. The scaled rank is applied within each mouse and assigns the maximum fluorescence intensity a value of one and the minimum fluorescence intensities a value of zero. It can be thought of as a crude normalization of the FACS data that allows us to compare fluorescence intensities from different mice.", fig.asp = 6}
 tmp <- sce
 colData(tmp) <- cbind(colData(tmp), t(assays(altExp(tmp, "FACS"))$raw))
 
-facs_markers <- grep("V525_50_A_CD4_BV510|B530_30_A_CD161_FITC", colnames(colData(tmp)), value = TRUE)
+facs_markers <- grep("^F|^S|^V|^B|^R|^V", colnames(colData(tmp)), value = TRUE)
 
 corrected_umap <- cbind(
   data.frame(
