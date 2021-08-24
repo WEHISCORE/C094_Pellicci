@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-08-23"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-08-23"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-08-24"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-08-24"/>
   <meta name="article:author" content="William Ho"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -111,7 +111,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Merging cells for Pellicci gamma-delta T-cell single-cell dataset (S3 only)"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-23"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Merging cells for Pellicci gamma-delta T-cell single-cell dataset (S3 only)"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-24"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2056,7 +2056,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Merging cells for Pellicci gamma-delta T-cell single-cell dataset (S3 only)","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-23T00:00:00.000+10:00","citationText":"Ho, 2021"}
+{"title":"Merging cells for Pellicci gamma-delta T-cell single-cell dataset (S3 only)","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-24T00:00:00.000+10:00","citationText":"Ho, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2160,7 +2160,7 @@ Supplementary files
 <div class="d-byline">
   William Ho  (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-08-23
+<br/>2021-08-24
 </div>
 
 <div class="d-article">
@@ -2796,38 +2796,6 @@ Figure 6: UMAP plot of the dataset. Each point represents a cell and each panel 
 </div>
 </div>
 <p>Taken altogether, we conclude that the data corrected by the <em>manual merge</em> as the best possible merge order for data integration of this dataset and proceed.</p>
-<div class="layout-chunk" data-layout="l-body">
-<details>
-<summary>
-Show code
-</summary>
-<div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html'>reducedDim</a></span><span class='op'>(</span><span class='va'>sce</span>, <span class='st'>"corrected"</span><span class='op'>)</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html'>reducedDim</a></span><span class='op'>(</span><span class='va'>mnn_out</span>, <span class='st'>"corrected"</span><span class='op'>)</span>
-</code></pre>
-</div>
-</details>
-</div>
-<div class="layout-chunk" data-layout="l-body">
-<details>
-<summary>
-Show code
-</summary>
-<div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>1248</span><span class='op'>)</span>
-<span class='va'>sce</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scater/man/runUMAP.html'>runUMAP</a></span><span class='op'>(</span><span class='va'>sce</span>, dimred <span class='op'>=</span> <span class='st'>"corrected"</span>, name <span class='op'>=</span> <span class='st'>"UMAP_corrected"</span><span class='op'>)</span>
-
-<span class='fu'><a href='https://rdrr.io/r/base/Random.html'>set.seed</a></span><span class='op'>(</span><span class='fl'>4759</span><span class='op'>)</span>
-<span class='va'>snn_gr</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/pkg/scran/man/buildSNNGraph.html'>buildSNNGraph</a></span><span class='op'>(</span><span class='va'>sce</span>, use.dimred <span class='op'>=</span> <span class='st'>"corrected"</span><span class='op'>)</span>
-<span class='va'>clusters</span> <span class='op'>&lt;-</span> <span class='fu'>igraph</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/igraph/man/cluster_louvain.html'>cluster_louvain</a></span><span class='op'>(</span><span class='va'>snn_gr</span><span class='op'>)</span>
-<span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='va'>clusters</span><span class='op'>$</span><span class='va'>membership</span><span class='op'>)</span>
-<span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/setNames.html'>setNames</a></span><span class='op'>(</span>
-  <span class='fu'>scater</span><span class='fu'>:::</span><span class='fu'>.get_palette</span><span class='op'>(</span><span class='st'>"tableau10medium"</span><span class='op'>)</span><span class='op'>[</span><span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq_len</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/nlevels.html'>nlevels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span><span class='op'>]</span>,
-  <span class='fu'><a href='https://rdrr.io/r/base/levels.html'>levels</a></span><span class='op'>(</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster_colours</span> <span class='op'>&lt;-</span> <span class='va'>cluster_colours</span><span class='op'>[</span><span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span><span class='op'>]</span>
-</code></pre>
-</div>
-</details>
-</div>
 <p>To sumup, there are 6 clusters detected, broken down by experimental factors in Figure <a href="#fig:cluster-barplot-merged">7</a> and shown on the UMAP plot Figure <a href="#fig:clusterplot-umap-merged">8</a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -3048,7 +3016,7 @@ Show code
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Australia/Melbourne         
- date     2021-08-23                  
+ date     2021-08-24                  
 
 ─ Packages ─────────────────────────────────────────────────────────
  ! package              * version  date       lib source        
@@ -3117,13 +3085,13 @@ Show code
  P jsonlite               1.7.2    2020-12-09 [?] CRAN (R 4.0.2)
    knitr                  1.33     2021-04-24 [1] CRAN (R 4.0.3)
  P labeling               0.4.2    2020-10-20 [?] CRAN (R 4.0.0)
-   lattice                0.20-41  2020-04-02 [2] CRAN (R 4.0.3)
+ P lattice                0.20-41  2020-04-02 [3] CRAN (R 4.0.3)
  P lifecycle              1.0.0    2021-02-15 [?] CRAN (R 4.0.2)
  P limma                * 3.46.0   2020-10-27 [?] Bioconductor  
  P locfit                 1.5-9.4  2020-03-25 [?] CRAN (R 4.0.0)
  P lubridate              1.7.10   2021-02-26 [?] CRAN (R 4.0.3)
  P magrittr               2.0.1    2020-11-17 [?] CRAN (R 4.0.2)
-   Matrix                 1.2-18   2019-11-27 [2] CRAN (R 4.0.3)
+ P Matrix                 1.2-18   2019-11-27 [3] CRAN (R 4.0.3)
  P MatrixGenerics       * 1.2.1    2021-01-30 [?] Bioconductor  
  P matrixStats          * 0.58.0   2021-01-29 [?] CRAN (R 4.0.2)
  P memoise                2.0.0    2021-01-26 [?] CRAN (R 4.0.2)
@@ -3161,7 +3129,7 @@ Show code
    stringi                1.7.3    2021-07-16 [1] CRAN (R 4.0.3)
  P stringr                1.4.0    2019-02-10 [?] CRAN (R 4.0.0)
  P SummarizedExperiment * 1.20.0   2020-10-27 [?] Bioconductor  
-   survival               3.2-7    2020-09-28 [2] CRAN (R 4.0.3)
+ P survival               3.2-7    2020-09-28 [3] CRAN (R 4.0.3)
  P tibble                 3.1.0    2021-02-25 [?] CRAN (R 4.0.2)
  P tidyselect             1.1.0    2020-05-11 [?] CRAN (R 4.0.0)
  P utf8                   1.2.1    2021-03-12 [?] CRAN (R 4.0.2)
@@ -3179,7 +3147,8 @@ Show code
  P zlibbioc               1.36.0   2020-10-27 [?] Bioconductor  
 
 [1] /stornext/Home/data/allstaff/h/ho.w/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
-[2] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
+[2] /tmp/Rtmp35cmTb/renv-system-library
+[3] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
 
  P ── Loaded and on-disk path mismatch.</code></pre>
 </div>

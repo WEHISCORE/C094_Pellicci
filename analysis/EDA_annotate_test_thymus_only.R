@@ -2121,10 +2121,10 @@ vs7_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs7_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_16_vs_13_15rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_16_vs_13_15rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_16_vs_13_15"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_16_vs_13_15"), recursive = TRUE)
 
 vs_pair <- c("16", "13_15")
 
@@ -2135,7 +2135,7 @@ for (n in names(vs7_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "thymus_only",
       "uniquely_up",
       "cluster_16_vs_13_15",
       paste0("cluster_",
@@ -2345,10 +2345,10 @@ vs8_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs8_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_13_vs_15_16.rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_13_vs_15_16.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_13_vs_15_16"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_13_vs_15_16"), recursive = TRUE)
 
 vs_pair <- c("13", "15_16")
 
@@ -2359,7 +2359,7 @@ for (n in names(vs8_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "thymus_only",
       "uniquely_up",
       "cluster_13_vs_15_16",
       paste0("cluster_",
@@ -2570,10 +2570,10 @@ vs9_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs9_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_14_vs_15_16.rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_14_vs_15_16.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster14_vs_15_16"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster14_vs_15_16"), recursive = TRUE)
 
 vs_pair <- c("14", "15_16")
 
@@ -2584,7 +2584,7 @@ for (n in names(vs9_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "thymus_only",
       "uniquely_up",
       "cluster_14_vs_15_16",
       paste0("cluster_",

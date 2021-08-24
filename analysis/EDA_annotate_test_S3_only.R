@@ -2086,10 +2086,10 @@ vs7_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs7_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_9_10_vs_11.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_9_10_vs_11.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_9_10_vs_11"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_9_10_vs_11"), recursive = TRUE)
 
 vs_pair <- c("9_10", "11")
 
@@ -2100,7 +2100,7 @@ for (n in names(vs7_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_9_10_vs_11",
       paste0("cluster_",
@@ -2315,10 +2315,10 @@ vs8_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs8_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_10_11_vs_9.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_10_11_vs_9.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_10_11_vs_9"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_10_11_vs_9"), recursive = TRUE)
 
 vs_pair <- c("10_11", "9")
 
@@ -2329,7 +2329,7 @@ for (n in names(vs8_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_10_11_vs_9",
       paste0("cluster_",
@@ -2543,10 +2543,10 @@ vs9_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs9_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_9_11_vs_10.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_9_11_vs_10.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_9_11_vs_10"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_9_11_vs_10"), recursive = TRUE)
 
 vs_pair <- c("9_11", "10")
 
@@ -2557,7 +2557,7 @@ for (n in names(vs9_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_9_11_vs_10",
       paste0("cluster_",
@@ -2771,10 +2771,10 @@ vs10_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs10_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_9_10_vs_12.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_9_10_vs_12.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_9_10_vs_12"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_9_10_vs_12"), recursive = TRUE)
 
 vs_pair <- c("9_10", "12")
 
@@ -2785,7 +2785,7 @@ for (n in names(vs10_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_9_10_vs_12",
       paste0("cluster_",
@@ -2999,10 +2999,10 @@ vs11_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs11_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_10_11_vs_12.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_10_11_vs_12.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_10_11_vs_12"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_10_11_vs_12"), recursive = TRUE)
 
 vs_pair <- c("10_11", "12")
 
@@ -3013,7 +3013,7 @@ for (n in names(vs11_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_10_11_vs_12",
       paste0("cluster_",
@@ -3227,10 +3227,10 @@ vs12_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs12_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_9_11_vs_12.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_9_11_vs_12.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_9_11_vs_12"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_9_11_vs_12"), recursive = TRUE)
 
 vs_pair <- c("9_11", "12")
 
@@ -3241,7 +3241,7 @@ for (n in names(vs12_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_9_11_vs_12",
       paste0("cluster_",
@@ -3452,10 +3452,10 @@ vs13_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs13_uniquely_up,
-  here("data", "marker_genes", "whole_cell", "C094_Pellicci.uniquely_up.cluster_9_10_11_vs_12.rds"),
+  here("data", "marker_genes", "S3_only", "C094_Pellicci.uniquely_up.cluster_9_10_11_vs_12.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "whole_cell", "uniquely_up", "cluster_9_10_11_vs_12"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "S3_only", "uniquely_up", "cluster_9_10_11_vs_12"), recursive = TRUE)
 
 vs_pair <- c("9_10_11", "12")
 
@@ -3466,7 +3466,7 @@ for (n in names(vs13_uniquely_up)) {
     description = here(
       "output",
       "marker_genes",
-      "whole_cell",
+      "S3_only",
       "uniquely_up",
       "cluster_9_10_11_vs_12",
       paste0("cluster_",

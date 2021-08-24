@@ -38,7 +38,6 @@ knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.merge.whole_cell_fil
 
 ```{r}
 sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.cell_selected.SCE.rds"))
-
 # Some useful colours
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
@@ -56,14 +55,12 @@ stage_colours <- setNames(
   unique(sce$colours$stage_colours),
   unique(names(sce$colours$stage_colours)))
 stage_colours <- stage_colours[levels(sce$stage)]
-
 # also define group (i.e. tissue.stage)
 sce$group <- factor(paste0(sce$tissue, ".", sce$stage))
 group_colours <- setNames(
   Polychrome::kelly.colors(nlevels(sce$group) + 1)[-1],
   levels(sce$group))
 sce$colours$group_colours <- group_colours[sce$group]
-
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -94,17 +91,14 @@ sce$batch <- sce$plate_number
 var_fit <- modelGeneVarWithSpikes(sce, "ERCC", block = sce$batch)
 hvg <- getTopHVGs(var_fit, var.threshold = 0)
 hvg <- intersect(hvg, protein_coding_gene_set)
-
 set.seed(67726)
 sce <- denoisePCA(
   sce, 
   var_fit, 
   subset.row = hvg,
   BSPARAM = BiocSingular::IrlbaParam(deferred = TRUE))
-
 set.seed(853)
 sce <- runUMAP(sce, dimred = "PCA")
-
 set.seed(4759)
 snn_gr_0 <- buildSNNGraph(sce, use.dimred = "PCA")
 clusters_0 <- igraph::cluster_louvain(snn_gr_0)
@@ -124,42 +118,36 @@ p1 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p2 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = stage), size = 0.25) +
   scale_colour_manual(values = stage_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p3 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = plate_number), size = 0.25) +
   scale_colour_manual(values = plate_number_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p4 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = tissue), size = 0.25) +
   scale_colour_manual(values = tissue_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p5 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = donor), size = 0.25) +
   scale_colour_manual(values = donor_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 p6 <- ggcells(sce, aes(x = UMAP.1, y = UMAP.2)) +
   geom_point(aes(colour = group), size = 0.25) +
   scale_colour_manual(values = group_colours) + 
   theme_cowplot(font_size = 8) + 
   xlab("Dimension 1") + 
   ylab("Dimension 2")
-
 (p1 | p2) / (p3 | p4) / (p5 | p6)
 ```
 
@@ -171,7 +159,6 @@ p1 <- ggcells(sce) +
   theme_cowplot(font_size = 8) +
   scale_fill_manual(values = cluster_colours_0) +
   geom_text(stat='count', aes(x = cluster_0, label=..count..), hjust=1.5, size=2)
-
 p2 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster_0, fill = stage),
@@ -180,7 +167,6 @@ p2 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
-
 p3 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster_0, fill = plate_number),
@@ -189,7 +175,6 @@ p3 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
-
 p4 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster_0, fill = tissue),
@@ -198,7 +183,6 @@ p4 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
-
 p5 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster_0, fill = donor),
@@ -207,7 +191,6 @@ p5 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
-
 p6 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster_0, fill = group),
@@ -216,7 +199,6 @@ p6 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
-
 (p1 | p2) / (p3 | p4) / (p5 | p6)
 ```
 
@@ -253,7 +235,6 @@ p1 <- ggcells(sce) +
   theme_cowplot(font_size = 8) +
   scale_fill_manual(values = plate_number_colours) +
   geom_text(stat='count', aes(x = plate_number, label=..count..), hjust=1.5, size=2)
-
 p2 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = stage),
@@ -262,7 +243,6 @@ p2 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
-
 p3 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = plate_number),
@@ -271,7 +251,6 @@ p3 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
-
 p4 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = tissue),
@@ -280,7 +259,6 @@ p4 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
-
 p5 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = donor),
@@ -289,7 +267,6 @@ p5 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
-
 p6 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = group),
@@ -298,7 +275,6 @@ p6 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
-
 (p1 | p2) / (p3 | p4) / (p5 | p6) 
 ```
 
@@ -335,14 +311,11 @@ knitr::kable(
 
 ```{r}
 reducedDim(sce, "corrected") <- reducedDim(mnn_out, "corrected")
-
 # generate UMAP
 set.seed(1248)
 sce <- runUMAP(sce, dimred = "corrected", name = "UMAP_corrected")
-
 # re-clustering after each MNN correction
 set.seed(4759)
-
 snn_gr <- buildSNNGraph(sce, use.dimred = "corrected")
 clusters <- igraph::cluster_louvain(snn_gr)
 sce$cluster <- factor(clusters$membership)
@@ -355,37 +328,30 @@ sce$colours$cluster_colours <- cluster_colours[sce$cluster]
 Figure \@ref(fig:batch-correction-vs) shows an overview of comparisons between the unmerged and merged data  (*manual merge*) broken down by different experimental factors.
 
 ```{r batch-correction-vs, fig.cap = "Comparison between batch-uncorrected data (left column) and -corrected data by manual merge orders (right column).", fig.asp = 2, layout="l-page"}
-
 p1 <- plotReducedDim(sce, "UMAP", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
 p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
-
 p3 <- plotReducedDim(sce, "UMAP", colour_by = "cluster_0", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours_0, name = "cluster_0")
 p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours, name = "cluster")
-
 p5 <- plotReducedDim(sce, "UMAP", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = stage_colours, name = "stage")
 p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = stage_colours, name = "stage")
-
 p7 <- plotReducedDim(sce, "UMAP", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = tissue_colours, name = "tissue")
 p8 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = tissue_colours, name = "tissue")
-
 p9 <- plotReducedDim(sce, "UMAP", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
 p10 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
-
 p11 <- plotReducedDim(sce, "UMAP", colour_by = "group", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = group_colours, name = "group")
 p12 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = group_colours, name = "group")
-
 p1 + p2 + p3 + p4 + 
   p5 + p6 + p7 + p8 + 
   p9 + p10 + p11 + p12 + 
@@ -400,12 +366,9 @@ From the perspective of correcting the batch effect, the MNN correction can effe
 From the perspective of preserving the biological-feature-of-interest, after the batch correction, we can still observe: (i) the "shifting" of the transcriptomic stages of cells `P6` to `P7`, then `P8` (Figure \@ref(fig:umap-stage-vs)); (ii) `Blood` contains cells mostly at `P8` only, whilst `Thymus` contains cells at all three phases, i.e. `P6`, `P7` and `P8` (Figure \@ref(fig:umap-tissue-vs)).
 
 ```{r umap-plate-number-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `plate_number` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
-
 umap_df <- makePerCellDF(sce)
 bg <- dplyr::select(umap_df, -plate_number)
-
 plot_grid(
-
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
@@ -417,7 +380,6 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   facet_wrap(~plate_number, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = plate_number), alpha = 1, size = 0.5) +
@@ -429,19 +391,15 @@ ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   facet_wrap(~plate_number, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ncol= 2,
 align ="h"
 )
 ```
 
 ```{r umap-stage-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `stage` when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 3/4, layout="l-body"}
-
 umap_df <- makePerCellDF(sce)
 bg <- dplyr::select(umap_df, -stage)
-
 plot_grid(
-
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
@@ -457,7 +415,6 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   facet_wrap(~stage, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = stage), alpha = 1, size = 0.5) +
@@ -473,7 +430,6 @@ ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   facet_wrap(~stage, ncol = 3) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ncol= 2,
 align ="h"
 )
@@ -482,9 +438,7 @@ align ="h"
 ```{r umap-tissue-vs, fig.cap = "UMAP plot of the dataset. Each point represents a cell and each panel highlights cells from a particular `tissue`when data is unmerged (left) and merged by manual merge 2 (right).", fig.asp = 2/3, layout="l-body"}
 umap_df <- makePerCellDF(sce)
 bg <- dplyr::select(umap_df, -tissue)
-
 plot_grid(
-
 ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
@@ -496,7 +450,6 @@ ggplot(aes(x = UMAP.1, y = UMAP.2), data = umap_df) +
   facet_wrap(~tissue, ncol = 2) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   geom_point(data = bg, colour = scales::alpha("grey", 0.5), size = 0.125) +
   geom_point(aes(colour = tissue), alpha = 1, size = 0.5) +
@@ -508,31 +461,12 @@ ggplot(aes(x = UMAP_corrected.1, y = UMAP_corrected.2), data = umap_df) +
   facet_wrap(~tissue, ncol = 2) +
   guides(colour = guide_legend(override.aes = list(size = 2, alpha = 1))) + 
   guides(colour = FALSE),
-
 ncol= 2,
 align ="h"
 )
 ```
 
 Taken altogether, we conclude that the data corrected by the *manual merge* as the best possible merge order for data integration of this dataset and proceed.
-
-```{r}
-reducedDim(sce, "corrected") <- reducedDim(mnn_out, "corrected")
-```
-
-```{r}
-set.seed(1248)
-sce <- runUMAP(sce, dimred = "corrected", name = "UMAP_corrected")
-
-set.seed(4759)
-snn_gr <- buildSNNGraph(sce, use.dimred = "corrected")
-clusters <- igraph::cluster_louvain(snn_gr)
-sce$cluster <- factor(clusters$membership)
-cluster_colours <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
-  levels(sce$cluster))
-sce$cluster_colours <- cluster_colours[sce$cluster]
-```
 
 To sumup, there are `r nlevels(sce$cluster)` clusters detected, broken down by experimental factors in Figure \@ref(fig:cluster-barplot-merged) and shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-merged).
 
@@ -544,7 +478,6 @@ p1 <- ggcells(sce) +
   theme_cowplot(font_size = 8) +
   scale_fill_manual(values = cluster_colours) +
   geom_text(stat='count', aes(x = cluster, label=..count..), hjust=1.5, size=2)
-
 p2 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = stage),
@@ -553,7 +486,6 @@ p2 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = stage_colours) +
   theme_cowplot(font_size = 8)
-
 p3 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = plate_number),
@@ -562,7 +494,6 @@ p3 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = plate_number_colours) +
   theme_cowplot(font_size = 8)
-
 p4 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = tissue),
@@ -571,7 +502,6 @@ p4 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
-
 p5 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = donor),
@@ -580,7 +510,6 @@ p5 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
-
 p6 <- ggcells(sce) + 
   geom_bar(
     aes(x = cluster, fill = group),
@@ -589,29 +518,22 @@ p6 <- ggcells(sce) +
   ylab("Frequency") +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
-
 (p1 | p2) / (p3 | p4) / (p5 | p6) 
 ```
 
 ```{r clusterplot-umap-merged, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
 p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = cluster_colours, name = "cluster")
-
 p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = stage_colours, name = "stage")
-
 p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = plate_number_colours, name = "plate_number")
-
 p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = tissue_colours, name = "tissue")
-
 p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = donor_colours, name = "donor")
-
 p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.2) + 
   scale_colour_manual(values = group_colours, name = "group")
-
 (p1 | p2) / (p3 | p4) / (p5 | p6) 
 ```
 
@@ -620,15 +542,12 @@ Figure \@ref(fig:umap-with-facs) overlays the index sorting data on the UMAP plo
 ```{r umap-with-facs, fig.width = 8, fig.height = 9, fig.cap = "Overlay of index sorting data on UMAP plot. For each marker, the left-hand plot shows the 'raw' or 'pseudo-logged' fluorescence intensity and the right-side plots the 'scaled rank' of the raw intensity. The pseudo-log transformation is a transformation mapping numbers to a signed logarithmic scale with a smooth transition to linear scale around 0. This transformation is commonly used when plotting fluorescence intensities from FACS. The scaled rank is applied within each mouse and assigns the maximum fluorescence intensity a value of one and the minimum fluorescence intensities a value of zero. It can be thought of as a crude normalization of the FACS data that allows us to compare fluorescence intensities from different mice.", fig.asp = 6}
 tmp <- sce
 colData(tmp) <- cbind(colData(tmp), t(assays(altExp(tmp, "FACS"))$raw))
-
 facs_markers <- grep("^F|^S|^V|^B|^R|^V", colnames(colData(tmp)), value = TRUE)
-
 corrected_umap <- cbind(
   data.frame(
     UMAP.1 = reducedDim(tmp, "UMAP_corrected")[, 1],
     UMAP.2 = reducedDim(tmp, "UMAP_corrected")[, 2]),
   as.data.frame(colData(tmp)))
-
 p <- lapply(facs_markers, function(m) {
   p1 <- ggplot(aes(x = UMAP.1, y = UMAP.2), data = corrected_umap) +
     geom_point(aes_string(colour = m, fill = m), alpha = 1, size = 1) +

@@ -474,24 +474,6 @@ align ="h"
 
 Taken altogether, we conclude that the data corrected by the *manual merge* as the best possible merge order for data integration of this dataset and proceed.
 
-```{r}
-reducedDim(sce, "corrected") <- reducedDim(mnn_out, "corrected")
-```
-
-```{r}
-set.seed(1248)
-sce <- runUMAP(sce, dimred = "corrected", name = "UMAP_corrected")
-
-set.seed(4759)
-snn_gr <- buildSNNGraph(sce, use.dimred = "corrected")
-clusters <- igraph::cluster_louvain(snn_gr)
-sce$cluster <- factor(clusters$membership)
-cluster_colours <- setNames(
-  scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce$cluster))],
-  levels(sce$cluster))
-sce$cluster_colours <- cluster_colours[sce$cluster]
-```
-
 To sumup, there are `r nlevels(sce$cluster)` clusters detected, broken down by experimental factors in Figure \@ref(fig:cluster-barplot-merged) and shown on the UMAP plot Figure \@ref(fig:clusterplot-umap-merged).
 
 ```{r cluster-barplot-merged, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
