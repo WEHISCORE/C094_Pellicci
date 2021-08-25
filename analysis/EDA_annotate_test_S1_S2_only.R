@@ -276,7 +276,7 @@ p1 + p2 + p3 + p4 +
 # comment:
 # we expect there are at least 4 groups in this subset: thymus.s1, thymus.s2, blood.s1, blood.s2
 # it seems like it can divide the Blood.s1/s2 from thymus.s1/s2
-# 4 cluster is nice, but considering keeping the statistical power
+# 3 cluster is nice, but considering keeping the statistical power
 3
 
 ###############################
@@ -873,7 +873,7 @@ saveRDS(
 
 dir.create(here("output", "marker_genes", "S1_S2_only", "uniquely_up", "cluster_6_vs_8"), recursive = TRUE)
 
-vs_pair <- c("1", "3")
+vs_pair <- c("6", "8")
 
 message("Writing 'uniquely_up (cluster_6_vs_8)' marker genes to file.")
 for (n in names(vs2_uniquely_up)) {
@@ -1097,7 +1097,7 @@ saveRDS(
 
 dir.create(here("output", "marker_genes", "S1_S2_only", "uniquely_up", "cluster_6_vs_7_8"), recursive = TRUE)
 
-vs_pair <- c("1", "2_3")
+vs_pair <- c("6", "7_8")
 
 message("Writing 'uniquely_up (cluster_6_vs_7_8)' marker genes to file.")
 for (n in names(vs3_uniquely_up)) {
@@ -1335,7 +1335,7 @@ for (n in names(vs4_uniquely_up)) {
       "marker_genes",
       "S1_S2_only",
       "uniquely_up",
-      "cluster_2_vs_3",
+      "cluster_7_vs_8",
       paste0("cluster_",
              vs_pair[which(names(vs4_uniquely_up) %in% n)],
              "_vs_",
