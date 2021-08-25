@@ -89,6 +89,7 @@ We re-process the cells from *thymus only* remained in the dataset.
 
 ```{r}
 sce <- sce[, sce$tissue == "Thymus"]
+sce <- sce[, !sce$stage == "Unknown"]
 colData(sce) <- droplevels(colData(sce))
 ```
 

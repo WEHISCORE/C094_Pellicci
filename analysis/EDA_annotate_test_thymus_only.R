@@ -181,18 +181,18 @@ cluster_colours_2 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_2))],
   levels(sce0$cluster_2))
 sce0$colours$cluster_colours_2 <- cluster_colours_2[sce0$cluster_2]
-# number of cluster = 4
+# number of cluster = 3
 set.seed(4759)
-snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected", k=4)
+snn_gr_3 <- buildSNNGraph(sce0, use.dimred = "corrected", k=6)
 clusters_3 <- igraph::cluster_louvain(snn_gr_3)
 sce0$cluster_3 <- factor(clusters_3$membership)
 cluster_colours_3 <- setNames(
   scater:::.get_palette("tableau10medium")[seq_len(nlevels(sce0$cluster_3))],
   levels(sce0$cluster_3))
 sce0$colours$cluster_colours_3 <- cluster_colours_3[sce0$cluster_3]
-# number of cluster = 8
+# number of cluster = 4
 set.seed(4759)
-snn_gr_4 <- buildSNNGraph(sce0, use.dimred = "corrected", k=3)
+snn_gr_4 <- buildSNNGraph(sce0, use.dimred = "corrected", k=5)
 clusters_4 <- igraph::cluster_louvain(snn_gr_4)
 sce0$cluster_4 <- factor(clusters_4$membership)
 cluster_colours_4 <- setNames(
@@ -281,10 +281,9 @@ p1 + p2 + p3 + p4 +
 # we expect there are at least 3 groups in this subset: thymus.s1, thymus.s2, thymus.s3
 # we hope to separate: thymus.s1 and thymus.s2, but increasing the number of cluster cannot achieve this purpose, but only further divide cells in group thymus.s3
 # so it seems we can only compare thymus.s1+thymus.s2 and thymus.s3
-# if go for 3 clusters, cluster 2 only has 8 cells, not useful at all
-# although when we go for 4 clusters, it seems only subdivide thymus.s3 cells into 3, and cluster 3 and 4 seems to be the same based on the composition of experimental groups,
-# cluster in between S1 and S2 could be of interest (novel ?)
-# thus I decide to try with 4 clusters (but maybe merge cluster 3 and 4)
+# if go for 3 clusters fro mteh default setting, cluster 1 only has 32 cells, not useful at all
+# whilst when we go for four cluster, the clustering algorithm seem to struggle
+# thus I decide to try with 3 clusters
 3
 
 ###############################
@@ -295,8 +294,7 @@ sce$cluster <- factor(
   dplyr::case_when(
     sce$cluster == "1" ~ "13",
     sce$cluster == "2" ~ "14",
-    sce$cluster == "3" ~ "15",
-    sce$cluster == "4" ~ "16"), levels = c("13", "14", "15", "16"))
+    sce$cluster == "3" ~ "15"), levels = c("13", "14", "15"))
 
 cluster_colours <- setNames(
   palette.colors(nlevels(sce$cluster), "R4"),
@@ -311,7 +309,9 @@ cluster_colours <- setNames(
 ###################################
 # (M1) raw unique
 #
-# cluster 13 (i.e. mostly thymus S3, with S1 and S2) vs 14 (i.e. mostly thymus S1, S2) vs 15 (i.e. mostly thymus S3, with almost only S2, set 1) vs 16 (i.e. mostly thymus S3, with almost only S2, set 2)
+# cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1
+# cluster 14 (i.e. mostly.thymus.S1.S2
+# cluster 15 (i.e. mostly.thymus.S3.with.S1.S2.2
 
 # find unique DE ./. clusters
 uniquely_up <- findMarkers(
@@ -324,14 +324,14 @@ uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   uniquely_up,
-  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_13_vs_14_vs_15_vs_16.rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_13_vs_14_vs_15.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_13_vs_14_vs_15_vs_16"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_13_vs_14_vs_15"), recursive = TRUE)
 
-vs_pair <- c("13", "14", "15", "16")
+vs_pair <- c("13", "14", "15")
 
-message("Writing 'uniquely_up (cluster_13_vs_14_vs_15_vs_16)' marker genes to file.")
+message("Writing 'uniquely_up (cluster_13_vs_14_vs_15)' marker genes to file.")
 for (n in names(uniquely_up)) {
   message(n)
   gzout <- gzfile(
@@ -340,7 +340,7 @@ for (n in names(uniquely_up)) {
       "marker_genes",
       "thymus_only",
       "uniquely_up",
-      "cluster_13_vs_14_vs_15_vs_16",
+      "cluster_13_vs_14_vs_15",
       paste0("cluster_",
              vs_pair[which(names(uniquely_up) %in% n)],
              "_vs_",
@@ -364,30 +364,30 @@ for (n in names(uniquely_up)) {
 }
 
 ##########################################
-# look at cluster 13 (i.e. mostly thymus S3, with S1 and S2)
+# look at cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1)
 chosen <- "13"
-cluster1_uniquely_up <- uniquely_up[[chosen]]
+cluster13_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(mostly thymus S3, with S1 and S2)"
+x <- "(mostly.thymus.S3.with.S1.S2.1)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
-# cluster1_uniquely_up <- cluster1_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster1_uniquely_up)), ]
+# cluster13_uniquely_up <- cluster13_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster13_uniquely_up)), ]
 
 # get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
-cluster1_uniquely_up_noiseR <- cluster1_uniquely_up[setdiff(rownames(cluster1_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+cluster13_uniquely_up_noiseR <- cluster13_uniquely_up[setdiff(rownames(cluster13_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
 
 # see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
 y <- c("CD4",
-       which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"),
-       cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+       which(rownames(cluster13_uniquely_up_noiseR) %in% "CD4"),
+       cluster13_uniquely_up_noiseR[which(rownames(cluster13_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
 z <- c("KLRB1/CD161",
-       which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"),
-       cluster1_uniquely_up_noiseR[which(rownames(cluster1_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+       which(rownames(cluster13_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster13_uniquely_up_noiseR[which(rownames(cluster13_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
 # top25 only
-best_set <- cluster1_uniquely_up_noiseR[1:25, ]
+best_set <- cluster13_uniquely_up_noiseR[1:25, ]
 
 # heatmap
 plotHeatmap(
@@ -416,13 +416,13 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   show_colnames = FALSE,
-  # annotation_row = data.frame(
-  #   Sig = factor(
-  #     ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-  #     # TODO: temp trick to deal with the row-colouring problem
-  #     # levels = c("Yes", "No")),
-  #     levels = c("Yes")),
-  #   row.names = rownames(best_set)),
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
   main = paste0("Cluster: ", chosen, " ", x, " - \n",
                 y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
                 z[1], "_top ", z[2], "_significance: ", z[3]),
@@ -438,12 +438,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################
-# look at cluster 14 (i.e. mostly thymus S1, S2)
+# look at cluster 14 (i.e. mostly.thymus.S1.S2
 chosen <- "14"
 cluster14_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(mostly thymus S1, S2)"
+x <- "(mostly.thymus.S1.S2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -512,12 +512,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################
-# look at cluster 15 (i.e. mostly thymus S3, with almost only S2, set 1)
+# look at cluster 15 (i.e. mostly.thymus.S3.with.S1.S2.2)
 chosen <- "15"
 cluster15_uniquely_up <- uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(mostly thymus S3, with almost only S2, set 1)"
+x <- "(mostly.thymus.S3.with.S1.S2.2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -585,107 +585,29 @@ plotHeatmap(
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 
-##########################################
-# look at cluster 16 (i.e. mostly thymus S3, with almost only S2, set 2)
-chosen <- "16"
-cluster16_uniquely_up <- uniquely_up[[chosen]]
+# cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1
+# cluster 14 (i.e. mostly.thymus.S1.S2
+# cluster 15 (i.e. mostly.thymus.S3.with.S1.S2.2
 
-# add description for the chosen cluster-group
-x <- "(mostly thymus S3, with almost only S2, set 2)"
+# COMMENT:
+# As expected, being the only cluster harbouring most of the S1 and S2 cells, cluster 14 showed to have lots of unique marker genes.
+# whilst for cluster 13, due to its high similarity to cluster 15, besides the NPIPB as unique markers for cluster 13, no useful marker can be obtained for either case.
+# Pairwise comparison is perhaps needed to demonstrate their uniqueness
 
-# look only at protein coding gene (pcg)
-# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
-# cluster16_uniquely_up <- cluster16_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster16_uniquely_up)), ]
 
-# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
-cluster16_uniquely_up_noiseR <- cluster16_uniquely_up[setdiff(rownames(cluster16_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
 
-# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
-y <- c("CD4",
-       which(rownames(cluster16_uniquely_up_noiseR) %in% "CD4"),
-       cluster16_uniquely_up_noiseR[which(rownames(cluster16_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
-z <- c("KLRB1/CD161",
-       which(rownames(cluster16_uniquely_up_noiseR) %in% "KLRB1"),
-       cluster16_uniquely_up_noiseR[which(rownames(cluster16_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
 
-# top25 only
-best_set <- cluster16_uniquely_up_noiseR[1:25, ]
 
-# heatmap
-plotHeatmap(
-  sce,
-  features = rownames(best_set),
-  columns = order(
-    sce$cluster,
-    sce$stage,
-    sce$tissue,
-    sce$donor,
-    sce$group,
-    sce$plate_number,
-    sce$CD4,
-    sce$CD161),
-  colour_columns_by = c(
-    "cluster",
-    "stage",
-    "tissue",
-    "donor",
-    "group",
-    "plate_number",
-    "CD4",
-    "CD161"),
-  cluster_cols = FALSE,
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  show_colnames = FALSE,
-  annotation_row = data.frame(
-    Sig = factor(
-      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
-      # TODO: temp trick to deal with the row-colouring problem
-      # levels = c("Yes", "No")),
-      levels = c("Yes")),
-    row.names = rownames(best_set)),
-  main = paste0("Cluster: ", chosen, " ", x, " - \n",
-                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
-                z[1], "_top ", z[2], "_significance: ", z[3]),
-  column_annotation_colors = list(
-    # Sig = c("Yes" = "red", "No" = "lightgrey"),
-    cluster = cluster_colours,
-    stage = stage_colours,
-    tissue = tissue_colours,
-    donor = donor_colours,
-    group = group_colours,
-    plate_number = plate_number_colours),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 7)
-
-# cluster 13 (i.e. mostly thymus S3, with S1 and S2
-# cluster 14 (i.e. mostly thymus S1, S2
-# cluster 15 (i.e. mostly thymus S3, with almost only S2, set 1
-# cluster 16 (i.e. mostly thymus S3, with almost only S2, set 2
-
-# COMMENT: cluster 13 and 15 don't show any unique marker, while marker of cluster 16 is only a gene family
-# for cluster 13, it is the point of interest and should be left untouched, may show if look for pairwise unique, rather than global unique
-# for cluster 14, it is kind of expected that it got tonnes of unique genes when compare to the rest (that are all thymus.s3 cells); this also goes in line with the minibulk
-# no marker for cluster 15, and cluster 16 only have NPIB family gene as marker; should be combined if DE test tell they have no difference
 
 # DE test to be performed:
 
-# fx: show how thymus.s3 differed from S1-S2-mix
+#### **fx**: show how thymus.S3 differed from S1-S2-mix
 # 13 vs 14
 # 15 vs 14
-# 16 vs 14
 
-# fx: show if 3 and 4 are different
-# 15 vs 16
+# fx: show if the two thymus.S3 clusters are truly different
+# 13 vs 15
 
-# fx: if yes, compare to the remaining thymus.s3
-# 13 vs 15 (x)
-# 13 vs 16 (o) ?
-
-# fx: if no, combine and compare to the rest
-# 13 vs 15_16 (o) ?
-# 14 vs 15_16 (o)
 
 
 
@@ -712,7 +634,7 @@ plotHeatmap(
 #########
 
 ################################################################################
-# cluster 13 (i.e. mostly thymus S3, with S1 and S2) vs 14 (i.e. mostly thymus S1, S2)
+# cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1) vs 14 (i.e. mostly.thymus.S1.S2)
 
 # checkpoint
 cp <- sce
@@ -776,12 +698,12 @@ for (n in names(vs1_uniquely_up)) {
 }
 
 ##########################################################
-# look at cluster-group A / cluster 13 (i.e. mostly thymus S3, with S1 and S2)
+# look at cluster-group A / cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1)
 chosen <- "A"
 A_uniquely_up <- vs1_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 13; mostly thymus S3, with S1 and S2)"
+x <- "(cluster 13; mostly.thymus.S3.with.S1.S2.1)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -854,12 +776,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################################
-# look at cluster-group B / cluster 14 (i.e. mostly thymus S1, S2)
+# look at cluster-group B / cluster 14 (i.e. mostly.thymus.S1.S2)
 chosen <- "B"
 B_uniquely_up <- vs1_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 14; mostly thymus S1, S2)"
+x <- "(cluster 14; mostly.thymus.S1.S2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -938,16 +860,16 @@ plotHeatmap(
 #########
 
 ################################################################################
-# cluster 14 (i.e. mostly thymus S1, S2) vs 15 (i.e. mostly thymus S3, with almost only S2, set 1)
+# cluster 15 (i.e. mostly.thymus.S3.with.S1.S2.2) vs 14 (i.e. mostly.thymus.S1.S2)
 
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
-cp <- cp[, cp$cluster == "14" | cp$cluster == "15"]
+cp <- cp[, cp$cluster == "15" | cp$cluster == "14"]
 colData(cp) <- droplevels(colData(cp))
 
 # classify cluster-group for comparison
-cp$vs2 <- factor(ifelse(cp$cluster == 14, "C", "D"))
+cp$vs2 <- factor(ifelse(cp$cluster == 15, "C", "D"))
 
 # set vs colours
 vs2_colours <- setNames(
@@ -966,14 +888,14 @@ vs2_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs2_uniquely_up,
-  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_14_vs_15.rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_15_vs_14.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_14_vs_15"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_15_vs_14"), recursive = TRUE)
 
 vs_pair <- c("2", "3")
 
-message("Writing 'uniquely_up (cluster_14_vs_15)' marker genes to file.")
+message("Writing 'uniquely_up (cluster_15_vs_14)' marker genes to file.")
 for (n in names(vs2_uniquely_up)) {
   message(n)
   gzout <- gzfile(
@@ -982,7 +904,7 @@ for (n in names(vs2_uniquely_up)) {
       "marker_genes",
       "thymus_only",
       "uniquely_up",
-      "cluster_14_vs_15",
+      "cluster_15_vs_14",
       paste0("cluster_",
              vs_pair[which(names(vs2_uniquely_up) %in% n)],
              "_vs_",
@@ -1002,12 +924,12 @@ for (n in names(vs2_uniquely_up)) {
 }
 
 ##########################################################
-# look at cluster-group C / cluster 14 (i.e. mostly thymus S1, S2)
+# look at cluster-group C / cluster 15 (i.e. mostly.thymus.S3.with.S1.S2.2)
 chosen <- "C"
 C_uniquely_up <- vs2_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 14;  mostly thymus S1, S2)"
+x <- "(cluster 15; mostly.thymus.S3.with.S1.S2.2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -1080,12 +1002,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################################
-# look at cluster-group D / cluster 15 (i.e. mostly thymus S3, with almost only S2, set 1)
+# look at cluster-group D / cluster 14 (i.e. mostly.thymus.S1.S2)
 chosen <- "D"
 D_uniquely_up <- vs2_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 15; mostly thymus S3, with almost only S2, set 1)"
+x <- "(cluster 14; mostly.thymus.S1.S2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -1163,29 +1085,21 @@ plotHeatmap(
 
 
 
-
-
-
-
-
-
-
-
 #########
 # E vs F
 #########
 
 ################################################################################
-# cluster 14 (i.e. mostly thymus S1, S2) vs 16 (i.e. mostly thymus S3, with almost only S2, set 2)
+# cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1) vs 15 (i.e. mostly.thymus.S3.with.S1.S2.2)
 
 # checkpoint
 cp <- sce
 # exclude cells of uninterested cluster from cp
-cp <- cp[, cp$cluster == "14" | cp$cluster == "16"]
+cp <- cp[, cp$cluster == "13" | cp$cluster == "15"]
 colData(cp) <- droplevels(colData(cp))
 
 # classify cluster-group for comparison
-cp$vs3 <- factor(ifelse(cp$cluster == 14, "E", "F"))
+cp$vs3 <- factor(ifelse(cp$cluster == 13, "E", "F"))
 
 # set vs colours
 vs3_colours <- setNames(
@@ -1204,14 +1118,14 @@ vs3_uniquely_up <- findMarkers(
 # export DGE lists
 saveRDS(
   vs3_uniquely_up,
-  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_14_vs_16.rds"),
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_13_vs_15.rds"),
   compress = "xz")
 
-dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_14_vs_16"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_13_vs_15"), recursive = TRUE)
 
 vs_pair <- c("14", "16")
 
-message("Writing 'uniquely_up (cluster_14_vs_16)' marker genes to file.")
+message("Writing 'uniquely_up (cluster_13_vs_15)' marker genes to file.")
 for (n in names(vs3_uniquely_up)) {
   message(n)
   gzout <- gzfile(
@@ -1220,7 +1134,7 @@ for (n in names(vs3_uniquely_up)) {
       "marker_genes",
       "thymus_only",
       "uniquely_up",
-      "cluster_14_vs_16",
+      "cluster_13_vs_15",
       paste0("cluster_",
              vs_pair[which(names(vs3_uniquely_up) %in% n)],
              "_vs_",
@@ -1240,12 +1154,12 @@ for (n in names(vs3_uniquely_up)) {
 }
 
 ##########################################################
-# look at cluster-group E / cluster 14 (i.e. mostly thymus S1, S2)
+# look at cluster-group E / cluster 13 (i.e. mostly.thymus.S3.with.S1.S2.1)
 chosen <- "E"
 E_uniquely_up <- vs3_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 14;  mostly thymus S1, S2)"
+x <- "(cluster 13; mostly.thymus.S3.with.S1.S2.1)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -1318,12 +1232,12 @@ plotHeatmap(
   fontsize = 7)
 
 ##########################################################
-# look at cluster-group F / cluster 16 (i.e. mostly thymus S3, with almost only S2, set 2)
+# look at cluster-group F / cluster 15 (i.e. mostly.thymus.S3.with.S1.S2.2)
 chosen <- "F"
 F_uniquely_up <- vs3_uniquely_up[[chosen]]
 
 # add description for the chosen cluster-group
-x <- "(cluster 16; mostly thymus S3, with almost only S2, set 2)"
+x <- "(cluster 15; mostly.thymus.S3.with.S1.S2.2)"
 
 # look only at protein coding gene (pcg)
 # NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
@@ -1394,6 +1308,22 @@ plotHeatmap(
     plate_number = plate_number_colours),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,492 @@
+---
+title: "Annotating Pellicci gamma-delta T-cell single-cell dataset (thymus only)"
+description: |
+author:
+  - name: William Ho
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
+
+```{r setup}
+library(SingleCellExperiment)
+library(here)
+library(scater)
+library(scran)
+library(ggplot2)
+library(cowplot)
+library(edgeR)
+library(Glimma)
+library(BiocParallel)
+library(patchwork)
+library(janitor)
+library(pheatmap)
+library(batchelor)
+library(rmarkdown)
+library(BiocStyle)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggrepel)
+library(magrittr)
+
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.annotate.thymus_only_files/")
+```
+
+# Preparing the data
+
+We start from the cell selected *SingleCellExperiment* object created in ['Merging cells for Pellicci gamma-delta T-cell dataset (thymus only)'](C094_Pellicci.single-cell.merge.thymus_only.html).
+
+```{r}
+sce <- readRDS(here("data", "SCEs", "C094_Pellicci.single-cell.merged.thymus_only.SCE.rds"))
+
+# pre-create directories for saving export, or error (dir not exists)
+dir.create(here("data", "marker_genes", "thymus_only"), recursive = TRUE)
+dir.create(here("output", "marker_genes", "thymus_only"), recursive = TRUE)
+
+# Some useful colours
+plate_number_colours <- setNames(
+  unique(sce$colours$plate_number_colours),
+  unique(names(sce$colours$plate_number_colours)))
+plate_number_colours <- plate_number_colours[levels(sce$plate_number)]
+tissue_colours <- setNames(
+  unique(sce$colours$tissue_colours),
+  unique(names(sce$colours$tissue_colours)))
+tissue_colours <- tissue_colours[levels(sce$tissue)]
+donor_colours <- setNames(
+  unique(sce$colours$donor_colours),
+  unique(names(sce$colours$donor_colours)))
+donor_colours <- donor_colours[levels(sce$donor)]
+stage_colours <- setNames(
+  unique(sce$colours$stage_colours),
+  unique(names(sce$colours$stage_colours)))
+stage_colours <- stage_colours[levels(sce$stage)]
+group_colours <- setNames(
+  unique(sce$colours$group_colours),
+  unique(names(sce$colours$group_colours)))
+group_colours <- group_colours[levels(sce$group)]
+cluster_colours <- setNames(
+  unique(sce$colours$cluster_colours),
+  unique(names(sce$colours$cluster_colours)))
+cluster_colours <- cluster_colours[levels(sce$cluster)]
+
+# Some useful gene sets
+mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
+ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
+# NOTE: A more curated approach for identifying ribosomal protein genes
+#       (https://github.com/Bioconductor/OrchestratingSingleCellAnalysis-base/blob/ae201bf26e3e4fa82d9165d8abf4f4dc4b8e5a68/feature-selection.Rmd#L376-L380)
+library(msigdbr)
+c2_sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo_set <- union(
+  ribo_set,
+  c2_sets[c2_sets$gs_name == "KEGG_RIBOSOME", ]$gene_symbol)
+ribo_set <- intersect(ribo_set, rownames(sce))
+sex_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME %in% c("X", "Y"))]
+pseudogene_set <- rownames(sce)[
+  any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+# NOTE: not suggest to narrow down into protein coding genes (pcg) as it remove all significant candidate in most of the comparison !!!
+protein_coding_gene_set <- rownames(sce)[
+  any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
+
+```{r}
+# include part of the FACS data (for plot of heatmap)
+facs <- t(assays(altExp(sce, "FACS"))$pseudolog)
+facs_markers <- grep("V525_50_A_CD4_BV510|B530_30_A_CD161_FITC", colnames(facs), value = TRUE)
+facs_selected <- facs[,facs_markers]
+colnames(facs_selected) <- c("CD161", "CD4")
+colData(sce) <- cbind(colData(sce), facs_selected)
+```
+
+# Re-clustering 
+
+**NOTE**: Based on our explorative data analyses (EDA) on the **thymus only subset**, we conclude the optimal number of clusters for demonstrating the heterogeneity of the dataset, we therefore re-cluster in here.
+Also, as indicated by Dan during our online meeting on 11 Aug 2011, we need to use different numbering and colouring for clusters in different subsets of the dataset (to prepare for publication), we perform all these by the following script.
+
+```{r}
+# re-clustering
+set.seed(4759)
+snn_gr <- buildSNNGraph(sce, use.dimred = "corrected", k=70)
+clusters <- igraph::cluster_louvain(snn_gr)
+sce$cluster <- factor(clusters$membership)
+
+# re-numbering of clusters
+sce$cluster <- factor(
+  dplyr::case_when(
+    sce$cluster == "1" ~ "13",
+    sce$cluster == "2" ~ "14"), levels = c("13", "14"))
+
+# re-colouring of clusters
+cluster_colours <- setNames(
+  palette.colors(nlevels(sce$cluster), "R4"),
+  levels(sce$cluster))
+```
+
+After the re-clustering, there are `r nlevels(sce$cluster)` clusters for **thymus only subset** of the dataset.
+
+
+# Data overview
+
+```{r clusterplot-umap, fig.cap = "UMAP plot, where each point represents a cell and is coloured according to the legend.", fig.asp = 1.25}
+p1 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster", theme_size = 7, point_size = 0.4) +
+  scale_colour_manual(values = cluster_colours, name = "cluster")
+p2 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "stage", theme_size = 7, point_size = 0.4) +
+  scale_colour_manual(values = stage_colours, name = "stage")
+p3 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "plate_number", theme_size = 7, point_size = 0.4) +
+  scale_colour_manual(values = plate_number_colours, name = "plate_number")
+p4 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue", theme_size = 7, point_size = 0.4) +
+  scale_colour_manual(values = tissue_colours, name = "tissue")
+p5 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "donor", theme_size = 7, point_size = 0.4) +
+  scale_colour_manual(values = donor_colours, name = "donor")
+p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7, point_size = 0.4) +
+  scale_colour_manual(values = group_colours, name = "group")
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+```
+
+```{r cluster-barplot, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
+# summary - stacked barplot
+p1 <- ggcells(sce) +
+  geom_bar(aes(x = cluster, fill = cluster)) +
+  coord_flip() +
+  ylab("Number of samples") +
+  theme_cowplot(font_size = 8) +
+  scale_fill_manual(values = cluster_colours) +
+  geom_text(stat='count', aes(x = cluster, label=..count..), hjust=1.5, size=2)
+p2 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = stage),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = stage_colours) +
+  theme_cowplot(font_size = 8)
+p3 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = plate_number),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = plate_number_colours) +
+  theme_cowplot(font_size = 8)
+p4 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = tissue),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = tissue_colours) +
+  theme_cowplot(font_size = 8)
+p5 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = donor),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = donor_colours) +
+  theme_cowplot(font_size = 8)
+p6 <- ggcells(sce) +
+  geom_bar(
+    aes(x = cluster, fill = group),
+    position = position_fill(reverse = TRUE)) +
+  coord_flip() +
+  ylab("Frequency") +
+  scale_fill_manual(values = group_colours) +
+  theme_cowplot(font_size = 8)
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+```
+
+**NOTE**: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at `cell` level) could not further sub-classify the developmental stage/subtype of them (either annotating cluster as `Th1 cell`-/`Naive CD8`/`CD4 T cell` or `Vd2gd T cells`-alike) [ref: EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.
+
+# Marker gene detection
+
+To interpret our clustering results, we identify the genes that drive separation between clusters.
+These marker genes allow us to assign biological meaning to each cluster based on their functional annotation.
+In the most obvious case, the marker genes for each cluster are *a priori* associated with particular cell types, allowing us to treat the clustering as a proxy for cell type identity.
+The same principle can be applied to more subtle differences in activation status or differentiation state.
+
+Identification of marker genes is usually based around the retrospective detection of differential expression between clusters^[Differential expression analyses is performed on the original log-expression values.
+We do not use the MNN-corrected values here except to obtain the clusters to be characterized.].
+Genes that are more strongly DE are more likely to have driven cluster separation in the first place.
+The top DE genes are likely to be good candidate markers as they can effectively distinguish between cells in different clusters.
+
+The Welch *t*-test is an obvious choice of statistical method to test for differences in expression between clusters.
+It is quickly computed and has good statistical properties for large numbers of cells [@soneson2018bias].
+
+```{r}
+# block on plate
+sce$block <- paste0(sce$plate_number)
+```
+
+## Cluster `13` vs. `14`
+
+Here we look for the unique up-regulated markers of each cluster when compared to the all remaining ones.
+For instance, unique markers of cluster `13` refer to the genes significantly up-regulated in **all** of these comparisons: cluster `14` vs. `13` **and** cluster `15` vs. `13` **and** cluster `16` vs. `13`.
+
+```{r}
+###################################
+# (M1) raw unique
+#
+# cluster 13 (i.e. mostly.thymus.S3.with.S1.S2) 
+# cluster 14 (i.e. mostly.thymus.S1.S2) 
+
+# find unique DE ./. clusters
+uniquely_up <- findMarkers(
+  sce,
+  groups = sce$cluster,
+  block = sce$block,
+  pval.type = "all",
+  direction = "up")
+```
+
+```{r}
+# export DGE lists
+saveRDS(
+  uniquely_up,
+  here("data", "marker_genes", "thymus_only", "C094_Pellicci.uniquely_up.cluster_13_vs_14.rds"),
+  compress = "xz")
+
+dir.create(here("output", "marker_genes", "thymus_only", "uniquely_up", "cluster_13_vs_14"), recursive = TRUE)
+
+vs_pair <- c("13", "14")
+
+message("Writing 'uniquely_up (cluster_13_vs_14)' marker genes to file.")
+for (n in names(uniquely_up)) {
+  message(n)
+  gzout <- gzfile(
+    description = here(
+      "output",
+      "marker_genes",
+      "thymus_only",
+      "uniquely_up",
+      "cluster_13_vs_14",
+      paste0("cluster_",
+             vs_pair[which(names(uniquely_up) %in% n)],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][1],
+             "_vs_",
+             vs_pair[-which(names(uniquely_up) %in% n)][2],
+             ".uniquely_up.csv.gz")),
+    open = "wb")
+  write.table(
+    x = uniquely_up[[n]] %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("gene_ID"),
+    file = gzout,
+    sep = ",",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE)
+  close(gzout)
+}
+```
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Cluster 13` {.panel-name}
+
+```{r}
+##########################################
+# look at cluster 13 (i.e. mostly.thymus.S3.with.S1.S2)
+chosen <- "13"
+cluster13_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly.thymus.S3.with.S1.S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster13_uniquely_up <- cluster13_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster13_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster13_uniquely_up_noiseR <- cluster13_uniquely_up[setdiff(rownames(cluster13_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster13_uniquely_up_noiseR) %in% "CD4"),
+       cluster13_uniquely_up_noiseR[which(rownames(cluster13_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster13_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster13_uniquely_up_noiseR[which(rownames(cluster13_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only
+best_set <- cluster13_uniquely_up_noiseR[1:25, ]
+```
+
+```{r heat-uniquely-up-logExp-cluster-13, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title", fig.asp = 1.2, layout="l-body-outset"}
+
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number,
+    sce$CD4,
+    sce$CD161),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number",
+    "CD4",
+    "CD161"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Cluster 14` {.panel-name}
+
+```{r}
+##########################################
+# look at cluster 14 (i.e. mostly.thymus.S1.S2)
+chosen <- "14"
+cluster14_uniquely_up <- uniquely_up[[chosen]]
+
+# add description for the chosen cluster-group
+x <- "(mostly.thymus.S1.S2)"
+
+# look only at protein coding gene (pcg)
+# NOTE: not suggest to narrow down into pcg as it remove all significant candidates (FDR << 0.05) !
+# cluster14_uniquely_up <- cluster14_uniquely_up[intersect(protein_coding_gene_set, rownames(cluster14_uniquely_up)), ]
+
+# get rid of noise (i.e. pseudo, ribo, mito, sex) that collaborator not interested in
+cluster14_uniquely_up_noiseR <- cluster14_uniquely_up[setdiff(rownames(cluster14_uniquely_up), c(pseudogene_set, mito_set, ribo_set, sex_set)), ]
+
+# see if key marker, "CD4 and/or ""KLRB1/CD161"", contain in the DE list + if it is "significant (i.e FDR <0.05)
+y <- c("CD4",
+       which(rownames(cluster14_uniquely_up_noiseR) %in% "CD4"),
+       cluster14_uniquely_up_noiseR[which(rownames(cluster14_uniquely_up_noiseR) %in% "CD4"), ]$FDR < 0.05)
+z <- c("KLRB1/CD161",
+       which(rownames(cluster14_uniquely_up_noiseR) %in% "KLRB1"),
+       cluster14_uniquely_up_noiseR[which(rownames(cluster14_uniquely_up_noiseR) %in% "KLRB1"), ]$FDR < 0.05)
+
+# top25 only
+best_set <- cluster14_uniquely_up_noiseR[1:25, ]
+```
+
+```{r heat-uniquely-up-logExp-cluster-14, fig.cap = "Heatmap of log-expression values in each sample for the top uniquely upregulated marker genes. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range. Ranking of CD4 and CD161/KLRB1 from top of the DGE list sorted in ascending order of FDR and their statistical significance (TRUE = FDR < 0.05) are provided in the title", fig.asp = 1.2, layout="l-body-outset"}
+
+# heatmap
+plotHeatmap(
+  sce,
+  features = rownames(best_set),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number,
+    sce$CD4,
+    sce$CD161),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number",
+    "CD4",
+    "CD161"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  annotation_row = data.frame(
+    Sig = factor(
+      ifelse(best_set[, "FDR"] < 0.05, "Yes", "No"),
+      # TODO: temp trick to deal with the row-colouring problem
+      # levels = c("Yes", "No")),
+      levels = c("Yes")),
+    row.names = rownames(best_set)),
+  main = paste0("Cluster ", chosen, " ", x, " - \n",
+                y[1], "_top ", y[2], "_significance: ", y[3], " ; \n",
+                z[1], "_top ", z[2], "_significance: ", z[3]),
+  column_annotation_colors = list(
+    # Sig = c("Yes" = "red", "No" = "lightgrey"),
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::::::
+
+DGE lists of these comparisons are available in [`output/marker_genes/thymus_only/uniquely_up/cluster_13_vs_14/`](..output/marker_genes/thymus_only/uniquely_up/cluster_13_vs_14).
+
+**Summary**: 
+
+For the `thymus only` subset, one would expect that there are at least 3 different groups of cells, ie. thymus.s1, thymus.s2, thymus.s3, upon clustering.
+But due to the high similarities between the thymus.S1 and thymus.S2 cells, where even in the mini-bulk setting, there are only *17* differentially expressed genes can be detected.
+Therefore, during the clustering of this subset of single cells, we may hope to separate the thymus.S1 and thymus.S2 cells.
+But unfortunately, increasing the number of clusters cannot achieve this purpose, but only further divide cells in the thymus.S3 cells into 2 to 3 subgroups.
+
+For the thymus.S3 subgroups, we did try to test if they are truly different, but based on the outcome of our statistical DE test, these sub-groups show no difference from each other and thus should be combined.
+
+On the whole, the best we can achieve from the single-cell samples of the `thymus only` subset could be to compare the difference between the thymus.S1.S2-mix and the thymus.S3, then make use of it to perhaps validate the mini-bulk outcome.
+
+
+
+# Session info {.appendix}
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
+
+```{r}
+sessioninfo::session_info()
+```
+
+</details>
