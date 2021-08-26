@@ -556,15 +556,15 @@ DGE lists of these comparisons are available in [`output/marker_genes/S1_S2_only
 
 **Summary**: 
 
-Except for cluster `8` (mostly.thymus.S1.S2.less.blood), both cluster `6` and `7` show number of unique markers already.
-For instance, cluster `6` (pure.thymus.S1.S2) shows clear up-regulation of ACTG1, ACTB, GAPDH, MIR1244-3 and H3F3A expression compared to cluster `7` and `8`.
-Cluster `7`(mostly.thymus.S1.S2.more.blood) also demonstrate increase in HLA (class I), CCL5, NKG7 expression, in which CCL5 and NKG7 expression seem to be relatively higher in `blood` samples.
-This is apparent that at least cluster 6 and 7 are different clusters (and cluster 8 uniqueness could be shown in pairwise comparison.
+Except for cluster `8` (mostly.thymus.S1.S2.less.blood) , both cluster `6` and `7` already show number of globally unique markers. 
+For instance, cluster `6` (i.e. pure.thymus.S1.S2) shows clear up-regulation of ACTG1, ACTB, GAPDH, MIR1244-2 and H3F3A expression compared to cluster `7` and `8`. 
+Whilst Cluster 7 (i.e. mostly.thymus.S1.S2.more.blood) also demonstrate unique increase in gene expression such as of class I HLA, CCL5, NKG7, and B2M (in which CCL5 expression seem to be relatively higher in blood.S2, whilst NKG7 expression are relatively higher in both S1 and 2 of blood cells). 
+From these, it is apparent that at least cluster 6 and 7 are different clusters (whilst for cluster 8, its uniqueness could be shown in selected pairwise comparison).
 
 With this regard, apart from making "all pairwise comparisons" between "all clusters" to pinpoint DE unique to each cluster as above, we took an alternative path and determined the DE unique to only the "selected pairwise comparisons" between "clusters" below.
 Say, for cluster `8`, we determine markers that is significantly up-regulated in **at least one** of these comparisons: cluster `6` vs. `8` **or** cluster `7` vs. `8`. 
 
-Besides, we also look into the the pairwise comparisons between the interesting "cluster-groups".
+Besides, we also look into the pairwise comparisons between the interesting "cluster-groups".
 For instance, cluster `6` is the only cluster with pure `thymus` origin.
 It would be interesting to know how cluster `6` is different from both cluster `7` and `8`, which is a S1-S2-mix of thymus cells with varying amount of blood cells.
 
@@ -1934,14 +1934,12 @@ plotHeatmap(
 DGE lists of these comparisons are available in [`output/marker_genes/S1_S2_only/uniquely_up/integrated/`](..output/marker_genes/S1_S2_only/uniquely_up/integrated/).
 
 **Summary**: 
-Based on all of these findings, it demonstrate that there are 3 sub-stages within the `S1 S2 only subset`.
-However, rather than divided by tissue (e.g. thymus.S1.S2, blood.S1.S2), these sub-stages are distinguished by marker gene expression.
-In which (Figure \@ref(fig:violin-key-markers-cluster)), cluster `6` (pure.thymus.S1.S2) is characterized by unique markers (such as H3F3A, ACTG1, GAPDH, MIR1244-4, etc.).
-Cluster  `7` (mostly.thymus.S1.S2.more.blood) is also featrured by uniquely higher expression of markers (e.g. NKG7, CCL5, etc.)
-Although cluster `8` (mostly.thymus.S1.S2.less.blood) do not have global unique up-regulated markers, genes such as FYB1 and EPB41 can help distinguish cluster `8` cells from cluster `7` and `6`, respectively.
+Indeed, the cluster `8` (with mostly.thymus.S1.S2.less.blood) does show to have a number of genes upregulated when compared to cluster `7`, such as FYB1, TCF7, CD3G etc.
+Whilst compared to cluster 6, cluster 8 is also featured by the statistically significant markers, such as LTB, PTPRC, and SELL, etc.
+Altogether, these findings indicate that there are 3 different clusters of yet-to-known cell sub-type within the `S1 S2 only` subset. 
+But rather than divided by `tissue` (such as thymus.S1, blood.S1) or by `stage` (such as thymus.S1, thymus.S2), these three clusters of cell sub-types are distinguished by numbers of strong and clear up-regulation of marker genes. 
 
-Furthermore, S1 and S2 cells are basically inseparable as in terms of transcriptomes, as indicated by highly overlapped distribution on the UMAP plot.
-Having said so, we may find some clues about the key markers driven the S1 and S2 apart (e.g.1. STMN1 and MIR1244-4 seems to be more highly expression in S1 than S2; e.g.2. up-regulation of CCL5 and IL7R clearly associated with cluster 2 only) (Figure \@ref(fig:violin-key-markers-stage) and \@ref(fig:violin-key-markers-stage-cluster)).
+
 
 ## Supplemental info
 
@@ -1955,13 +1953,13 @@ assay(sce, "log2cpm") <- edgeR::cpm(
   lib.size = colSums(counts(sce)))
 ```
 
-```{r violin-key-markers-cluster, fig.cap = "Violin plot showing the expression of key markers stratified by clusters", fig.asp = 1.5, layout="l-body-outset"}
+```{r violin-key-markers-cluster, fig.cap = "Violin plot showing the expression of key markers stratified by clusters", fig.asp = 3, layout="l-body-outset"}
 plot_grid(
   
   # cluster 6 unique
   plotExpression(
     sce,
-    features = "H3F3A",
+    features = "ACTG1",
     x = "cluster",
     exprs_values = "log2cpm",
     colour_by = "cluster") +
@@ -1970,7 +1968,7 @@ plot_grid(
   
   plotExpression(
     sce,
-    features = "ACTG1",
+    features = "ACTB",
     x = "cluster",
     exprs_values = "log2cpm",
     colour_by = "cluster") +
@@ -1988,17 +1986,26 @@ plot_grid(
   
   plotExpression(
     sce,
-    features = "MIR1244-4",
+    features = "MIR1244-2",
     x = "cluster",
     exprs_values = "log2cpm",
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
-  
+
+  plotExpression(
+    sce,
+    features = "H3F3A",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+    
   # cluster 7 unique
   plotExpression(
     sce,
-    features = "NKG7",
+    features = "HLA-A",
     x = "cluster",
     exprs_values = "log2cpm",
     colour_by = "cluster") +
@@ -2013,8 +2020,26 @@ plot_grid(
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  plotExpression(
+    sce,
+    features = "NKG7",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  plotExpression(
+    sce,
+    features = "B2M",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
   
-  # cluster 8 pairwise unique
+  # cluster 8 pairwise unique (vs 7)
   plotExpression(
     sce,
     features = "FYB1",
@@ -2026,37 +2051,55 @@ plot_grid(
   
   plotExpression(
     sce,
-    features = "LTB",
+    features = "TCF7",
     x = "cluster",
     exprs_values = "log2cpm",
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  plotExpression(
+    sce,
+    features = "CD3G",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  # cluster 8 pairwise unique (vs 6)  
+  plotExpression(
+    sce,
+    features = "LTB",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),  
+
+  plotExpression(
+    sce,
+    features = "PTPRC",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),  
+
+  plotExpression(
+    sce,
+    features = "SELL",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),  
   
   ncol = 2)
 ```
 
-```{r violin-key-markers-stage, fig.cap = "Violin plot showing the expression of key markers stratified by stages", fig.asp = 1, layout="l-body-outset"}
+```{r violin-key-markers-stage, fig.cap = "Violin plot showing the expression of key markers stratified by stages", fig.asp = 1/2, layout="l-body-outset"}
 plot_grid(
-  
-  # cluster 6 unique
-  plotExpression(
-    sce,
-    features = "STMN1",
-    x = "stage",
-    exprs_values = "log2cpm",
-    colour_by = "stage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage"),
-  
-  plotExpression(
-    sce,
-    features = "MIR1244-4",
-    x = "stage",
-    exprs_values = "log2cpm",
-    colour_by = "stage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage"),
   
   plotExpression(
     sce,
@@ -2069,7 +2112,7 @@ plot_grid(
   
   plotExpression(
     sce,
-    features = "IL7R",
+    features = "NKG7",
     x = "stage",
     exprs_values = "log2cpm",
     colour_by = "stage") +
@@ -2078,53 +2121,6 @@ plot_grid(
   
   ncol = 2)
 ```
-
-```{r violin-key-markers-stage-cluster, fig.cap = "Violin plot showing the expression of key markers stratified by stages", fig.asp = 2.5, layout="l-body-outset"}
-plot_grid(
-  
-  plotExpression(
-    sce,
-    features = "STMN1",
-    x = "stage",
-    exprs_values = "log2cpm",
-    colour_by = "stage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage") + 
-    facet_grid(~sce$cluster),
-    
-  plotExpression(
-    sce,
-    features = "MIR1244-4",
-    x = "stage",
-    exprs_values = "log2cpm",
-    colour_by = "stage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage") + 
-    facet_grid(~sce$cluster),
-  
-  plotExpression(
-    sce,
-    features = "CCL5",
-    x = "stage",
-    exprs_values = "log2cpm",
-    colour_by = "stage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage") + 
-    facet_grid(~sce$cluster),   
-  
-  plotExpression(
-    sce,
-    features = "IL7R",
-    x = "stage",
-    exprs_values = "log2cpm",
-    colour_by = "stage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage") + 
-    facet_grid(~sce$cluster),   
-  
-  ncol = 1)
-```
-
 
 # Session info {.appendix}
 
