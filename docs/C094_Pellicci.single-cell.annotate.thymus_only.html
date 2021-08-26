@@ -2727,7 +2727,7 @@ Figure 4: Heatmap of log-expression values in each sample for the top uniquely u
 <p>DGE lists of these comparisons are available in <a href="..output/marker_genes/thymus_only/uniquely_up/cluster_13_vs_14"><code>output/marker_genes/thymus_only/uniquely_up/cluster_13_vs_14/</code></a>.</p>
 <p><strong>Summary</strong>:</p>
 <p>For the <code>thymus only</code> subset, one would expect that there are at least 3 different groups of cells, ie. thymus.s1, thymus.s2, thymus.s3, upon clustering. But due to the high similarities between the thymus.S1 and thymus.S2 cells, where even in the mini-bulk setting, there are only <em>17</em> differentially expressed genes can be detected. Therefore, during the clustering of this subset of single cells, we may hope to separate the thymus.S1 and thymus.S2 cells. But unfortunately, increasing the number of clusters cannot achieve this purpose, but only further divide cells in the thymus.S3 cells into 2 to 3 subgroups.</p>
-<p>For the thymus.S3 subgroups, we did try to test if they are truly different, but based on the outcome of our statistical DE test, these sub-groups show no difference from each other and thus should be combined.</p>
+<p>For the thymus.S3 subgroups, we did try to test if cells contained in higher number of clusters are truly different, but based on the outcome of our statistical DE test, these sub-groups show no difference from each other and thus should be combined.</p>
 <p>On the whole, the best we can achieve from the single-cell samples of the <code>thymus only</code> subset could be to compare the difference between the thymus.S1.S2-mix and the thymus.S3, then make use of it to perhaps validate the mini-bulk outcome.</p>
 <h1 class="appendix" id="session-info">Session info</h1>
 <summary>

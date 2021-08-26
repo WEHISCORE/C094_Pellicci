@@ -7325,8 +7325,12 @@ Figure 22: Heatmap of log-expression values in each sample for the top uniquely 
 <p>DGE lists of these comparisons are available in <a href="..output/marker_genes/S3_only/uniquely_up/integrated/"><code>output/marker_genes/S3_only/uniquely_up/integrated/</code></a>.</p>
 <p><strong>Summary</strong>: As in the minibulk with 20 DE only and we cannot tell the difference between thymus.s3 and blood.s3, there is no standout feature in terms of tissue-of-origin for each cluster of the “S3 only” subset and all of them are S3-mix (with mostly thymus.s3 blended with some blood.s3). Having said so, it may indicate that, S3 cells are somehow in common between thymus and blood, and based on gene expression difference, this subset of cells can be sub-divided into different sub-types.</p>
 <p>By default parameter of the SNN algorithm, the “S3 only” subset contains six different clusters, but based on the UMAP, the clustering algorithm seems struggling, and based on my explorative analysis, four clusters is sufficient and can best demonstrate the heterogeneity of this subset dataset.</p>
-<p>Based on the pairwise DE detection, each of the peripheral clusters (i.e. cluster 9, 10, 11) do have unique markers up-regulated and driving them apart. For instance: Cluster <code>9</code> is characterized by having the highest level of IL7R expression among the <code>S3 only</code> subset; and it is proven to be different from cells in cluster <code>10</code> and <code>11</code> by genes, say, having higher expression of LTB and IFITM3, respectively. Besides the NPIPB gene family, the gene AC009022.1 is the global unique marker of cluster <code>10</code>, which is also featured by the higher expression of genes, say CCL5 and SYNE2, when compared to cluster <code>9</code> and <code>11</code>, respectively. Unlike cluster <code>9</code> or <code>10</code>, cluster <code>11</code> does not have globally unique markers. However it does have higher expression of CCL5 when compare to cluster <code>9</code>, whilst it show no up-regulation when compare to cluster <code>10</code>, cluster <code>10</code> does show genes that are statistically different in expression (i.e. SYNE2 and AC009022.1) when compare to cluster <code>11</code>.</p>
-<p>Whilst for the central cluster, i.e. cluster 12, it does not have any marker unique marker by itself when pairwise compared to to any other peripheral cluster (9,10, or 11), it may look uninteresting at first glance, but if we consider the opposite direction of comparison, i.e. <code>9 vs 12</code>, <code>10 vs 12</code>, and <code>11 vs 12</code>, it returns number of markers up-regulated in the peripheral clusters, but not in central cluster <code>12</code>, e.g.: cluster 9: CAPZA1, TSPAN14, and JARID2, etc. cluster 10: <em>ACTG1, </em>MBNL1, RSF1, etc. cluster 11: SPN, MYO9B, CCT3, etc. Altogether, it could indeed indicate cluster <code>12</code> represent a group iof cells that have all features common to cluster 9,10 and 11; one possibility could be that the cluster <code>12</code> is a group of <strong>progenitor cells</strong> for the S3 cells contained in cluster 9,10 and 11.</p>
+<p>Based on the pairwise DE detection, each of the peripheral clusters (i.e. cluster 9, 10, 11) do have unique markers up-regulated and driving them apart.</p>
+<p>For instance:</p>
+<p>For cluster <code>9</code>, the only global unique marker that can be found is IL7R, but when pairwise compare cluster 9 with the other clusters one by one, cluster 9 did show a number of gene feature that the other clusters do not have, such as gene LTB when compare 9 to 10, IFITM3, TOMM7 and S100A10 when compare 9 to 11, and lots of marker gene (such as CAPZA1, TPI1, and SLK) when compared 9 to 12.</p>
+<p>Same applied to cluster <code>10</code>, in which, besides the NPIPB gene family, AC009022.1 was shown as the only global unique marker for cluster 10, but when pairwise compare cluster 9 with the other clusters one by one, cluster 10 did show a number of unique gene features, such as SYNE2, KLRD1, and CCL5 when compare 10 to 9, EFHD2 when compare 10 to 11, and series of markers (such as MBNL1 and RSF1) when compare 10 to 12.</p>
+<p>For cluster <code>11</code>, one can easily tell apart the cluster 9, 11, and 12, because CCL5 was up-regulated in cluster 11, but not cluster 9, whilst, a series of gene (such as MYO9B, SLK and CD1E) expressed in cluster 11, but not in 12. In contrast, we find no up-regulated markers when 11 to 10, but SYNE2, AC009022.1, and the NPIPB gene family when compare 10 to 11. All in all, cluster 11 is a separated cluster.</p>
+<p>For cluster <code>12</code>, no significantly up-regulated genes can be spotted when compare cluster 12 to all other 3 clusters. But as I shown you before, there are pack of genes significantly up-regulated in cluster 9, 10, and 11, but not in cluster 12. From the biological point of view, one possibility could be that the cluster 12 is a <strong>progenitor</strong> cell-type in the “S3 only” subset of the gamma-delta T cells, which could be multipotent and could be developed into either cluster 9, 10, or 11 cells depending on which set of markers it is going to express.</p>
 <h2 id="supplemental-info">Supplemental info</h2>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -7380,7 +7384,25 @@ Show code
     colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
-  
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"TOMM7"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"S100A10"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
+      
   <span class='co'># cluster 10 and 11</span>
   <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
     <span class='va'>sce</span>,
@@ -7399,7 +7421,16 @@ Show code
     colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
-  
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"KLRD1"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
+    
   <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
     <span class='va'>sce</span>,
     features <span class='op'>=</span> <span class='st'>"CCL5"</span>,
@@ -7408,7 +7439,16 @@ Show code
     colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
-  
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"EFHD2"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>, 
+    
   <span class='co'># cluster 12</span>
   <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
     <span class='va'>sce</span>,
@@ -7427,7 +7467,34 @@ Show code
     colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
     <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
-  
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"CAPZA1"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"SLK"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
+
+  <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotExpression.html'>plotExpression</a></span><span class='op'>(</span>
+    <span class='va'>sce</span>,
+    features <span class='op'>=</span> <span class='st'>"CD1E"</span>,
+    x <span class='op'>=</span> <span class='st'>"cluster"</span>,
+    exprs_values <span class='op'>=</span> <span class='st'>"log2cpm"</span>,
+    colour_by <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/theme.html'>theme</a></span><span class='op'>(</span>axis.text.x <span class='op'>=</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/element.html'>element_text</a></span><span class='op'>(</span>angle <span class='op'>=</span> <span class='fl'>45</span>, hjust <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+    <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_colour_manual</a></span><span class='op'>(</span>values <span class='op'>=</span> <span class='va'>cluster_colours</span>, name <span class='op'>=</span> <span class='st'>"cluster"</span><span class='op'>)</span>,
+        
   ncol <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
 </code></pre>
 </div>

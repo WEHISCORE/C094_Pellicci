@@ -474,7 +474,7 @@ But due to the high similarities between the thymus.S1 and thymus.S2 cells, wher
 Therefore, during the clustering of this subset of single cells, we may hope to separate the thymus.S1 and thymus.S2 cells.
 But unfortunately, increasing the number of clusters cannot achieve this purpose, but only further divide cells in the thymus.S3 cells into 2 to 3 subgroups.
 
-For the thymus.S3 subgroups, we did try to test if they are truly different, but based on the outcome of our statistical DE test, these sub-groups show no difference from each other and thus should be combined.
+For the thymus.S3 subgroups, we did try to test if cells contained in higher number of clusters are truly different, but based on the outcome of our statistical DE test, these sub-groups show no difference from each other and thus should be combined.
 
 On the whole, the best we can achieve from the single-cell samples of the `thymus only` subset could be to compare the difference between the thymus.S1.S2-mix and the thymus.S3, then make use of it to perhaps validate the mini-bulk outcome.
 

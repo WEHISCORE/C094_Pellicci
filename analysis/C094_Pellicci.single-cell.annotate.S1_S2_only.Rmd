@@ -2098,7 +2098,7 @@ plot_grid(
   ncol = 2)
 ```
 
-```{r violin-key-markers-stage, fig.cap = "Violin plot showing the expression of key markers stratified by stages", fig.asp = 1/2, layout="l-body-outset"}
+```{r violin-key-markers-stage, fig.cap = "Violin plot showing the expression of key markers stratified by stages", fig.asp = 1, layout="l-body-outset"}
 plot_grid(
   
   plotExpression(
@@ -2108,7 +2108,8 @@ plot_grid(
     exprs_values = "log2cpm",
     colour_by = "stage") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage"),
+    scale_colour_manual(values = stage_colours, name = "stage") +
+    facet_grid(~sce$tissue),   
   
   plotExpression(
     sce,
@@ -2117,9 +2118,10 @@ plot_grid(
     exprs_values = "log2cpm",
     colour_by = "stage") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = stage_colours, name = "stage"),
+    scale_colour_manual(values = stage_colours, name = "stage") +
+    facet_grid(~sce$tissue),   
   
-  ncol = 2)
+  ncol = 1)
 ```
 
 # Session info {.appendix}

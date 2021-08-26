@@ -4405,17 +4405,17 @@ Having said so, it may indicate that, S3 cells are somehow in common between thy
 By default parameter of the SNN algorithm, the "S3 only" subset contains six different clusters, but based on the UMAP, the clustering algorithm seems struggling, and based on my explorative analysis, four clusters is sufficient and can best demonstrate the heterogeneity of this subset dataset.
 
 Based on the pairwise DE detection, each of the peripheral clusters (i.e. cluster 9, 10, 11) do have unique markers up-regulated and driving them apart.
-For instance:
-Cluster `9` is characterized by having the highest level of IL7R expression among the `S3 only` subset; and it is proven to be different from cells in cluster `10` and `11` by genes, say, having higher expression of LTB and IFITM3, respectively.
-Besides the NPIPB gene family, the gene AC009022.1 is the global unique marker of cluster `10`, which is also featured by the higher expression of genes, say CCL5 and SYNE2, when compared to cluster `9` and `11`, respectively.
-Unlike cluster `9` or `10`, cluster `11` does not have globally unique markers.
-However it does have higher expression of CCL5 when compare to cluster `9`, whilst it show no up-regulation when compare to cluster `10`, cluster `10` does show genes that are statistically different in expression (i.e. SYNE2 and AC009022.1) when compare to cluster `11`.
 
-Whilst for the central cluster, i.e. cluster 12, it does not have any marker unique marker by itself when pairwise compared to to any other peripheral cluster (9,10, or 11), it may look uninteresting at first glance, but if we consider the opposite direction of comparison, i.e. `9 vs 12`, `10 vs 12`, and `11 vs 12`, it returns number of markers up-regulated in the peripheral clusters, but not in central cluster `12`, e.g.:
-cluster 9: CAPZA1, TSPAN14, and JARID2, etc.
-cluster 10: *ACTG1, *MBNL1, RSF1, etc.
-cluster 11: SPN, MYO9B, CCT3, etc.
-Altogether, it could indeed indicate cluster `12` represent a group iof cells that have all features common to cluster 9,10 and 11; one possibility could be that the cluster `12` is a group of **progenitor cells** for the S3 cells contained in cluster 9,10 and 11.
+For instance:
+
+
+For cluster `9`, the only global unique marker that can be found is IL7R, but when pairwise compare cluster 9 with the other clusters one by one, cluster 9 did show a number of gene feature that the other clusters do not have, such as gene LTB when compare 9 to 10, IFITM3, TOMM7 and S100A10 when compare 9 to 11, and lots of marker gene (such as CAPZA1, TPI1, and SLK) when compared 9 to 12. 
+
+Same applied to cluster `10`, in which, besides the NPIPB gene family, AC009022.1 was shown as the only global unique marker for cluster 10, but when pairwise compare cluster 9 with the other clusters one by one, cluster 10 did show a number of unique gene features, such as SYNE2, KLRD1, and CCL5 when compare 10 to 9,  EFHD2 when compare 10 to 11, and series of markers (such as MBNL1 and RSF1) when compare 10 to 12. 
+
+For cluster `11`, one can easily tell apart the cluster 9, 11, and 12, because CCL5 was up-regulated in cluster 11, but not cluster 9, whilst, a series of gene (such as MYO9B, SLK and CD1E) expressed in cluster 11, but not in 12. In contrast, we find no up-regulated markers when 11 to 10, but SYNE2, AC009022.1, and the NPIPB gene family when compare 10 to 11. All in all, cluster 11 is a separated cluster. 
+
+For cluster `12`, no significantly up-regulated genes can be spotted when compare cluster 12 to all other 3 clusters. But as I shown you before, there are pack of genes significantly up-regulated in cluster 9, 10, and 11, but not in cluster 12. From the biological point of view, one possibility could be that the cluster 12 is a **progenitor** cell-type in the “S3 only” subset of the gamma-delta T cells, which could be multipotent and could be developed into either cluster 9, 10, or 11 cells depending on which set of markers it is going to express.  
 
 
 
@@ -4431,7 +4431,7 @@ assay(sce, "log2cpm") <- edgeR::cpm(
   lib.size = colSums(counts(sce)))
 ```
 
-```{r violin-key-markers-cluster, fig.cap = "Violin plot showing the expression of key markers stratified by clusters", fig.asp = 1.5, layout="l-body-outset"}
+```{r violin-key-markers-cluster, fig.cap = "Violin plot showing the expression of key markers stratified by clusters", fig.asp = 4, layout="l-body-outset"}
 plot_grid(
   
   # cluster 9
@@ -4461,7 +4461,25 @@ plot_grid(
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
-  
+
+  plotExpression(
+    sce,
+    features = "TOMM7",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  plotExpression(
+    sce,
+    features = "S100A10",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+      
   # cluster 10 and 11
   plotExpression(
     sce,
@@ -4480,7 +4498,16 @@ plot_grid(
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
-  
+
+  plotExpression(
+    sce,
+    features = "KLRD1",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+    
   plotExpression(
     sce,
     features = "CCL5",
@@ -4489,7 +4516,16 @@ plot_grid(
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
-  
+
+  plotExpression(
+    sce,
+    features = "EFHD2",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"), 
+    
   # cluster 12
   plotExpression(
     sce,
@@ -4508,7 +4544,34 @@ plot_grid(
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
-  
+
+  plotExpression(
+    sce,
+    features = "CAPZA1",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  plotExpression(
+    sce,
+    features = "SLK",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+
+  plotExpression(
+    sce,
+    features = "CD1E",
+    x = "cluster",
+    exprs_values = "log2cpm",
+    colour_by = "cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_manual(values = cluster_colours, name = "cluster"),
+        
   ncol = 2)
 ```
 
