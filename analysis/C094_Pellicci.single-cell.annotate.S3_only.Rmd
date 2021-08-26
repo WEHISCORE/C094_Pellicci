@@ -4411,7 +4411,7 @@ For instance:
 
 For cluster `9`, the only global unique marker that can be found is IL7R, but when pairwise compare cluster 9 with the other clusters one by one, cluster 9 did show a number of gene feature that the other clusters do not have, such as gene LTB when compare 9 to 10, IFITM3, TOMM7 and S100A10 when compare 9 to 11, and lots of marker gene (such as CAPZA1, TPI1, and SLK) when compared 9 to 12. 
 
-Same applied to cluster `10`, in which, besides the NPIPB gene family, AC009022.1 was shown as the only global unique marker for cluster 10, but when pairwise compare cluster 9 with the other clusters one by one, cluster 10 did show a number of unique gene features, such as SYNE2, KLRD1, and CCL5 when compare 10 to 9,  EFHD2 when compare 10 to 11, and series of markers (such as MBNL1 and RSF1) when compare 10 to 12. 
+Same applied to cluster `10`, in which, the NPIPB gene family and the long non-coding RNA (AC009022.1) was shown as the  global unique marker for cluster 10, then when pairwise compare cluster 9 with the other clusters one by one, cluster 10 did show a number of unique gene features, such as KLRD1 and CCL5 when compare 10 to 9,  SYNE2 when compare 10 to 11, and series of markers (such as MBNL1 and RSF1) when compare 10 to 12. 
 
 For cluster `11`, one can easily tell apart the cluster 9, 11, and 12, because CCL5 was up-regulated in cluster 11, but not cluster 9, whilst, a series of gene (such as MYO9B, SLK and CD1E) expressed in cluster 11, but not in 12. In contrast, we find no up-regulated markers when 11 to 10, but SYNE2, AC009022.1, and the NPIPB gene family when compare 10 to 11. All in all, cluster 11 is a separated cluster. 
 
@@ -4516,15 +4516,6 @@ plot_grid(
     colour_by = "cluster") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_colour_manual(values = cluster_colours, name = "cluster"),
-
-  plotExpression(
-    sce,
-    features = "EFHD2",
-    x = "cluster",
-    exprs_values = "log2cpm",
-    colour_by = "cluster") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_colour_manual(values = cluster_colours, name = "cluster"), 
     
   # cluster 12
   plotExpression(
