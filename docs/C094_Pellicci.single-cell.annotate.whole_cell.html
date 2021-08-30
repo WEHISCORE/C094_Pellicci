@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-08-26"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-08-26"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-08-30"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-08-30"/>
   <meta name="article:author" content="William Ho"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -111,7 +111,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Annotating Pellicci gamma-delta T-cell single-cell dataset (whole cell)"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-26"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Annotating Pellicci gamma-delta T-cell single-cell dataset (whole cell)"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-08-30"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2058,7 +2058,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Annotating Pellicci gamma-delta T-cell single-cell dataset (whole cell)","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-26T00:00:00.000+10:00","citationText":"Ho, 2021"}
+{"title":"Annotating Pellicci gamma-delta T-cell single-cell dataset (whole cell)","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-08-30T00:00:00.000+10:00","citationText":"Ho, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2162,7 +2162,7 @@ Supplementary files
 <div class="d-byline">
   William Ho  (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-08-26
+<br/>2021-08-30
 </div>
 
 <div class="d-article">
@@ -2178,7 +2178,10 @@ Supplementary files
 <li><a href="#cluster-1-vs.-2-vs.-3-vs.-4-vs.-5">Cluster <code>1</code> vs. <code>2</code> vs. <code>3</code> vs. <code>4</code> vs. <code>5</code></a></li>
 <li><a href="#selected-pairwise-comparisons">Selected pairwise comparisons</a></li>
 <li><a href="#selected-pairwise-comparisons---integrated">Selected pairwise comparisons - integrated</a></li>
-<li><a href="#supplemental-info">Supplemental info</a></li>
+<li><a href="#supplemental-info">Supplemental info</a>
+<ul>
+<li><a href="#expression-of-minibulk-de-in-the-single-cell-dataset">Expression of minibulk DE in the single-cell dataset</a></li>
+</ul></li>
 </ul></li>
 <li><a href="#session-info">Session info</a></li>
 </ul>
@@ -7675,6 +7678,159 @@ Show code
 </details>
 <p><img src="C094_Pellicci.single-cell.annotate.whole_cell_files/violin-key-markers-1.png" width="624" /></p>
 </div>
+<h3 id="expression-of-minibulk-de-in-the-single-cell-dataset">Expression of minibulk DE in the single-cell dataset</h3>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># laod package for read in csv.gz</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://r-datatable.com'>data.table</a></span><span class='op'>)</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/HenrikBengtsson/R.utils'>R.utils</a></span><span class='op'>)</span>
+
+<span class='co'># read in</span>
+<span class='va'>a</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fread.html'>fread</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"DEGs"</span>, <span class='st'>"excluding_blood_1-3"</span>, <span class='st'>"Thymus.S2_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>b</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fread.html'>fread</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"DEGs"</span>, <span class='st'>"excluding_blood_1-3"</span>, <span class='st'>"Thymus.S3_vs_Blood.S3.aggregated_tech_reps.DEGs.csv.gz"</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>c</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fread.html'>fread</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"DEGs"</span>, <span class='st'>"excluding_blood_1-3"</span>, <span class='st'>"Thymus.S3_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>d</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fread.html'>fread</a></span><span class='op'>(</span><span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output"</span>, <span class='st'>"DEGs"</span>, <span class='st'>"excluding_blood_1-3"</span>, <span class='st'>"Thymus.S3_vs_Thymus.S2.aggregated_tech_reps.DEGs.csv.gz"</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='co'># extract DEGlist (FDR &lt; 0.05)</span>
+<span class='va'>minibulkDEG.a</span> <span class='op'>&lt;-</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>a</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.b</span> <span class='op'>&lt;-</span> <span class='va'>b</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>b</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.c</span> <span class='op'>&lt;-</span> <span class='va'>c</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>c</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.d</span> <span class='op'>&lt;-</span> <span class='va'>d</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>d</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span><span class='op'>]</span>
+
+<span class='co'># keep only unique markers</span>
+<span class='va'>uniq.minibulkDEG.a</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.a</span>,
+                                           <span class='va'>minibulkDEG.b</span>,
+                                           <span class='va'>minibulkDEG.c</span>,
+                                           <span class='va'>minibulkDEG.d</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.b</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.b</span>,
+                                           <span class='va'>minibulkDEG.a</span>,
+                                           <span class='va'>minibulkDEG.c</span>,
+                                           <span class='va'>minibulkDEG.d</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.c</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.c</span>,
+                                           <span class='va'>minibulkDEG.a</span>,
+                                           <span class='va'>minibulkDEG.b</span>,
+                                           <span class='va'>minibulkDEG.d</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.d</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.d</span>,
+                                           <span class='va'>minibulkDEG.a</span>,
+                                           <span class='va'>minibulkDEG.b</span>,
+                                           <span class='va'>minibulkDEG.c</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='co'># check number of unique minibulkDEG in each</span>
+<span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 3</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 11</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 511</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.d</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 37</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># keep only top50</span>
+<span class='va'>top.uniq.minibulkDEG.a</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.b</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.c</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.d</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.d</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.d</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.d</span><span class='op'>}</span>
+
+<span class='co'># feature</span>
+<span class='va'>minibulk_markers</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>top.uniq.minibulkDEG.a</span>,
+                      <span class='va'>top.uniq.minibulkDEG.b</span>,
+                      <span class='va'>top.uniq.minibulkDEG.c</span>,
+                      <span class='va'>top.uniq.minibulkDEG.d</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"cluster"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"group"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.blood.s3 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk against different clusters"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk"></span>
+<img src="C094_Pellicci.single-cell.annotate.whole_cell_files/heat-minibulk-1.png" alt="Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 33: Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
 <h1 class="appendix" id="session-info">Session info</h1>
 <summary>
 The analysis and this document were prepared using the following software (click triangle to expand)
@@ -7700,7 +7856,7 @@ Show code
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Australia/Melbourne         
- date     2021-08-26                  
+ date     2021-08-30                  
 
 ─ Packages ─────────────────────────────────────────────────────────
  ! package              * version  date       lib
@@ -7729,6 +7885,7 @@ Show code
  P colorspace             2.0-0    2020-11-11 [?]
  P cowplot              * 1.1.1    2020-12-30 [?]
  P crayon                 1.4.1    2021-02-08 [?]
+ P data.table           * 1.14.0   2021-02-21 [?]
  P DBI                    1.1.1    2021-01-15 [?]
  P DelayedArray           0.16.3   2021-03-24 [?]
  P DelayedMatrixStats     1.12.3   2021-02-03 [?]
@@ -7787,6 +7944,9 @@ Show code
  P pillar                 1.5.1    2021-03-05 [?]
  P pkgconfig              2.0.3    2019-09-22 [?]
  P purrr                  0.3.4    2020-04-17 [?]
+ P R.methodsS3          * 1.8.1    2020-08-26 [?]
+ P R.oo                 * 1.24.0   2020-08-26 [?]
+ P R.utils              * 2.10.1   2020-08-26 [?]
  P R6                     2.5.0    2020-10-28 [?]
  P RColorBrewer           1.1-2    2014-12-07 [?]
  P Rcpp                   1.0.6    2021-01-15 [?]
@@ -7856,6 +8016,7 @@ Show code
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.3)                          
  CRAN (R 4.0.2)                          
+ CRAN (R 4.0.2)                          
  Bioconductor                            
  Bioconductor                            
  Bioconductor                            
@@ -7911,6 +8072,9 @@ Show code
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.2)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
@@ -7962,7 +8126,7 @@ Show code
  P ── Loaded and on-disk path mismatch.</code></pre>
 </div>
 </details>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
 <div id="ref-soneson2018bias" class="csl-entry" role="doc-biblioentry">
 Soneson, C., and M. D. Robinson. 2018. <span>“Bias, Robustness and Scalability in Single-Cell Differential Expression Analysis.”</span> <em>Nat. Methods</em> 15 (4): 255–61. <a href="https://www.ncbi.nlm.nih.gov/pubmed/29481549">https://www.ncbi.nlm.nih.gov/pubmed/29481549</a>.
