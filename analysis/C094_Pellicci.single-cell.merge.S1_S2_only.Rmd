@@ -270,15 +270,6 @@ p2 <- ggcells(sce) +
 
 p3 <- ggcells(sce) +
   geom_bar(
-    aes(x = plate_number, fill = plate_number),
-    position = position_fill(reverse = TRUE)) +
-  coord_flip() +
-  ylab("Frequency") +
-  scale_fill_manual(values = plate_number_colours) +
-  theme_cowplot(font_size = 8)
-
-p4 <- ggcells(sce) +
-  geom_bar(
     aes(x = plate_number, fill = tissue),
     position = position_fill(reverse = TRUE)) +
   coord_flip() +
@@ -286,7 +277,7 @@ p4 <- ggcells(sce) +
   scale_fill_manual(values = tissue_colours) +
   theme_cowplot(font_size = 8)
 
-p5 <- ggcells(sce) +
+p4 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = donor),
     position = position_fill(reverse = TRUE)) +
@@ -295,7 +286,7 @@ p5 <- ggcells(sce) +
   scale_fill_manual(values = donor_colours) +
   theme_cowplot(font_size = 8)
 
-p6 <- ggcells(sce) +
+p5 <- ggcells(sce) +
   geom_bar(
     aes(x = plate_number, fill = group),
     position = position_fill(reverse = TRUE)) +
@@ -304,7 +295,7 @@ p6 <- ggcells(sce) +
   scale_fill_manual(values = group_colours) +
   theme_cowplot(font_size = 8)
 
-(p1 | p2) / (p3 | p4) / (p5 | p6) 
+(p1 | p2) / (p3 | p4) / (p5 | plot_spacer()) 
 ```
 
 We treat each plate as a batch and also test to manually provide the merge order.
