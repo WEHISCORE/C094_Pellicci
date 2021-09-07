@@ -482,6 +482,9 @@ On the whole, the best we can achieve from the single-cell samples of the `thymu
 ### Expression of minibulk DE in the single-cell dataset
 
 ```{r}
+###############################################
+# Heatmap using minibulk sig markers as feature
+
 # laod package for read in csv.gz
 library(data.table)
 library(R.utils)
@@ -496,6 +499,14 @@ minibulkDEG.a <- a$ENSEMBL.GENENAME[a$FDR<0.05]
 minibulkDEG.b <- b$ENSEMBL.GENENAME[b$FDR<0.05]
 minibulkDEG.c <- c$ENSEMBL.GENENAME[c$FDR<0.05]
 
+minibulkDEG.a.up <- a$ENSEMBL.GENENAME[a$FDR<0.05 & a$logFC>0]
+minibulkDEG.b.up <- b$ENSEMBL.GENENAME[b$FDR<0.05 & a$logFC>0]
+minibulkDEG.c.up <- c$ENSEMBL.GENENAME[c$FDR<0.05 & a$logFC>0]
+
+minibulkDEG.a.down <- a$ENSEMBL.GENENAME[a$FDR<0.05 & a$logFC<0]
+minibulkDEG.b.down <- b$ENSEMBL.GENENAME[b$FDR<0.05 & a$logFC<0]
+minibulkDEG.c.down <- c$ENSEMBL.GENENAME[c$FDR<0.05 & a$logFC<0]
+
 # keep only unique markers
 uniq.minibulkDEG.a <- Reduce(setdiff, list(minibulkDEG.a,
                                            minibulkDEG.b,
@@ -507,23 +518,81 @@ uniq.minibulkDEG.c <- Reduce(setdiff, list(minibulkDEG.c,
                                            minibulkDEG.a,
                                            minibulkDEG.b))
 
+uniq.minibulkDEG.a.up <- Reduce(setdiff, list(minibulkDEG.a.up,
+                                              minibulkDEG.b.up,
+                                              minibulkDEG.c.up))
+uniq.minibulkDEG.b.up <- Reduce(setdiff, list(minibulkDEG.b.up,
+                                              minibulkDEG.a.up,
+                                              minibulkDEG.c.up))
+uniq.minibulkDEG.c.up <- Reduce(setdiff, list(minibulkDEG.c.up,
+                                              minibulkDEG.a.up,
+                                              minibulkDEG.b.up))
+
+uniq.minibulkDEG.a.down <- Reduce(setdiff, list(minibulkDEG.a.down,
+                                                minibulkDEG.b.down,
+                                                minibulkDEG.c.down))
+uniq.minibulkDEG.b.down <- Reduce(setdiff, list(minibulkDEG.b.down,
+                                                minibulkDEG.a.down,
+                                                minibulkDEG.c.down))
+uniq.minibulkDEG.c.down <- Reduce(setdiff, list(minibulkDEG.c.down,
+                                                minibulkDEG.a.down,
+                                                minibulkDEG.b.down))
+
 # check number of unique minibulkDEG in each
 length(uniq.minibulkDEG.a)
 length(uniq.minibulkDEG.b)
 length(uniq.minibulkDEG.c)
 
-# keep only top50
+length(uniq.minibulkDEG.a.up)
+length(uniq.minibulkDEG.b.up)
+length(uniq.minibulkDEG.c.up)
+
+length(uniq.minibulkDEG.a.down)
+length(uniq.minibulkDEG.b.down)
+length(uniq.minibulkDEG.c.down)
+
+# keep only top25
 top.uniq.minibulkDEG.a <- if(length(uniq.minibulkDEG.a) >=25){uniq.minibulkDEG.a[1:25]} else {uniq.minibulkDEG.a}
 top.uniq.minibulkDEG.b <- if(length(uniq.minibulkDEG.b) >=25){uniq.minibulkDEG.b[1:25]} else {uniq.minibulkDEG.b}
 top.uniq.minibulkDEG.c <- if(length(uniq.minibulkDEG.c) >=25){uniq.minibulkDEG.c[1:25]} else {uniq.minibulkDEG.c}
+
+top.uniq.minibulkDEG.a.up <- if(length(uniq.minibulkDEG.a.up) >=25){uniq.minibulkDEG.a.up[1:25]} else {uniq.minibulkDEG.a.up}
+top.uniq.minibulkDEG.b.up <- if(length(uniq.minibulkDEG.b.up) >=25){uniq.minibulkDEG.b.up[1:25]} else {uniq.minibulkDEG.b.up}
+top.uniq.minibulkDEG.c.up <- if(length(uniq.minibulkDEG.c.up) >=25){uniq.minibulkDEG.c.up[1:25]} else {uniq.minibulkDEG.c.up}
+
+top.uniq.minibulkDEG.a.down <- if(length(uniq.minibulkDEG.a.down) >=25){uniq.minibulkDEG.a.down[1:25]} else {uniq.minibulkDEG.a.down}
+top.uniq.minibulkDEG.b.down <- if(length(uniq.minibulkDEG.b.down) >=25){uniq.minibulkDEG.b.down[1:25]} else {uniq.minibulkDEG.b.down}
+top.uniq.minibulkDEG.c.down <- if(length(uniq.minibulkDEG.c.down) >=25){uniq.minibulkDEG.c.down[1:25]} else {uniq.minibulkDEG.c.down}
 
 # feature
 minibulk_markers <- c(top.uniq.minibulkDEG.a,
                       top.uniq.minibulkDEG.b,
                       top.uniq.minibulkDEG.c)
+
+minibulk_markers_up <- c(top.uniq.minibulkDEG.a.up,
+                         top.uniq.minibulkDEG.b.up,
+                         top.uniq.minibulkDEG.c.up)
+
+minibulk_markers_down <- c(top.uniq.minibulkDEG.a.down,
+                           top.uniq.minibulkDEG.b.down,
+                           top.uniq.minibulkDEG.c.down)
 ```
 
-```{r heat-minibulk-by-cluster, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by `cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.5, layout="l-body-outset"}
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+#### `Minibulk DE_ALL_by cluster` {.panel-name}
+
+```{r heat-minibulk-by-cluster, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by `cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
 
 library(scater)
 plotHeatmap(
@@ -566,6 +635,12 @@ plotHeatmap(
   fontsize = 7)
 ```
 
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_ALL_by group` {.panel-name}
+
 ```{r heat-minibulk-by-group, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
 
 library(scater)
@@ -595,7 +670,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different group",
+  main = "Row-normalized log expression of top unique markers from minibulk against different groups",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -605,6 +680,12 @@ plotHeatmap(
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 ```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_ALL_by group (clust_col)` {.panel-name}
 
 ```{r heat-minibulk-by-group-clustcol, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by `group` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
 
@@ -635,7 +716,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different group (column-clustered)",
+  main = "Row-normalized log expression of top unique markers from minibulk against different groups (column-clustered)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -645,6 +726,292 @@ plotHeatmap(
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 7)
 ```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_UP_by cluster` {.panel-name}
+
+```{r heat-minibulk-by-cluster-up, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by `cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers_up,
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.a.up, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.b.up, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.c.up, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers_up),
+  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different clusters",
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_UP_by group` {.panel-name}
+
+```{r heat-minibulk-by-group-up, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers_up,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.a.up, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.b.up, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.c.up, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers_up),
+  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups",
+  column_annotation_colors = list(
+    group = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_UP_by group (clust_col)` {.panel-name}
+
+```{r heat-minibulk-by-group-clustcol-up, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by `group` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers_up,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = TRUE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.a.up, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.b.up, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.c.up, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers_up),
+  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups (column-clustered)",
+  column_annotation_colors = list(
+    group = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_DOWN_by cluster` {.panel-name}
+
+```{r heat-minibulk-by-cluster-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers_down,
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.a.down, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers_down),
+  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different clusters",
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_DOWN_by group` {.panel-name}
+
+```{r heat-minibulk-by-group-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `grodown`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers_down,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.a.down, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers_down),
+  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns",
+  column_annotation_colors = list(
+    grodown = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_DOWN_by group (clust_col)` {.panel-name}
+
+```{r heat-minibulk-by-group-clustcol-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `grodown` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers_down,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = TRUE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.a.down, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers_down),
+  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns (column-clustered)",
+  column_annotation_colors = list(
+    grodown = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::::::
 
 # Session info {.appendix}
 

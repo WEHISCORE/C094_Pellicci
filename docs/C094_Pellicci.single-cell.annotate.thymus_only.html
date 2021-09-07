@@ -2741,7 +2741,10 @@ Figure 4: Heatmap of log-expression values in each sample for the top uniquely u
 Show code
 </summary>
 <div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># laod package for read in csv.gz</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'>###############################################</span>
+<span class='co'># Heatmap using minibulk sig markers as feature</span>
+
+<span class='co'># laod package for read in csv.gz</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://r-datatable.com'>data.table</a></span><span class='op'>)</span>
 <span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/HenrikBengtsson/R.utils'>R.utils</a></span><span class='op'>)</span>
 
@@ -2755,6 +2758,14 @@ Show code
 <span class='va'>minibulkDEG.b</span> <span class='op'>&lt;-</span> <span class='va'>b</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>b</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span><span class='op'>]</span>
 <span class='va'>minibulkDEG.c</span> <span class='op'>&lt;-</span> <span class='va'>c</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>c</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span><span class='op'>]</span>
 
+<span class='va'>minibulkDEG.a.up</span> <span class='op'>&lt;-</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>a</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span> <span class='op'>&amp;</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>logFC</span><span class='op'>&gt;</span><span class='fl'>0</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.b.up</span> <span class='op'>&lt;-</span> <span class='va'>b</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>b</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span> <span class='op'>&amp;</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>logFC</span><span class='op'>&gt;</span><span class='fl'>0</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.c.up</span> <span class='op'>&lt;-</span> <span class='va'>c</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>c</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span> <span class='op'>&amp;</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>logFC</span><span class='op'>&gt;</span><span class='fl'>0</span><span class='op'>]</span>
+
+<span class='va'>minibulkDEG.a.down</span> <span class='op'>&lt;-</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>a</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span> <span class='op'>&amp;</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>logFC</span><span class='op'>&lt;</span><span class='fl'>0</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.b.down</span> <span class='op'>&lt;-</span> <span class='va'>b</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>b</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span> <span class='op'>&amp;</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>logFC</span><span class='op'>&lt;</span><span class='fl'>0</span><span class='op'>]</span>
+<span class='va'>minibulkDEG.c.down</span> <span class='op'>&lt;-</span> <span class='va'>c</span><span class='op'>$</span><span class='va'>ENSEMBL.GENENAME</span><span class='op'>[</span><span class='va'>c</span><span class='op'>$</span><span class='va'>FDR</span><span class='op'>&lt;</span><span class='fl'>0.05</span> <span class='op'>&amp;</span> <span class='va'>a</span><span class='op'>$</span><span class='va'>logFC</span><span class='op'>&lt;</span><span class='fl'>0</span><span class='op'>]</span>
+
 <span class='co'># keep only unique markers</span>
 <span class='va'>uniq.minibulkDEG.a</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.a</span>,
                                            <span class='va'>minibulkDEG.b</span>,
@@ -2765,6 +2776,26 @@ Show code
 <span class='va'>uniq.minibulkDEG.c</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.c</span>,
                                            <span class='va'>minibulkDEG.a</span>,
                                            <span class='va'>minibulkDEG.b</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='va'>uniq.minibulkDEG.a.up</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.a.up</span>,
+                                              <span class='va'>minibulkDEG.b.up</span>,
+                                              <span class='va'>minibulkDEG.c.up</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.b.up</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.b.up</span>,
+                                              <span class='va'>minibulkDEG.a.up</span>,
+                                              <span class='va'>minibulkDEG.c.up</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.c.up</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.c.up</span>,
+                                              <span class='va'>minibulkDEG.a.up</span>,
+                                              <span class='va'>minibulkDEG.b.up</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='va'>uniq.minibulkDEG.a.down</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.a.down</span>,
+                                                <span class='va'>minibulkDEG.b.down</span>,
+                                                <span class='va'>minibulkDEG.c.down</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.b.down</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.b.down</span>,
+                                                <span class='va'>minibulkDEG.a.down</span>,
+                                                <span class='va'>minibulkDEG.c.down</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>uniq.minibulkDEG.c.down</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/funprog.html'>Reduce</a></span><span class='op'>(</span><span class='va'>setdiff</span>, <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>minibulkDEG.c.down</span>,
+                                                <span class='va'>minibulkDEG.a.down</span>,
+                                                <span class='va'>minibulkDEG.b.down</span><span class='op'>)</span><span class='op'>)</span>
 
 <span class='co'># check number of unique minibulkDEG in each</span>
 <span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>)</span>
@@ -2797,19 +2828,113 @@ Show code
 Show code
 </summary>
 <div class="sourceCode">
-<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># keep only top50</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a.up</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 255</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b.up</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 4</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c.up</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 71</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a.down</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 341</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b.down</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 5</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c.down</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>[1] 47</code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># keep only top25</span>
 <span class='va'>top.uniq.minibulkDEG.a</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.a</span><span class='op'>}</span>
 <span class='va'>top.uniq.minibulkDEG.b</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.b</span><span class='op'>}</span>
 <span class='va'>top.uniq.minibulkDEG.c</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.c</span><span class='op'>}</span>
+
+<span class='va'>top.uniq.minibulkDEG.a.up</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a.up</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.a.up</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.a.up</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.b.up</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b.up</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.b.up</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.b.up</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.c.up</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c.up</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.c.up</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.c.up</span><span class='op'>}</span>
+
+<span class='va'>top.uniq.minibulkDEG.a.down</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.a.down</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.a.down</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.a.down</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.b.down</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.b.down</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.b.down</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.b.down</span><span class='op'>}</span>
+<span class='va'>top.uniq.minibulkDEG.c.down</span> <span class='op'>&lt;-</span> <span class='kw'>if</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/length.html'>length</a></span><span class='op'>(</span><span class='va'>uniq.minibulkDEG.c.down</span><span class='op'>)</span> <span class='op'>&gt;=</span><span class='fl'>25</span><span class='op'>)</span><span class='op'>{</span><span class='va'>uniq.minibulkDEG.c.down</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>25</span><span class='op'>]</span><span class='op'>}</span> <span class='kw'>else</span> <span class='op'>{</span><span class='va'>uniq.minibulkDEG.c.down</span><span class='op'>}</span>
 
 <span class='co'># feature</span>
 <span class='va'>minibulk_markers</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>top.uniq.minibulkDEG.a</span>,
                       <span class='va'>top.uniq.minibulkDEG.b</span>,
                       <span class='va'>top.uniq.minibulkDEG.c</span><span class='op'>)</span>
+
+<span class='va'>minibulk_markers_up</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>top.uniq.minibulkDEG.a.up</span>,
+                         <span class='va'>top.uniq.minibulkDEG.b.up</span>,
+                         <span class='va'>top.uniq.minibulkDEG.c.up</span><span class='op'>)</span>
+
+<span class='va'>minibulk_markers_down</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>top.uniq.minibulkDEG.a.down</span>,
+                           <span class='va'>top.uniq.minibulkDEG.b.down</span>,
+                           <span class='va'>top.uniq.minibulkDEG.c.down</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
 </div>
+<div class="layout-chunk" data-layout="l-body">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># NOTE: The following is a workaround to the lack of support for tabsets in </span>
+<span class='co'>#       distill (see https://github.com/rstudio/distill/issues/11 and </span>
+<span class='co'>#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in </span>
+<span class='co'>#       particular).</span>
+<span class='fu'>xaringanExtra</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/xaringanExtra/man/panelset.html'>use_panelset</a></span><span class='op'>(</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+</div>
+<div class="panelset">
+<section id="minibulk-de_all_by-cluster" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_ALL_by cluster</code></h4>
 <div class="layout-chunk" data-layout="l-body-outset">
 <details>
 <summary>
@@ -2865,6 +2990,9 @@ Figure 5: Heatmap of log-expression values in each sample for the marker genes i
 </p>
 </div>
 </div>
+</section>
+<section id="minibulk-de_all_by-group" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_ALL_by group</code></h4>
 <div class="layout-chunk" data-layout="l-body-outset">
 <details>
 <summary>
@@ -2898,7 +3026,7 @@ Show code
     thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
     thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
     row.names <span class='op'>=</span> <span class='va'>minibulk_markers</span><span class='op'>)</span>,
-  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk against different group"</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk against different groups"</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
     group <span class='op'>=</span> <span class='va'>group_colours</span>,
     stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
@@ -2917,6 +3045,9 @@ Figure 6: Heatmap of log-expression values in each sample for the marker genes i
 </p>
 </div>
 </div>
+</section>
+<section id="minibulk-de_all_by-group-clust_col" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_ALL_by group (clust_col)</code></h4>
 <div class="layout-chunk" data-layout="l-body-outset">
 <details>
 <summary>
@@ -2950,7 +3081,7 @@ Show code
     thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
     thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
     row.names <span class='op'>=</span> <span class='va'>minibulk_markers</span><span class='op'>)</span>,
-  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk against different group (column-clustered)"</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk against different groups (column-clustered)"</span>,
   column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
     group <span class='op'>=</span> <span class='va'>group_colours</span>,
     stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
@@ -2968,6 +3099,344 @@ Show code
 Figure 7: Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by <code>group</code> (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
 </p>
 </div>
+</div>
+</section>
+<section id="minibulk-de_up_by-cluster" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_UP_by cluster</code></h4>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers_up</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"cluster"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"group"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers_up</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk (up-regulated) against different clusters"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-cluster-up"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymus_only_files/heat-minibulk-by-cluster-up-1.png" alt="Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by `cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 8: Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by <code>cluster</code>. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
+</section>
+<section id="minibulk-de_up_by-group" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_UP_by group</code></h4>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers_up</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"group"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers_up</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-group-up"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymus_only_files/heat-minibulk-by-group-up-1.png" alt="Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 9: Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by <code>group</code>. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
+</section>
+<section id="minibulk-de_up_by-group-clust_col" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_UP_by group (clust_col)</code></h4>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers_up</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"group"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_up</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c.up</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers_up</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups (column-clustered)"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-group-clustcol-up"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymus_only_files/heat-minibulk-by-group-clustcol-up-1.png" alt="Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by `group` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 10: Heatmap of log-expression values in each sample for the marker genes (up-regulated) identified from the mini-bulk analysis. Cells are ordered by <code>group</code> (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
+</section>
+<section id="minibulk-de_down_by-cluster" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_DOWN_by cluster</code></h4>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers_down</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>cluster</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"cluster"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"group"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers_down</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk (down-regulated) against different clusters"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    cluster <span class='op'>=</span> <span class='va'>cluster_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-cluster-down"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymus_only_files/heat-minibulk-by-cluster-down-1.png" alt="Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `cluster`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 11: Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by <code>cluster</code>. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
+</section>
+<section id="minibulk-de_down_by-group" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_DOWN_by group</code></h4>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers_down</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"group"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers_down</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    grodown <span class='op'>=</span> <span class='va'>group_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-group-down"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymus_only_files/heat-minibulk-by-group-down-1.png" alt="Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `grodown`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 12: Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by <code>grodown</code>. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
+</section>
+<section id="minibulk-de_down_by-group-clust_col" class="panel-name panel">
+<h4 class="panel-name"><code>Minibulk DE_DOWN_by group (clust_col)</code></h4>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers_down</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"group"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s3.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.b.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    thymus.s3.vs.thymus.s2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers_down</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.c.down</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers_down</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns (column-clustered)"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    grodown <span class='op'>=</span> <span class='va'>group_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-group-clustcol-down"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymus_only_files/heat-minibulk-by-group-clustcol-down-1.png" alt="Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `grodown` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 13: Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by <code>grodown</code> (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
+</section>
 </div>
 <h1 class="appendix" id="session-info">Session info</h1>
 <summary>
@@ -3265,7 +3734,7 @@ Show code
  P ── Loaded and on-disk path mismatch.</code></pre>
 </div>
 </details>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
 <div id="ref-soneson2018bias" class="csl-entry" role="doc-biblioentry">
 Soneson, C., and M. D. Robinson. 2018. <span>“Bias, Robustness and Scalability in Single-Cell Differential Expression Analysis.”</span> <em>Nat. Methods</em> 15 (4): 255–61. <a href="https://www.ncbi.nlm.nih.gov/pubmed/29481549">https://www.ncbi.nlm.nih.gov/pubmed/29481549</a>.
