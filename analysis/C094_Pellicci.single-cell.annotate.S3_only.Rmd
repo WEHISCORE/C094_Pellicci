@@ -4671,7 +4671,43 @@ plotHeatmap(
   fontsize = 7)
 ```
 
+```{r heat-minibulk-by-group-clustcol, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by `group` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
 
+library(scater)
+plotHeatmap(
+  sce,
+  features = minibulk_markers,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = TRUE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers),
+  main = "Row-normalized log expression of top unique markers from minibulk against different groups (column-clustered)",
+  column_annotation_colors = list(
+    group = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
 
 
 # Session info {.appendix}

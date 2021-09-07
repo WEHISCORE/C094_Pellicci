@@ -2875,6 +2875,56 @@ Figure 6: Heatmap of log-expression values in each sample for the marker genes i
 </p>
 </div>
 </div>
+<div class="layout-chunk" data-layout="l-body-outset">
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://bioconductor.org/packages/scater/'>scater</a></span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
+  <span class='va'>sce</span>,
+  features <span class='op'>=</span> <span class='va'>minibulk_markers</span>,
+  columns <span class='op'>=</span> <span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/setorder.html'>order</a></span><span class='op'>(</span>
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>group</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>stage</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>tissue</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>donor</span>,
+    <span class='va'>sce</span><span class='op'>$</span><span class='va'>plate_number</span><span class='op'>)</span>,
+  colour_columns_by <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>
+    <span class='st'>"group"</span>,
+    <span class='st'>"stage"</span>,
+    <span class='st'>"tissue"</span>,
+    <span class='st'>"donor"</span>,
+    <span class='st'>"plate_number"</span><span class='op'>)</span>,
+  cluster_cols <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  center <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  symmetric <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  zlim <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>3</span>, <span class='fl'>3</span><span class='op'>)</span>,
+  show_colnames <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='co'># TODO: temp trick to deal with the row-colouring problem</span>
+  annotation_row <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+    thymus.s2.vs.thymus.s1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'><a href='https://Rdatatable.gitlab.io/data.table/reference/fifelse.html'>ifelse</a></span><span class='op'>(</span><span class='va'>minibulk_markers</span> <span class='op'>%in%</span> <span class='va'>top.uniq.minibulkDEG.a</span>, <span class='st'>"DE"</span>, <span class='st'>"not DE"</span><span class='op'>)</span>, levels <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"DE"</span><span class='op'>)</span><span class='op'>)</span>,
+    row.names <span class='op'>=</span> <span class='va'>minibulk_markers</span><span class='op'>)</span>,
+  main <span class='op'>=</span> <span class='st'>"Row-normalized log expression of top unique markers from minibulk against different groups (column-clustered)"</span>,
+  column_annotation_colors <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>
+    group <span class='op'>=</span> <span class='va'>group_colours</span>,
+    stage <span class='op'>=</span> <span class='va'>stage_colours</span>,
+    tissue <span class='op'>=</span> <span class='va'>tissue_colours</span>,
+    donor <span class='op'>=</span> <span class='va'>donor_colours</span>,
+    plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
+  color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
+  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<div class="figure"><span id="fig:heat-minibulk-by-group-clustcol"></span>
+<img src="C094_Pellicci.single-cell.annotate.thymusS1_thymusS2_only_files/heat-minibulk-by-group-clustcol-1.png" alt="Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by `group` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range." width="624" />
+<p class="caption">
+Figure 7: Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis. Cells are ordered by <code>group</code> (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.
+</p>
+</div>
+</div>
 <h1 class="appendix" id="session-info">Session info</h1>
 <summary>
 The analysis and this document were prepared using the following software (click triangle to expand)
