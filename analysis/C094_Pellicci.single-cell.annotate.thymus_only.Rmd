@@ -500,12 +500,12 @@ minibulkDEG.b <- b$ENSEMBL.GENENAME[b$FDR<0.05]
 minibulkDEG.c <- c$ENSEMBL.GENENAME[c$FDR<0.05]
 
 minibulkDEG.a.up <- a$ENSEMBL.GENENAME[a$FDR<0.05 & a$logFC>0]
-minibulkDEG.b.up <- b$ENSEMBL.GENENAME[b$FDR<0.05 & a$logFC>0]
-minibulkDEG.c.up <- c$ENSEMBL.GENENAME[c$FDR<0.05 & a$logFC>0]
+minibulkDEG.b.up <- b$ENSEMBL.GENENAME[b$FDR<0.05 & b$logFC>0]
+minibulkDEG.c.up <- c$ENSEMBL.GENENAME[c$FDR<0.05 & c$logFC>0]
 
 minibulkDEG.a.down <- a$ENSEMBL.GENENAME[a$FDR<0.05 & a$logFC<0]
-minibulkDEG.b.down <- b$ENSEMBL.GENENAME[b$FDR<0.05 & a$logFC<0]
-minibulkDEG.c.down <- c$ENSEMBL.GENENAME[c$FDR<0.05 & a$logFC<0]
+minibulkDEG.b.down <- b$ENSEMBL.GENENAME[b$FDR<0.05 & b$logFC<0]
+minibulkDEG.c.down <- c$ENSEMBL.GENENAME[c$FDR<0.05 & c$logFC<0]
 
 # keep only unique markers
 uniq.minibulkDEG.a <- Reduce(setdiff, list(minibulkDEG.a,
@@ -923,7 +923,7 @@ plotHeatmap(
 
 #### `Minibulk DE_DOWN_by group` {.panel-name}
 
-```{r heat-minibulk-by-group-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `grodown`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-minibulk-by-group-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
 
 library(scater)
 plotHeatmap(
@@ -952,9 +952,9 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns",
+  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different groups",
   column_annotation_colors = list(
-    grodown = group_colours,
+    group = group_colours,
     stage = stage_colours,
     tissue = tissue_colours,
     donor = donor_colours,
@@ -969,7 +969,7 @@ plotHeatmap(
 
 #### `Minibulk DE_DOWN_by group (clust_col)` {.panel-name}
 
-```{r heat-minibulk-by-group-clustcol-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `grodown` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+```{r heat-minibulk-by-group-clustcol-down, fig.cap = "Heatmap of log-expression values in each sample for the marker genes (down-regulated) identified from the mini-bulk analysis. Cells are ordered by `group` (column-clustered). Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
 
 library(scater)
 plotHeatmap(
@@ -998,9 +998,9 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns (column-clustered)",
+  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different groups (column-clustered)",
   column_annotation_colors = list(
-    grodown = group_colours,
+    group = group_colours,
     stage = stage_colours,
     tissue = tissue_colours,
     donor = donor_colours,
