@@ -4652,7 +4652,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different clusters",
+  main = "Minibulk DE expression (UP and DOWN) in S3 subset (with cells divided by cluster)",
   column_annotation_colors = list(
     cluster = cluster_colours,
     stage = stage_colours,
@@ -4697,7 +4697,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different groups",
+  main = "Minibulk DE expression (UP and DOWN) in S3 subset (with cells divided by groups)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -4741,7 +4741,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different groups (column-clustered)",
+  main = "Minibulk DE expression (UP and DOWN) in S3 subset (with cells divided by groups, column-clustered)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -4787,7 +4787,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_up),
-  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different clusters",
+  main = "Minibulk DE expression (UP only) in S3 subset (with cells divided by clusters)",
   column_annotation_colors = list(
     cluster = cluster_colours,
     stage = stage_colours,
@@ -4832,7 +4832,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_up),
-  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups",
+  main = "Minibulk DE expression (UP only) in S3 subset (with cells divided by groups)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -4876,7 +4876,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_up),
-  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups (column-clustered)",
+  main = "Minibulk DE expression (UP only) in S3 subset (with cells divided by clusters, column-clustered)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -4922,7 +4922,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different clusters",
+  main = "Minibulk DE expression (DOWN only) in S3 subset (with cells divided by clusters)",
   column_annotation_colors = list(
     cluster = cluster_colours,
     stage = stage_colours,
@@ -4967,7 +4967,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns",
+  main = "Minibulk DE expression (DOWN only) in S3 subset (with cells divided by groups)",
   column_annotation_colors = list(
     grodown = group_colours,
     stage = stage_colours,
@@ -5011,7 +5011,7 @@ plotHeatmap(
   annotation_row = data.frame(
     thymus.s3.vs.blood.s3 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different grodowns (column-clustered)",
+  main = "Minibulk DE expression (DOWN only) in S3 subset (with cells divided by groups, column-clustered)",
   column_annotation_colors = list(
     grodown = group_colours,
     stage = stage_colours,

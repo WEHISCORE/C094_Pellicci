@@ -623,7 +623,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different clusters",
+  main = "Minibulk DE expression (UP and DOWN) in thymus subset (with cells divided by clusters)",
   column_annotation_colors = list(
     cluster = cluster_colours,
     stage = stage_colours,
@@ -670,7 +670,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different groups",
+  main = "Minibulk DE expression (UP and DOWN) in thymus subset (with cells divided by groups)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -716,7 +716,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers),
-  main = "Row-normalized log expression of top unique markers from minibulk against different groups (column-clustered)",
+  main = "Minibulk DE expression (UP and DOWN) in thymus subset (with cells divided by groups, column-clustered)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -764,7 +764,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.b.up, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.c.up, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_up),
-  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different clusters",
+  main = "Minibulk DE expression (UP only) in thymus subset (with cells divided by clusters)",
   column_annotation_colors = list(
     cluster = cluster_colours,
     stage = stage_colours,
@@ -811,7 +811,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.b.up, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.c.up, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_up),
-  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups",
+  main = "Minibulk DE expression (UP only) in thymus subset (with cells divided by groups)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -857,7 +857,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.b.up, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_up %in% top.uniq.minibulkDEG.c.up, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_up),
-  main = "Row-normalized log expression of top unique markers from minibulk (up-regulated) against different groups (column-clustered)",
+  main = "Minibulk DE expression (UP only) in thymus subset (with cells divided by groups, column-clustered)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -905,7 +905,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different clusters",
+  main = "Minibulk DE expression (DOWN only) in thymus subset (with cells divided by clusters)",
   column_annotation_colors = list(
     cluster = cluster_colours,
     stage = stage_colours,
@@ -952,7 +952,7 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different groups",
+  main = "Minibulk DE expression (DOWN only) in thymus subset (with cells divided by groups)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
@@ -998,7 +998,145 @@ plotHeatmap(
     thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.b.down, "DE", "not DE"), levels = c("DE")),
     thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers_down %in% top.uniq.minibulkDEG.c.down, "DE", "not DE"), levels = c("DE")),
     row.names = minibulk_markers_down),
-  main = "Row-normalized log expression of top unique markers from minibulk (down-regulated) against different groups (column-clustered)",
+  main = "Minibulk DE expression (DOWN only) in thymus subset (with cells divided by groups, column-clustered)",
+  column_annotation_colors = list(
+    group = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_ALL_by group (thymus.s3.vs.thymus.s1)` {.panel-name}
+
+```{r heat-minibulk-by-group-all-thymusS3-vs-thymusS1, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis (thymus.s3.vs.thymus.s1). Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = top.uniq.minibulkDEG.a,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
+    # thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
+    # thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers),
+  main = "Minibulk DE expression (thymus.S3 vs thymus.S1) in thymus subset (with cells divided by groups)",
+  column_annotation_colors = list(
+    group = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_ALL_by group (thymus.s2.vs.thymus.s1)` {.panel-name}
+
+```{r heat-minibulk-by-group-all-thymusS2-vs-thymusS1, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis (thymus.s2.vs.thymus.s1). Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 0.5, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = top.uniq.minibulkDEG.b,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    # thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
+    thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
+    # thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers),
+  main = "Minibulk DE expression (thymus.S2 vs thymus.S1) in thymus subset (with cells divided by groups)",
+  column_annotation_colors = list(
+    group = group_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+```
+
+:::
+
+::: {.panel}
+
+#### `Minibulk DE_ALL_by group (thymus.s3.vs.thymus.s2)` {.panel-name}
+
+```{r heat-minibulk-by-group-all-thymusS3-vs-thymusS2, fig.cap = "Heatmap of log-expression values in each sample for the marker genes identified from the mini-bulk analysis (thymus.s3.vs.thymus.s2). Cells are ordered by `group`. Each column is a sample, each row a gene. Colours are capped at -3 and 3 to preserve dynamic range.", fig.asp = 1.2, layout="l-body-outset"}
+
+library(scater)
+plotHeatmap(
+  sce,
+  features = top.uniq.minibulkDEG.c,
+  columns = order(
+    sce$group,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$plate_number),
+  colour_columns_by = c(
+    "group",
+    "stage",
+    "tissue",
+    "donor",
+    "plate_number"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  show_colnames = FALSE,
+  # TODO: temp trick to deal with the row-colouring problem
+  annotation_row = data.frame(
+    # thymus.s3.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.a, "DE", "not DE"), levels = c("DE")),
+    # thymus.s2.vs.thymus.s1 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.b, "DE", "not DE"), levels = c("DE")),
+    thymus.s3.vs.thymus.s2 = factor(ifelse(minibulk_markers %in% top.uniq.minibulkDEG.c, "DE", "not DE"), levels = c("DE")),
+    row.names = minibulk_markers),
+  main = "Minibulk DE expression (thymus.S3 vs thymus.S2) in thymus subset (with cells divided by groups)",
   column_annotation_colors = list(
     group = group_colours,
     stage = stage_colours,
