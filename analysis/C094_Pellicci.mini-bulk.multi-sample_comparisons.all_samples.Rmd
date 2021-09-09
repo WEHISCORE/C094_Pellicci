@@ -905,6 +905,14 @@ genes <- c(
   "CD28", "CD44", "CD26" = "DPP4", "CD94" = "KLRD1", "IL18RAP",
   # Markers used for gating.
   "CD4", "CD161" = "KLRB1")
+
+# NOTE: Dan requested particular group colours (email 2021-09-07). I manually 
+#       matched these colours to the examples in figure Dan sent.
+group_colours <- c(
+  "Thymus.S1" = "#3954a1", 
+  "Thymus.S2" = "#94c643",
+  "Thymus.S3" = "#ec2327",
+  "Blood.S3" = "#6a539f")
 ```
 
 Dan requested violin plots of specific genes (email 2021-08-12), listed below.
@@ -945,8 +953,10 @@ scater::plotExpression(
   exprs_values = "logCPM",
   scales = "free_y",
   ncol = 4,
-  colour_by = "group") +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+  colour_by = "group",
+  point_alpha = 1) +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
+  scale_colour_manual(values = group_colours, name = "group")
 ```
 
 :::
@@ -964,8 +974,10 @@ scater::plotExpression(
   exprs_values = "batch-corrected logCPM",
   scales = "free_y",
   ncol = 4,
-  colour_by = "group") +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+  colour_by = "group",
+  point_alpha = 1) +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
+  scale_colour_manual(values = group_colours, name = "group")
 ```
 
 :::
