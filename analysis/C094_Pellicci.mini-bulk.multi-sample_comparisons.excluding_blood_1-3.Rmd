@@ -918,7 +918,13 @@ group_colours <- c(
 Dan requested violin plots of specific genes (email 2021-08-12), listed below.
 I've added in *CD4* and *KLRB1* (*CD161*) for good measure.
 
+<aside>
+PDF versions of these figures are available in [`output/DEGs/excluding_blood_1-3/violin_plots/logCPM.pdf`](../output/DEGs/excluding_blood_1-3/violin_plots/logCPM.pdf) and [`output/DEGs/excluding_blood_1-3/violin_plots/batch-corrected_logCPM.pdf`](../output/DEGs/excluding_blood_1-3/violin_plots/batch-corrected_logCPM.pdf).
+</aside>
+
 ```{r}
+dir.create(file.path(outdir, "violin_plots"))
+
 genes_df <- data.frame(
   `Gene name supplied by Dan` = ifelse(names(genes) == "", genes, names(genes)),
   `Gene name in dataset` = unname(genes),
@@ -957,6 +963,25 @@ scater::plotExpression(
   point_alpha = 1) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
   scale_colour_manual(values = group_colours, name = "group")
+
+pdf(file.path(outdir, "violin_plots", "logCPM.pdf"))
+for (i in seq_len(nrow(genes_df))) {
+  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(y))
+  if (length(g)) {
+    p <- scater::plotExpression(
+      se,
+      features = g,
+      x = "group",
+      exprs_values = "logCPM",
+      scales = "free_y",
+      ncol = 4,
+      colour_by = "group",
+      point_alpha = 1) +
+      scale_colour_manual(values = group_colours, name = "group")
+    print(p)
+  }
+}
+dev.off()
 ```
 
 :::
@@ -978,6 +1003,25 @@ scater::plotExpression(
   point_alpha = 1) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
   scale_colour_manual(values = group_colours, name = "group")
+
+pdf(file.path(outdir, "violin_plots", "batch-corrected_logCPM.pdf"))
+for (i in seq_len(nrow(genes_df))) {
+  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(y))
+  if (length(g)) {
+    p <- scater::plotExpression(
+      se,
+      features = g,
+      x = "group",
+      exprs_values = "batch-corrected logCPM",
+      scales = "free_y",
+      ncol = 4,
+      colour_by = "group",
+      point_alpha = 1) +
+      scale_colour_manual(values = group_colours, name = "group")
+    print(p)
+  }
+}
+dev.off()
 ```
 
 :::
