@@ -964,7 +964,7 @@ scater::plotExpression(
   theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
   scale_colour_manual(values = group_colours, name = "group")
 
-pdf(file.path(outdir, "violin_plots", "logCPM.pdf"))
+pdf(file.path(outdir, "violin_plots", "logCPM.pdf"), height = 5, width = 6)
 for (i in seq_len(nrow(genes_df))) {
   g <- intersect(genes_df$`Gene name in dataset`[i], rownames(y))
   if (length(g)) {
@@ -973,10 +973,11 @@ for (i in seq_len(nrow(genes_df))) {
       features = g,
       x = "group",
       exprs_values = "logCPM",
-      scales = "free_y",
-      ncol = 4,
       colour_by = "group",
-      point_alpha = 1) +
+      point_alpha = 1,
+      point_size = 3,
+      show_violin = FALSE,
+      show_median = TRUE) +
       scale_colour_manual(values = group_colours, name = "group")
     print(p)
   }
@@ -1004,7 +1005,10 @@ scater::plotExpression(
   theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
   scale_colour_manual(values = group_colours, name = "group")
 
-pdf(file.path(outdir, "violin_plots", "batch-corrected_logCPM.pdf"))
+pdf(
+  file.path(outdir, "violin_plots", "batch-corrected_logCPM.pdf"),
+  height = 5, 
+  width = 6)
 for (i in seq_len(nrow(genes_df))) {
   g <- intersect(genes_df$`Gene name in dataset`[i], rownames(y))
   if (length(g)) {
@@ -1016,7 +1020,10 @@ for (i in seq_len(nrow(genes_df))) {
       scales = "free_y",
       ncol = 4,
       colour_by = "group",
-      point_alpha = 1) +
+      point_alpha = 1,
+      point_size = 3,
+      show_violin = FALSE,
+      show_median = TRUE) +
       scale_colour_manual(values = group_colours, name = "group")
     print(p)
   }
