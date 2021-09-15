@@ -203,13 +203,13 @@ sce <- sce[rowSums(counts(sce)) > 0, ]
 library(tradeSeq)
 set.seed(666)
 # NOTE: Takes ~1 hour and can crash due to memory constraints.
-fit <- fitGAM(
-  counts(sce),
-  pseudotime = nonna.pseudo,
-  cellWeights = cell.weights,
-  parallel = TRUE,
-  BPPARAM = BiocParallel::MulticoreParam(4))
-saveRDS(fit, here("tmp/tradeSeq_fit.rds"))
+# fit <- fitGAM(
+#   counts(sce),
+#   pseudotime = nonna.pseudo,
+#   cellWeights = cell.weights,
+#   parallel = TRUE,
+#   BPPARAM = BiocParallel::MulticoreParam(4))
+# saveRDS(fit, here("tmp/tradeSeq_fit.rds"))
 fit <- readRDS(here("tmp/tradeSeq_fit.rds"))
 
 res <- associationTest(fit)
@@ -387,6 +387,7 @@ p1 <- plotReducedDim(
   point_alpha = 1) +
   scale_colour_manual(values = stage_colours, name = "stage")
   # ggtitle("Excluding 'Unknown'-stage cells")
+ggsave(here("tmp/Fig5a.pdf"), p1, width = 6, height = 5)
 
 p2 <- plotReducedDim(
   sce[, sce$stage != "Unknown"],
@@ -395,6 +396,7 @@ p2 <- plotReducedDim(
   point_alpha = 1) +
   scale_colour_manual(values = tissue_colours, name = "tissue")
   # ggtitle("Excluding 'Unknown'-stage cells")
+ggsave(here("tmp/Fig5b.pdf"), p2, width = 6, height = 5)
 
 p3 <- plotReducedDim(
   sce[, sce$stage != "Unknown"],
@@ -403,12 +405,13 @@ p3 <- plotReducedDim(
   point_alpha = 1) +
   geom_path(data = embedded, aes(x = Dim.1, y = Dim.2), size = 1.2)
   # ggtitle("Excluding 'Unknown'-stage cells")
+ggsave(here("tmp/Fig5c.pdf"), p3, width = 6, height = 5)
 
 p4 <- plotHeatmap(
   sce[, sce$stage != "Unknown"],
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
-  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 50),
+  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 100),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -419,8 +422,32 @@ p4 <- plotHeatmap(
     stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
     tissue = tissue_colours),
   silent = TRUE)
+ggsave(here("tmp/Fig5d.pdf"), p4$gtable, width = 6, height = 8)
+
+p4a <- plotHeatmap(
+  sce[, sce$stage != "Unknown"],
+  order_columns_by = c("stage", "slingPseudotime_1"),
+  colour_columns_by = c("stage", "slingPseudotime_1", "CD4", "CD161", "tissue"),
+  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 100),
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 5,
+  # main = "Excluding 'Unknown'-stage cells: Selected pseudotime-associated genes",
+  column_annotation_colors = list(
+    stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
+    tissue = tissue_colours),
+  silent = TRUE)
+ggsave(here("tmp/Fig5d_alternative.pdf"), p4a$gtable, width = 6, height = 8)
 
 p1 + p2 + p3 + p4$gtable +
+  plot_annotation(
+    title = "Summary of scRNA-seq data",
+    subtitle = "Excluding 'Unknown'-stage cells",
+    tag_levels = "a")
+
+p1 + p2 + p3 + p4a$gtable +
   plot_annotation(
     title = "Summary of scRNA-seq data",
     subtitle = "Excluding 'Unknown'-stage cells",
