@@ -148,6 +148,8 @@ For each analysis, shown are the number of genes that have sufficient counts to 
 
 ```{r}
 y_keep_exprs <- filterByExpr(y, group = y$samples$group, min.count = 5)
+# NOTE: Keep a copy of the unfiltered data for violin plots.
+y_ <- y
 y <- y[y_keep_exprs, , keep.lib.sizes = FALSE]
 table(y_keep_exprs)
 ```
@@ -886,21 +888,22 @@ pheatmap(
 ### Violin plots
 
 ```{r}
+y_ <- calcNormFactors(y_, method = "upperquartile")
 se <- SingleCellExperiment(
   assays = list(
-    logCPM = cpm(y, log = TRUE), 
+    logCPM = cpm(y_, log = TRUE), 
     `batch-corrected logCPM` = removeBatchEffect(
-    cpm(y, log = TRUE),
-    batch = y$samples$donor,
-    design = model.matrix(~group, y$samples))),
-  colData = y$samples,
-  rowData = y$genes)
+    cpm(y_, log = TRUE),
+    batch = y_$samples$donor,
+    design = model.matrix(~group, y_$samples))),
+  colData = y_$samples,
+  rowData = y_$genes)
 
 genes <- c(
   # TFs
   "BCL11B", "LEF1", "TBET" = "TBX21", "EOMES", 
   # Chemokines
-  "CCR5", "CCR9", "CXCR3", "CXCR6", "CCR6" = "CD196",
+  "CCR5", "CCR9", "CXCR3", "CXCR6", "CCR6",
   # Surface molecules
   "CD28", "CD44", "CD26" = "DPP4", "CD94" = "KLRD1", "IL18RAP",
   # Markers used for gating.
@@ -928,11 +931,12 @@ dir.create(file.path(outdir, "violin_plots"))
 genes_df <- data.frame(
   `Gene name supplied by Dan` = ifelse(names(genes) == "", genes, names(genes)),
   `Gene name in dataset` = unname(genes),
-  Detected = genes %in% rownames(y),
+  Detected = genes %in% rownames(y_),
+  Tested = genes %in% rownames(y),
   check.names = FALSE)
 knitr::kable(
   genes_df,
-  caption = "Genes requested by Dan for violin plots, their corresponding name in the dataset, and whether they are sufficiently expressed for DE analysis (`Detected`).")
+  caption = "Genes requested by Dan for violin plots, their corresponding name in the dataset, whether they are detected in the mini-bulk data (`Detected`), and whether they are sufficiently expressed to be tested in the DE analysis (`Tested`).")
 ```
 
 Figures \@ref(fig:dan-logcpm) and \@ref(fig:dan-batch-corrected-logcpm) show the expression of the `Detected` genes, either as $log(CPM)$ or as batch-corrected $log(CPM)$.
@@ -954,7 +958,7 @@ xaringanExtra::use_panelset()
 ```{r dan-logcpm, fig.cap = "Expression of Dan's requested genes."}
 scater::plotExpression(
   se,
-  features = intersect(genes_df$`Gene name in dataset`, rownames(y)),
+  features = intersect(genes_df$`Gene name in dataset`, rownames(se)),
   x = "group",
   exprs_values = "logCPM",
   scales = "free_y",
@@ -963,10 +967,12 @@ scater::plotExpression(
   point_alpha = 1) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
   scale_colour_manual(values = group_colours, name = "group")
+```
 
+```{r, results = "hide"}
 pdf(file.path(outdir, "violin_plots", "logCPM.pdf"), height = 5, width = 6)
 for (i in seq_len(nrow(genes_df))) {
-  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(y))
+  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(se))
   if (length(g)) {
     p <- scater::plotExpression(
       se,
@@ -995,7 +1001,7 @@ dev.off()
 ```{r dan-batch-corrected-logcpm, fig.cap = "Expression of Dan's requested genes."}
 scater::plotExpression(
   se,
-  features = intersect(genes_df$`Gene name in dataset`, rownames(y)),
+  features = intersect(genes_df$`Gene name in dataset`, rownames(se)),
   x = "group",
   exprs_values = "batch-corrected logCPM",
   scales = "free_y",
@@ -1004,13 +1010,15 @@ scater::plotExpression(
   point_alpha = 1) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
   scale_colour_manual(values = group_colours, name = "group")
+```
 
+```{r, results = "hide"}
 pdf(
   file.path(outdir, "violin_plots", "batch-corrected_logCPM.pdf"),
   height = 5, 
   width = 6)
 for (i in seq_len(nrow(genes_df))) {
-  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(y))
+  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(se))
   if (length(g)) {
     p <- scater::plotExpression(
       se,
