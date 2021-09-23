@@ -58,10 +58,6 @@ sce$sample_type <- factor(
     sce$sample_type == "99 cell" ~ "99 cells",
     TRUE ~ sce$sample_type),
   c("Single cell", "50 cells", "99 cells", "100 cells"))
-# TODO: Is this still required?
-# sce$sample_name <- factor(
-#   sce$sample_name,
-#   levels = c(paste("Blood", 1:5), paste("Thymus", 1:5), "Cell line"))
 colData(sce) <- DataFrame(
   endoapply(colData(sce), function(x) {
     if (is.character(x)) {
@@ -159,7 +155,7 @@ gate_to_stage_df <- data.frame(
 # Add `stage` to colData(sce).
 colData(sce) <- left_join(
   as.data.frame(colData(sce)),
-  select(sample_sheet_nn215, plate_number, well_position, post_hoc_sample_gate),
+  dplyr::select(sample_sheet_nn215, plate_number, well_position, post_hoc_sample_gate),
   by = c("plate_number", "well_position")) %>%
   mutate(
     sample_gate = factor(sample_gate, levels = c("P5", "P6", "P7", "P8", "NA")),
@@ -170,7 +166,7 @@ colData(sce) <- left_join(
   inner_join(
     gate_to_stage_df,
     by = c("post_hoc_sample_gate" = "gate")) %>%
-  select(
+  dplyr::select(
     plate_number, well_position, sample_type, sample_gate, sequencing_run, tissue, donor, stage, sample,
     unaligned, aligned_unmapped, mapped_to_exon, mapped_to_intron, ambiguous_mapping, mapped_to_ERCC, mapped_to_MT) %>%
   DataFrame(row.names = colnames(sce))
@@ -286,4 +282,3 @@ rownames(sce) <- uniquifyFeatureNames(
     }
   },
   character(1)))
-
