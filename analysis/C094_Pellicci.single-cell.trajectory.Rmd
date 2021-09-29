@@ -1,19 +1,34 @@
-# EDA of scRNA-seq trajectory analysis
-# Peter Hickey
-# 2021-09-09
+---
+title: "Trajectory analysis of the Pellicci gamma-delta T-cell single-cell data set"
+description: |
+author:
+  - name: Peter Hickey 
+    url: https://peterhickey.org
+    affiliation: Single Cell Open Research Endeavour (SCORE), WEHI
+    affiliation_url: https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+bibliography: ref.bib
+---
 
-# Setup ------------------------------------------------------------------------
+# Setup
 
+```{r}
 library(here)
 library(SingleCellExperiment)
 library(scater)
 library(patchwork)
+```
 
-# NOTE: Have to start from this object in order to have consistency with
-#       William's analyses.
+Need to start from this *SCE* object in order to have consistency with William's analyses.
+
+```{r}
 sce <- readRDS(
   here("data/SCEs/C094_Pellicci.single-cell.merged.whole_cell.SCE.rds"))
+```
 
+```{r}
 # Some useful gene sets
 mito_set <- rownames(sce)[any(rowData(sce)$ENSEMBL.SEQNAME == "MT")]
 ribo_set <- grep("^RP(S|L)", rownames(sce), value = TRUE)
@@ -30,23 +45,25 @@ pseudogene_set <- rownames(sce)[
   any(grepl("pseudogene", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
 protein_coding_gene_set <- rownames(sce)[
   any(grepl("protein_coding", rowData(sce)$ENSEMBL.GENEBIOTYPE))]
+```
 
-# Cluster-based minimum spanning tree ------------------------------------------
+# Obtaining pseudotime orderings
 
-# NOTE: Need more than the 'default' number of clusters to do something
-#       (potentially) interesting with TSCAN.
-set.seed(4759)
-snn_gr <- scran::buildSNNGraph(sce, use.dimred = "corrected", k = 10)
-clusters <- igraph::cluster_louvain(snn_gr)
-colLabels(sce) <- factor(clusters$membership)
+## Cluster-based minimum spanning tree
+
+Analysis using `r BiocStyle::Biocpkg("TSCAN")`; see [https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#cluster-based-minimum-spanning-tree](https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#cluster-based-minimum-spanning-tree) for inspiration.
+
+```{r, fig.asp = 0.7}
 plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster") +
-  plotReducedDim(sce, "UMAP_corrected", colour_by = "label") +
   plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue") +
-  plotReducedDim(sce, "UMAP_corrected", colour_by = "stage")
+  plotReducedDim(sce, "UMAP_corrected", colour_by = "stage") +
+  plot_layout(ncol = 2)
+```
 
+```{r}
 by.cluster <- aggregateAcrossCells(
   sce,
-  ids = colLabels(sce),
+  ids = sce$cluster,
   use_altexps = FALSE)
 centroids <- reducedDim(by.cluster, "corrected")
 
@@ -58,33 +75,48 @@ line.data <- reportEdges(
   mst = mst,
   clusters = NULL,
   use.dimred = "UMAP_corrected")
+```
 
-plotReducedDim(sce, "UMAP_corrected", colour_by = "label") +
+```{r, fig.asp = 0.8}
+plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster") +
   geom_line(data = line.data, mapping = aes(x = dim1, y = dim2, group = edge))
+```
 
-map.tscan <- mapCellsToEdges(sce, mst = mst, use.dimred = "corrected")
+```{r}
+map.tscan <- mapCellsToEdges(
+  sce,
+  mst = mst,
+  clusters = sce$cluster, 
+  use.dimred = "corrected")
 # NOTE: Manually set starting node using prior biological knowledge.
 tscan.pseudo <- orderCells(map.tscan, mst, start = "3")
-head(tscan.pseudo)
 
 # Taking the rowMeans just gives us a single pseudo-time for all cells. Cells
 # in segments that are shared across paths have the same pseudo-time value for
 # those paths anyway, so the rowMeans doesn't change anything.
 common.pseudo <- rowMeans(tscan.pseudo, na.rm = TRUE)
+```
+
+```{r, fig.asp = 0.8}
 plotReducedDim(
   sce,
   "UMAP_corrected",
   colour_by = I(common.pseudo),
-  text_by = "label",
+  text_by = "cluster",
   text_colour = "red") +
   geom_line(data = line.data, mapping = aes(x = dim1, y = dim2, group = edge))
+```
 
-# Summary: Forcing the pseudotime to respect the clusters seems suboptimal;
-# prefer the slingshot results which don't require this but recapitulates a
-# similar trajectory.
+Summary
 
-# Principal curves -------------------------------------------------------------
+- Forcing the pseudotime to respect the clusters seems suboptimal since the clusters themselves aren't that useful
+- Prefer the slingshot results which don't require this but does recapitulates a similar trajectory (see below)
 
+## Principal curves
+
+Analysis using `r BiocStyle::Biocpkg("slingshot")`; see [https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#principal-curves](https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#principal-curves) for inspiration.
+
+```{r, fig.asp = 0.7}
 library(slingshot)
 # NOTE: Can't directly use `slingshot(sce, reducedDim = "corrected")` because
 #       it gives an error:
@@ -102,7 +134,9 @@ sce <- slingshot(sce, reducedDim = "corrected_1")
 embedded <- embedCurves(sce, "UMAP_corrected")
 embedded <- slingCurves(embedded)[[1]] # only 1 path.
 embedded <- data.frame(embedded$s[embedded$ord, ])
+```
 
+```{r, fig.asp = 0.7}
 plotReducedDim(
   sce,
   dimred = "UMAP_corrected",
@@ -129,11 +163,16 @@ plotReducedDim(
     point_alpha = 1,
     point_size = 0.5) +
   plot_layout(ncol = 2)
+```
 
-# Changes along a trajectory ---------------------------------------------------
+# Changes along a trajectory
 
+## A simple method
+
+A simple method of testing for significant differences with respect to pseudotime, based on fitting linear models with a spline basis matrix, as implemented in `TSCAN::testPseudotime()`.
+
+```{r}
 pseudo <- testPseudotime(sce, pseudotime = sce$slingPseudotime_1)
-pseudo[order(pseudo$p.value), ]
 
 pseudo <- testPseudotime(
   sce,
@@ -142,55 +181,75 @@ pseudo <- testPseudotime(
   pseudotime = sce$slingPseudotime_1,
   block = sce$plate_number)
 sorted <- pseudo[order(pseudo$p.value), ]
+```
 
+Examples of genes upregulated at the beginning of pseudotime.
+
+```{r, fig.asp = 1}
 up.left <- sorted[sorted$logFC < 0,]
-head(up.left, 10)
-best <- head(rownames(up.left), 10)
+best <- head(rownames(up.left), 9)
 plotExpression(
   sce,
   features = best,
   x = "slingPseudotime_1",
-  # colour_by = "label",
   colour_by = "stage",
-  show_smooth = TRUE)
+  show_smooth = TRUE,
+  ncol = 3)
+```
 
-up.right <- sorted[sorted$logFC > 0,]
-head(up.right, 10)
-best <- head(rownames(up.right), 10)
-plotExpression(
-  sce,
-  features = best,
-  x = "slingPseudotime_1",
-  # colour_by = "label",
-  colour_by = "stage",
-  show_smooth = TRUE)
+Heatmap of some genes upregulated at the beginning of pseudotime.
 
+```{r, fig.asp = 1}
 plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
-  # colour_columns_by = "label",
-  colour_columns_by = c("stage", "tissue"),
-  features = head(rownames(up.right), 50),
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"))
-
-plotHeatmap(
-  sce,
-  order_columns_by = "slingPseudotime_1",
-  # colour_columns_by = "label",
   colour_columns_by = c("stage", "tissue"),
   features = head(rownames(up.left), 50),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"))
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 6)
+```
 
-# NOTE: Might need some filter on aveLogCPM to avoid genes for which only a
-#       handful of cells have non-zero expression.
+Examples of genes upregulated at the end of pseudotime.
 
-# tradeSeq ---------------------------------------------------------------------
+```{r, fig.asp = 1}
+up.right <- sorted[sorted$logFC > 0,]
+best <- head(rownames(up.right), 9)
+plotExpression(
+  sce,
+  features = best,
+  x = "slingPseudotime_1",
+  colour_by = "stage",
+  show_smooth = TRUE,
+  ncol = 3)
+```
+
+Heatmap of some genes upregulated at the end of pseudotime.
+
+```{r, fig.asp = 1}
+plotHeatmap(
+  sce,
+  order_columns_by = "slingPseudotime_1",
+  colour_columns_by = c("stage", "tissue"),
+  features = head(rownames(up.right), 50),
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 6)
+```
+
+Summary:
+
+- Might need some filter on `aveLogCPM` to avoid genes for which only a handful of cells have non-zero expression.
+
+## tradeSeq
+
+```{r}
+library(tradeSeq)
+dir.create(here("output/trajectory"))
 
 nonna.pseudo <- sce$slingPseudotime_1
 nonna.pseudo[is.na(nonna.pseudo)] <- 0
@@ -199,23 +258,31 @@ storage.mode(cell.weights) <- "numeric"
 
 # Remove genes with zero counts
 sce <- sce[rowSums(counts(sce)) > 0, ]
+```
 
-library(tradeSeq)
+```{r, eval = FALSE}
 set.seed(666)
 # NOTE: Takes ~1 hour and can crash due to memory constraints.
-# fit <- fitGAM(
-#   counts(sce),
-#   pseudotime = nonna.pseudo,
-#   cellWeights = cell.weights,
-#   parallel = TRUE,
-#   BPPARAM = BiocParallel::MulticoreParam(4))
-# saveRDS(fit, here("tmp/tradeSeq_fit.rds"))
-fit <- readRDS(here("tmp/tradeSeq_fit.rds"))
+fit <- fitGAM(
+  counts(sce),
+  pseudotime = nonna.pseudo,
+  cellWeights = cell.weights,
+  parallel = TRUE,
+  BPPARAM = BiocParallel::MulticoreParam(4))
+saveRDS(fit, here("output/trajectory/tradeSeq_fit.rds"))
+```
 
+```{r}
+fit <- readRDS(here("output/trajectory/tradeSeq_fit.rds"))
+```
+
+```{r}
 res <- associationTest(fit)
 res <- res[order(res$pvalue), ]
 res$FDR <- p.adjust(res$pvalue, method = "BH")
+```
 
+```{r, fig.asp = 1}
 plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
@@ -225,16 +292,22 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8)
+  fontsize = 6)
+```
 
+```{r}
 write.csv(
   res,
-  here("tmp/C094_Pellicci.tradeSeq_results.csv"),
+  here("output/trajectory/C094_Pellicci.tradeSeq_results.csv"),
   row.names = TRUE,
   quote = FALSE)
+```
 
-# Figures for paper ------------------------------------------------------------
+# Figures for paper
 
+Exact figure numbers may change.
+
+```{r}
 # Some useful colours
 plate_number_colours <- setNames(
   unique(sce$colours$plate_number_colours),
@@ -260,11 +333,16 @@ cluster_colours <- setNames(
   unique(sce$colours$cluster_colours),
   unique(names(sce$colours$cluster_colours)))
 cluster_colours <- cluster_colours[levels(sce$cluster)]
+```
 
+```{r}
 sce$CD4 <- assay(altExp(sce, "FACS"), "pseudolog")["V525_50_A_CD4_BV510", ]
 sce$CD161 <- assay(altExp(sce, "FACS"), "pseudolog")["B530_30_A_CD161_FITC", ]
+```
 
-# pdf()
+## Figure 5
+
+```{r, fig.asp = 0.8}
 plotReducedDim(
   sce,
   "UMAP_corrected",
@@ -272,7 +350,9 @@ plotReducedDim(
   point_alpha = 1) +
   scale_colour_manual(values = stage_colours, name = "stage") +
   ggtitle("All cells")
+```
 
+```{r, fig.asp = 0.8}
 plotReducedDim(
   sce,
   "UMAP_corrected",
@@ -280,7 +360,9 @@ plotReducedDim(
   point_alpha = 1) +
   scale_colour_manual(values = tissue_colours, name = "tissue") +
   ggtitle("All cells")
+```
 
+```{r, fig.asp = 0.8}
 plotReducedDim(
   sce,
   dimred = "UMAP_corrected",
@@ -288,7 +370,9 @@ plotReducedDim(
   point_alpha = 1) +
   geom_path(data = embedded, aes(x = Dim.1, y = Dim.2), size = 1.2) +
   ggtitle("All cells")
+```
 
+```{r, fig.asp = 1}
 plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
@@ -298,12 +382,14 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8,
+  fontsize = 6,
   main = "All cells: Selected pseudotime-associated genes",
   column_annotation_colors = list(
     stage = stage_colours,
     tissue = tissue_colours))
+```
 
+```{r, fig.asp = 0.8}
 plotReducedDim(
   sce[, sce$stage != "Unknown"],
   "UMAP_corrected",
@@ -311,7 +397,9 @@ plotReducedDim(
   point_alpha = 1) +
   scale_colour_manual(values = stage_colours, name = "stage") +
   ggtitle("Excluding 'Unknown'-stage cells")
+```
 
+```{r, fig.asp = 0.8}
 plotReducedDim(
   sce[, sce$stage != "Unknown"],
   "UMAP_corrected",
@@ -319,6 +407,9 @@ plotReducedDim(
   point_alpha = 1) +
   scale_colour_manual(values = tissue_colours, name = "tissue") +
   ggtitle("Excluding 'Unknown'-stage cells")
+```
+
+```{r, fig.asp = 0.8}
 
 plotReducedDim(
   sce[, sce$stage != "Unknown"],
@@ -327,7 +418,9 @@ plotReducedDim(
   point_alpha = 1) +
   geom_path(data = embedded, aes(x = Dim.1, y = Dim.2), size = 1.2) +
   ggtitle("Excluding 'Unknown'-stage cells")
+```
 
+```{r, fig.asp = 1}
 plotHeatmap(
   sce[, sce$stage != "Unknown"],
   order_columns_by = "slingPseudotime_1",
@@ -337,14 +430,19 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8,
+  fontsize = 6,
   main = "Excluding 'Unknown'-stage cells: Selected pseudotime-associated genes",
   column_annotation_colors = list(
     stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
     tissue = tissue_colours))
+```
 
-# Heatmaps sorted by CD4 and CD161 FACS expression " showing the DEGs across the gamma delta T cell stages ordered by decreasing either CD4 or KLRB1."
-# NOTE: This is an example but as I explained to dan I don't think these are very useful plots
+## DEG heatmaps
+
+Heatmaps sorted by CD4 and CD161 FACS expression "showing the DEGs across the gamma delta T cell stages ordered by decreasing either CD4 or KLRB1."
+This is an example, but, as I explained to Dan, I don't think these are very useful plots.
+
+```{r}
 tmp <- sce[, sce$group %in% c("Thymus.S1 (CD4+/CD161-)", "Thymus.S2 (CD4-/CD161-)", "Thymus.S3 (CD4-/CD161+)", "Blood.S3 (CD4-/CD161+)")]
 tmp$group <- factor(
   tmp$group,
@@ -352,7 +450,9 @@ tmp$group <- factor(
 
 x <- read.csv(
   here("output/DEGs/excluding_donors_1-3/Thymus.S3_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
+```
 
+```{r, fig.asp = 1}
 plotHeatmap(
   tmp,
   order_columns_by = c("group", "CD4"),
@@ -362,10 +462,12 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8,
+  fontsize = 6,
   main = "Mini-bulk DEGs: Thymus.S3 vs. Thymus.S1",
   column_annotation_colors = list(group = group_colours[levels(tmp$group)]))
+```
 
+```{r, fig.asp = 1}
 plotHeatmap(
   tmp,
   order_columns_by = c("group", "CD161"),
@@ -375,19 +477,23 @@ plotHeatmap(
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 8,
+  fontsize = 6,
   main = "Mini-bulk DEGs: Thymus.S3 vs. Thymus.S1",
   column_annotation_colors = list(group = group_colours[levels(tmp$group)]))
+```
 
-# Mock figure sent to Dan and co (2021-09-09).
+## Mock figure sent to Dan and co (2021-09-09)
+
+```{r}
+dir.create(here("output/figures"))
+
 p1 <- plotReducedDim(
   sce[, sce$stage != "Unknown"],
   "UMAP_corrected",
   colour_by = "stage",
   point_alpha = 1) +
   scale_colour_manual(values = stage_colours, name = "stage")
-  # ggtitle("Excluding 'Unknown'-stage cells")
-ggsave(here("tmp/Fig5a.pdf"), p1, width = 6, height = 5)
+ggsave(here("output/figures/Fig5a.pdf"), p1, width = 6, height = 5)
 
 p2 <- plotReducedDim(
   sce[, sce$stage != "Unknown"],
@@ -395,8 +501,7 @@ p2 <- plotReducedDim(
   colour_by = "tissue",
   point_alpha = 1) +
   scale_colour_manual(values = tissue_colours, name = "tissue")
-  # ggtitle("Excluding 'Unknown'-stage cells")
-ggsave(here("tmp/Fig5b.pdf"), p2, width = 6, height = 5)
+ggsave(here("output/figures/Fig5b.pdf"), p2, width = 6, height = 5)
 
 p3 <- plotReducedDim(
   sce[, sce$stage != "Unknown"],
@@ -404,8 +509,7 @@ p3 <- plotReducedDim(
   colour_by = "slingPseudotime_1",
   point_alpha = 1) +
   geom_path(data = embedded, aes(x = Dim.1, y = Dim.2), size = 1.2)
-  # ggtitle("Excluding 'Unknown'-stage cells")
-ggsave(here("tmp/Fig5c.pdf"), p3, width = 6, height = 5)
+ggsave(here("output/figures/Fig5c.pdf"), p3, width = 6, height = 5)
 
 p4 <- plotHeatmap(
   sce[, sce$stage != "Unknown"],
@@ -417,12 +521,11 @@ p4 <- plotHeatmap(
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
   fontsize = 5,
-  # main = "Excluding 'Unknown'-stage cells: Selected pseudotime-associated genes",
   column_annotation_colors = list(
     stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
     tissue = tissue_colours),
   silent = TRUE)
-ggsave(here("tmp/Fig5d.pdf"), p4$gtable, width = 6, height = 8)
+ggsave(here("output/figures/Fig5d.pdf"), p4$gtable, width = 6, height = 8)
 
 p4a <- plotHeatmap(
   sce[, sce$stage != "Unknown"],
@@ -439,16 +542,44 @@ p4a <- plotHeatmap(
     stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
     tissue = tissue_colours),
   silent = TRUE)
-ggsave(here("tmp/Fig5d_alternative.pdf"), p4a$gtable, width = 6, height = 8)
+ggsave(here("output/figures/Fig5d_alternative.pdf"), p4a$gtable, width = 6, height = 8)
+```
 
+Initial proposal:
+
+```{r, fig.asp = 1}
 p1 + p2 + p3 + p4$gtable +
   plot_annotation(
     title = "Summary of scRNA-seq data",
     subtitle = "Excluding 'Unknown'-stage cells",
     tag_levels = "a")
+```
 
+Alternative:
+
+```{r, fig.asp = 1}
 p1 + p2 + p3 + p4a$gtable +
   plot_annotation(
     title = "Summary of scRNA-seq data",
     subtitle = "Excluding 'Unknown'-stage cells",
     tag_levels = "a")
+```
+
+# Additional information {.appendix}
+
+The following are available on request:
+
+- Full CSV tables of any data presented.
+- PDF/PNG files of any static plots.
+
+# Session info {.appendix}
+
+<summary>The analysis and this document were prepared using the following software (click triangle to expand)</summary>
+<details>
+
+```{r}
+sessioninfo::session_info()
+```
+
+</details>
+
