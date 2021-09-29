@@ -91,8 +91,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2021-09-08"/>
-  <meta property="article:created" itemprop="dateCreated" content="2021-09-08"/>
+  <meta property="article:published" itemprop="datePublished" content="2021-09-29"/>
+  <meta property="article:created" itemprop="dateCreated" content="2021-09-29"/>
   <meta name="article:author" content="William Ho"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -111,7 +111,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Annotating Pellicci gamma-delta T-cell single-cell dataset (thymus.S1 and thymus.S2 only)"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-09-08"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","editor_options","bibliography"]}},"value":[{"type":"character","attributes":{},"value":["Annotating Pellicci gamma-delta T-cell single-cell dataset (thymus.S1 and thymus.S2 only)"]},{"type":"NULL"},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation","affiliation_url"]}},"value":[{"type":"character","attributes":{},"value":["William Ho"]},{"type":"character","attributes":{},"value":["Single Cell Open Research Endeavour (SCORE), WEHI"]},{"type":"character","attributes":{},"value":["https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility"]}]}]},{"type":"character","attributes":{},"value":["2021-09-29"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["chunk_output_type"]}},"value":[{"type":"character","attributes":{},"value":["console"]}]},{"type":"character","attributes":{},"value":["ref.bib"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2058,7 +2058,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Annotating Pellicci gamma-delta T-cell single-cell dataset (thymus.S1 and thymus.S2 only)","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-09-08T00:00:00.000+10:00","citationText":"Ho, 2021"}
+{"title":"Annotating Pellicci gamma-delta T-cell single-cell dataset (thymus.S1 and thymus.S2 only)","authors":[{"author":"William Ho","authorURL":"#","affiliation":"Single Cell Open Research Endeavour (SCORE), WEHI","affiliationURL":"https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility","orcidID":""}],"publishedDate":"2021-09-29T00:00:00.000+10:00","citationText":"Ho, 2021"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2117,6 +2117,7 @@ Annotating cells
 <a href="C094_Pellicci.single-cell.annotate.thymusS1_thymusS2_only.html">Single cell (thymus.S1 and thymus.S2 only)</a>
 </div>
 </div>
+<a href="C094_Pellicci.single-cell.trajectory.Rmd">Trajectory analysis</a>
 <div class="nav-dropdown">
 <button class="nav-dropbtn">
 Mini-bulk differential analyses
@@ -2164,7 +2165,7 @@ Supplementary files
 <div class="d-byline">
   William Ho  (Single Cell Open Research Endeavour (SCORE), WEHI)<a href="https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility" class="uri">https://www.wehi.edu.au/people/rory-bowden/4536/wehi-advanced-genomics-facility</a>
   
-<br/>2021-09-08
+<br/>2021-09-29
 </div>
 
 <div class="d-article">
@@ -3332,7 +3333,7 @@ Show code
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Australia/Melbourne         
- date     2021-09-08                  
+ date     2021-09-29                  
 
 ─ Packages ─────────────────────────────────────────────────────────
  ! package              * version  date       lib
@@ -3381,7 +3382,7 @@ Show code
  P geneplotter            1.68.0   2020-10-27 [?]
  P generics               0.1.0    2020-10-31 [?]
  P GenomeInfoDb         * 1.26.4   2021-03-10 [?]
- P GenomeInfoDbData       1.2.4    2020-12-07 [?]
+ P GenomeInfoDbData       1.2.4    2020-10-20 [?]
  P GenomicRanges        * 1.42.0   2020-10-27 [?]
  P ggbeeswarm             0.6.0    2017-08-07 [?]
  P ggplot2              * 3.3.3    2020-12-30 [?]
@@ -3391,7 +3392,7 @@ Show code
  P gridExtra              2.3      2017-09-09 [?]
  P gtable                 0.3.0    2019-03-25 [?]
  P here                 * 1.0.1    2020-12-13 [?]
-   highr                  0.9      2021-04-16 [1]
+ P highr                  0.9      2021-04-16 [?]
  P htmltools              0.5.1.1  2021-01-22 [?]
  P htmlwidgets            1.5.3    2020-12-10 [?]
  P httr                   1.4.2    2020-07-20 [?]
@@ -3401,15 +3402,15 @@ Show code
  P janitor              * 2.1.0    2021-01-05 [?]
  P jquerylib              0.1.3    2020-12-17 [?]
  P jsonlite               1.7.2    2020-12-09 [?]
-   knitr                  1.33     2021-04-24 [1]
+ P knitr                  1.33     2021-04-24 [?]
  P labeling               0.4.2    2020-10-20 [?]
-   lattice                0.20-41  2020-04-02 [2]
+ P lattice                0.20-41  2020-04-02 [3]
  P lifecycle              1.0.0    2021-02-15 [?]
  P limma                * 3.46.0   2020-10-27 [?]
  P locfit                 1.5-9.4  2020-03-25 [?]
  P lubridate              1.7.10   2021-02-26 [?]
  P magrittr             * 2.0.1    2020-11-17 [?]
-   Matrix                 1.2-18   2019-11-27 [2]
+ P Matrix                 1.2-18   2019-11-27 [3]
  P MatrixGenerics       * 1.2.1    2021-01-30 [?]
  P matrixStats          * 0.58.0   2021-01-29 [?]
  P memoise                2.0.0    2021-01-26 [?]
@@ -3429,7 +3430,7 @@ Show code
  P RCurl                  1.98-1.3 2021-03-16 [?]
  P readxl               * 1.3.1    2019-03-13 [?]
  P ResidualMatrix         1.0.0    2020-10-27 [?]
-   rlang                  0.4.11   2021-04-30 [1]
+ P rlang                  0.4.11   2021-04-30 [?]
  P rmarkdown            * 2.7      2021-02-19 [?]
  P rprojroot              2.0.2    2020-11-15 [?]
  P RSQLite                2.2.5    2021-03-27 [?]
@@ -3445,10 +3446,10 @@ Show code
  P snakecase              0.11.0   2019-05-25 [?]
  P sparseMatrixStats      1.2.1    2021-02-02 [?]
  P statmod                1.4.35   2020-10-19 [?]
-   stringi                1.7.3    2021-07-16 [1]
+ P stringi                1.7.3    2021-07-16 [?]
  P stringr                1.4.0    2019-02-10 [?]
  P SummarizedExperiment * 1.20.0   2020-10-27 [?]
-   survival               3.2-7    2020-09-28 [2]
+ P survival               3.2-7    2020-09-28 [3]
  P tibble                 3.1.0    2021-02-25 [?]
  P tidyr                * 1.1.3    2021-03-03 [?]
  P tidyselect             1.1.0    2020-05-11 [?]
@@ -3458,8 +3459,8 @@ Show code
  P viridis                0.5.1    2018-03-29 [?]
  P viridisLite            0.3.0    2018-02-01 [?]
  P withr                  2.4.1    2021-01-26 [?]
-   xaringanExtra          0.5.4    2021-07-22 [1]
-   xfun                   0.24     2021-06-15 [1]
+ P xaringanExtra          0.5.4    2021-08-04 [?]
+ P xfun                   0.24     2021-06-15 [?]
  P XML                    3.99-0.6 2021-03-16 [?]
  P xtable                 1.8-4    2019-04-21 [?]
  P XVector                0.30.0   2020-10-27 [?]
@@ -3471,7 +3472,7 @@ Show code
  CRAN (R 4.0.0)                          
  Bioconductor                            
  Bioconductor                            
- CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
  Bioconductor                            
  Bioconductor                            
  CRAN (R 4.0.3)                          
@@ -3484,88 +3485,88 @@ Show code
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  Bioconductor                            
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ Bioconductor                            
+ Bioconductor                            
+ Bioconductor                            
+ CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.0)                          
+ Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ Bioconductor                            
+ Bioconductor                            
+ CRAN (R 4.0.3)                          
+ Bioconductor                            
+ Bioconductor                            
+ Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.2)                          
+ Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
+ Bioconductor                            
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.3)                          
  CRAN (R 4.0.2)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
- Bioconductor                            
- Bioconductor                            
- Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.0)                          
- Bioconductor                            
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
- Bioconductor                            
- Bioconductor                            
+ CRAN (R 4.0.0)                          
+ CRAN (R 4.0.3)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  Bioconductor                            
- Bioconductor                            
- Bioconductor                            
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.2)                          
  CRAN (R 4.0.5)                          
- Bioconductor                            
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
  CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- Bioconductor                            
- CRAN (R 4.0.0)                          
  CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.3)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
- Bioconductor                            
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.3)                          
- Bioconductor                            
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.0)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.5)                          
- CRAN (R 4.0.0)                          
- Bioconductor                            
- CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
- CRAN (R 4.0.2)                          
  CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  Bioconductor                            
- CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  Bioconductor                            
  Bioconductor                            
@@ -3574,30 +3575,31 @@ Show code
  Bioconductor                            
  CRAN (R 4.0.0)                          
  Bioconductor                            
- CRAN (R 4.0.0)                          
+ CRAN (R 4.0.2)                          
  CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  Bioconductor                            
  CRAN (R 4.0.3)                          
- CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
- CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
  CRAN (R 4.0.0)                          
- CRAN (R 4.0.2)                          
+ CRAN (R 4.0.3)                          
  Github (gadenbuie/xaringanExtra@5e2d80b)
  CRAN (R 4.0.3)                          
- CRAN (R 4.0.5)                          
+ CRAN (R 4.0.3)                          
  CRAN (R 4.0.0)                          
  Bioconductor                            
  CRAN (R 4.0.0)                          
  Bioconductor                            
 
-[1] /stornext/Home/data/allstaff/h/ho.w/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
-[2] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
+[1] /stornext/Projects/score/Analyses/C094_Pellicci/renv/library/R-4.0/x86_64-pc-linux-gnu
+[2] /tmp/RtmpP41dVI/renv-system-library
+[3] /stornext/System/data/apps/R/R-4.0.3/lib64/R/library
 
  P ── Loaded and on-disk path mismatch.</code></pre>
 </div>

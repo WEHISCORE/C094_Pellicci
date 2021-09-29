@@ -33,7 +33,7 @@ source(here("code", "helper_functions.R"))
 # NOTE: Using multiple cores seizes up my laptop. Can use more on unix box.
 options("mc.cores" = ifelse(Sys.info()[["nodename"]] == "PC1331", 2L, 8L))
 register(MulticoreParam(workers = getOption("mc.cores")))
-knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.merge.thymus.S1_thymus.S2_only_files/")
+knitr::opts_chunk$set(fig.path = "C094_Pellicci.single-cell.merge.thymusS1_thymusS2_only_files/")
 ```
 
 ```{r}
