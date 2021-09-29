@@ -15,10 +15,10 @@ bibliography: ref.bib
 
 # Overview
 
-In this analysis, we study a dataset of human gamma-delta T cells collected by FACS gating on CD4 and CD161.
-This dataset were assayed on four 384-well plates using the CEL-Seq2 scRNA-seq platform.
+Analysis accompanying paper '**Human Vγ9Vδ2+ T cells develop within the postnatal thymus via a three-stage pathway defined by distinct molecular and cellular changes**'.
+Please see [https://wehiscore.github.io/C094_Pellicci](https://wehiscore.github.io/C094_Pellicci) for the HTML version of this analysis report.
 
-After sequencing, expression was quantified by counting the number of UMIs mapped to each gene using scPipe [@tian2018scpipe].
+After sequencing, expression was quantified by counting the number of UMIs mapped to each gene using scPipe [@tian2018scpipe]; see [`code/scPipe.R`](../code/scPipe.R).
 Count data for all endogenous genes (GENCODE Release vM18: GRCm38.p6) and spike-in transcripts (ERCC) are available in this repository.
 
 This analysis is adapted from the `r BiocStyle::Biocpkg("simpleSingleCell")` workflow as well as the [**Orchestrating Single-Cell Analysis with Bioconductor book**](https://osca.bioconductor.org).
