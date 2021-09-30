@@ -1144,15 +1144,15 @@ msigdb <- do.call(
   c, 
   list(
     H = readRDS(
-      bfcadd(
+      bfcrpath(
         bfc,
         "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.h.all.v7.1.entrez.rds")),
     C2 = readRDS(
-      bfcadd(
+      bfcrpath(
         bfc, 
         "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c2.all.v7.1.entrez.rds")),
     C7 = readRDS(
-      bfcadd(
+      bfcrpath(
         bfc, 
         "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c7.all.v7.1.entrez.rds"))))
 
