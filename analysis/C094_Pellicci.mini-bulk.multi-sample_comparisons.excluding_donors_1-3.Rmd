@@ -464,6 +464,164 @@ colnames(y_design) <- sub(
   colnames(y_design))
 ```
 
+## Violin plots
+
+```{r}
+y_ <- calcNormFactors(y_, method = "upperquartile")
+se <- SingleCellExperiment(
+  assays = list(
+    logCPM = cpm(y_, log = TRUE), 
+    `batch-corrected logCPM` = removeBatchEffect(
+    cpm(y_, log = TRUE),
+    batch = y_$samples$donor,
+    design = model.matrix(~group, y_$samples))),
+  colData = y_$samples,
+  rowData = y_$genes)
+
+genes <- c(
+  # TFs
+  "BCL11B", "LEF1", "TBET" = "TBX21", "EOMES", 
+  # Chemokines
+  "CCR5", "CCR9", "CXCR3", "CXCR6", "CCR6",
+  # Surface molecules
+  "CD28", "CD44", "CD26" = "DPP4", "CD94" = "KLRD1", "IL18RAP",
+  # Markers used for gating.
+  "CD4", "CD161" = "KLRB1")
+
+# NOTE: Dan requested particular group colours (email 2021-09-07). I manually 
+#       matched these colours to the examples in figure Dan sent.
+group_colours <- c(
+  "Thymus.S1" = "#3954a1", 
+  "Thymus.S2" = "#94c643",
+  "Thymus.S3" = "#ec2327",
+  "Blood.S3" = "#6a539f")
+```
+
+Dan requested violin plots of specific genes (email 2021-08-12), listed below.
+I've added in *CD4* and *KLRB1* (*CD161*) for good measure.
+
+<aside>
+PDF versions of these figures are available in [`output/DEGs/excluding_donors_1-3/violin_plots/logCPM.pdf`](../output/DEGs/excluding_donors_1-3/violin_plots/logCPM.pdf) and [`output/DEGs/excluding_donors_1-3/violin_plots/batch-corrected_logCPM.pdf`](../output/DEGs/excluding_donors_1-3/violin_plots/batch-corrected_logCPM.pdf).
+</aside>
+
+```{r}
+dir.create(file.path(outdir, "violin_plots"))
+
+genes_df <- data.frame(
+  `Gene name supplied by Dan` = ifelse(names(genes) == "", genes, names(genes)),
+  `Gene name in dataset` = unname(genes),
+  Detected = genes %in% rownames(y_),
+  Tested = genes %in% rownames(y),
+  check.names = FALSE)
+knitr::kable(
+  genes_df,
+  caption = "Genes requested by Dan for violin plots, their corresponding name in the dataset, whether they are detected in the mini-bulk data (`Detected`), and whether they are sufficiently expressed to be tested in the DE analysis (`Tested`).")
+```
+
+Figures \@ref(fig:dan-logcpm) and \@ref(fig:dan-batch-corrected-logcpm) show the expression of the `Detected` genes, either as $log(CPM)$ or as batch-corrected $log(CPM)$.
+
+```{r, echo = FALSE}
+# NOTE: The following is a workaround to the lack of support for tabsets in 
+#       distill (see https://github.com/rstudio/distill/issues/11 and 
+#       https://github.com/rstudio/distill/issues/11#issuecomment-692142414 in 
+#       particular).
+xaringanExtra::use_panelset()
+```
+
+::::: {.panelset}
+
+::: {.panel}
+
+### logCPM {.panel-name}
+
+```{r dan-logcpm, fig.cap = "Expression of Dan's requested genes."}
+scater::plotExpression(
+  se,
+  features = intersect(genes_df$`Gene name in dataset`, rownames(se)),
+  x = "group",
+  exprs_values = "logCPM",
+  scales = "free_y",
+  ncol = 4,
+  colour_by = "group",
+  point_alpha = 1) +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
+  scale_colour_manual(values = group_colours, name = "group")
+```
+
+```{r, results = "hide"}
+pdf(file.path(outdir, "violin_plots", "logCPM.pdf"), height = 5, width = 6)
+for (i in seq_len(nrow(genes_df))) {
+  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(se))
+  if (length(g)) {
+    p <- scater::plotExpression(
+      se,
+      features = g,
+      x = "group",
+      exprs_values = "logCPM",
+      colour_by = "group",
+      point_alpha = 1,
+      point_size = 3,
+      show_violin = FALSE,
+      show_median = TRUE) +
+      scale_colour_manual(values = group_colours, name = "group")
+    print(p)
+  }
+}
+dev.off()
+```
+
+:::
+
+::: {.panel}
+
+### Batch-corrected logCPM {.panel-name}
+
+```{r dan-batch-corrected-logcpm, fig.cap = "Expression of Dan's requested genes."}
+scater::plotExpression(
+  se,
+  features = intersect(genes_df$`Gene name in dataset`, rownames(se)),
+  x = "group",
+  exprs_values = "batch-corrected logCPM",
+  scales = "free_y",
+  ncol = 4,
+  colour_by = "group",
+  point_alpha = 1) +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
+  scale_colour_manual(values = group_colours, name = "group")
+```
+
+```{r, results = "hide"}
+pdf(
+  file.path(outdir, "violin_plots", "batch-corrected_logCPM.pdf"),
+  height = 5, 
+  width = 6)
+for (i in seq_len(nrow(genes_df))) {
+  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(se))
+  if (length(g)) {
+    p <- scater::plotExpression(
+      se,
+      features = g,
+      x = "group",
+      exprs_values = "batch-corrected logCPM",
+      scales = "free_y",
+      ncol = 4,
+      colour_by = "group",
+      point_alpha = 1,
+      point_size = 3,
+      show_violin = FALSE,
+      show_median = TRUE) +
+      scale_colour_manual(values = group_colours, name = "group")
+    print(p)
+  }
+}
+dev.off()
+```
+
+:::
+
+:::::
+
+
 ## DE analysis
 
 Fit a model using `r BiocStyle::Biocpkg("edgeR")` with a term for `group` and `donor`.
@@ -882,61 +1040,184 @@ pheatmap(
 
 :::::
 
-### Violin plots
+## Gene set tests
 
-```{r}
-y_ <- calcNormFactors(y_, method = "upperquartile")
-se <- SingleCellExperiment(
-  assays = list(
-    logCPM = cpm(y_, log = TRUE), 
-    `batch-corrected logCPM` = removeBatchEffect(
-    cpm(y_, log = TRUE),
-    batch = y_$samples$donor,
-    design = model.matrix(~group, y_$samples))),
-  colData = y_$samples,
-  rowData = y_$genes)
+Gene set testing is commonly used to interpret the differential expression results in
+a biological context.
+Here we apply various gene set tests to the DEG lists.
 
-genes <- c(
-  # TFs
-  "BCL11B", "LEF1", "TBET" = "TBX21", "EOMES", 
-  # Chemokines
-  "CCR5", "CCR9", "CXCR3", "CXCR6", "CCR6",
-  # Surface molecules
-  "CD28", "CD44", "CD26" = "DPP4", "CD94" = "KLRD1", "IL18RAP",
-  # Markers used for gating.
-  "CD4", "CD161" = "KLRB1")
+### goana
 
-# NOTE: Dan requested particular group colours (email 2021-09-07). I manually 
-#       matched these colours to the examples in figure Dan sent.
-group_colours <- c(
-  "Thymus.S1" = "#3954a1", 
-  "Thymus.S2" = "#94c643",
-  "Thymus.S3" = "#ec2327",
-  "Blood.S3" = "#6a539f")
+We use the `goana()` function from the `r BiocStyle::Biocpkg("limma")` R/Bioconductor package to test for over-representation of gene ontology (GO) terms in each DEG list.
+
+```{r, results = "hide"}
+list_of_go <- lapply(colnames(y_contrast), function(j) {
+  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+  
+  go <- goana(
+    de = dgelrt,
+    geneid = sapply(strsplit(dgelrt$genes$NCBI.ENTREZID, ","), "[[", 1),
+    species = "Hs")
+  gzout <- gzfile(
+    description = file.path(
+      outdir,
+      paste0(j, ".aggregated_tech_reps.goana.csv.gz")),
+    open = "wb")
+  write.csv(
+    topGO(go, number = Inf),
+    gzout,
+    row.names = TRUE)
+  close(gzout)
+  go
+})
+names(list_of_go) <- colnames(y_contrast)
 ```
 
-Dan requested violin plots of specific genes (email 2021-08-12), listed below.
-I've added in *CD4* and *KLRB1* (*CD161*) for good measure.
+CSV files of the results are available from [`output/DEGs/excluding_donors_1-3/`](../output/DEGs/excluding_donors_1-3/).
+
+An example of the results are shown below.
+
+```{r}
+topGO(list_of_go[[1]]) %>%
+  knitr::kable(
+    caption = '`goana()` produces a table with a row for each GO term and the following columns: **Term** (GO term); **Ont** (ontology that the GO term belongs to. Possible values are "BP", "CC" and "MF"); **N** (number of genes in the GO term); **Up** (number of up-regulated differentially expressed genes); **Down** (number of down-regulated differentially expressed genes); **P.Up** (p-value for over-representation of GO term in up-regulated genes); **P.Down** (p-value for over-representation of GO term in down-regulated genes)')
+```
+
+### kegga
+
+We use the `kegga()` function from the `r BiocStyle::Biocpkg("limma")` R/Bioconductor package to test for over-representation of KEGG pathways in each DEG list.
+
+```{r, results = "hide"}
+list_of_kegg <- lapply(colnames(y_contrast), function(j) {
+  dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+  
+  kegg <- kegga(
+    de = dgelrt,
+    geneid = sapply(strsplit(dgelrt$genes$NCBI.ENTREZID, ","), "[[", 1),
+    species = "Hs")
+  gzout <- gzfile(
+    description = file.path(
+      outdir,
+      paste0(j, ".aggregated_tech_reps.kegga.csv.gz")),
+    open = "wb")
+  write.csv(
+    topKEGG(kegg, number = Inf),
+    gzout,
+    row.names = TRUE)
+  close(gzout)
+  kegg
+})
+names(list_of_kegg) <- colnames(y_contrast)
+```
+
+CSV files of the results are available from [`output/DEGs/excluding_donors_1-3/`](../output/DEGs/excluding_donors_1-3/).
+
+An example of the results are shown below.
+
+```{r}
+topKEGG(list_of_kegg[[1]]) %>%
+  knitr::kable(
+    caption = '`kegga()` produces a table with a row for each KEGG pathway ID and the following columns: **Pathway** (KEGG pathway); **N** (number of genes in the GO term); **Up** (number of up-regulated differentially expressed genes); **Down** (number of down-regulated differentially expressed genes); **P.Up** (p-value for over-representation of KEGG pathway in up-regulated genes); **P.Down** (p-value for over-representation of KEGG pathway in down-regulated genes)')
+```
+
+### camera with MSigDB gene sets
+
+We use the `camera()` function from the `r BiocStyle::Biocpkg("limma")` R/Bioconductor package to test whether a set of genes is highly ranked relative to other genes in terms of differential expression, accounting for inter-gene correlation.
+Specifically, we test using gene sets from [MSigDB](https://www.gsea-msigdb.org/gsea/msigdb), namely:
 
 <aside>
-PDF versions of these figures are available in [`output/DEGs/excluding_donors_1-3/violin_plots/logCPM.pdf`](../output/DEGs/excluding_donors_1-3/violin_plots/logCPM.pdf) and [`output/DEGs/excluding_donors_1-3/violin_plots/batch-corrected_logCPM.pdf`](../output/DEGs/excluding_donors_1-3/violin_plots/batch-corrected_logCPM.pdf).
+We download these gene sets from [http://bioinf.wehi.edu.au/MSigDB/index.html](http://bioinf.wehi.edu.au/MSigDB/index.html)
 </aside>
 
-```{r}
-dir.create(file.path(outdir, "violin_plots"))
+- **H**: **hallmark gene sets** are coherently expressed signatures derived by aggregating many MSigDB gene sets to represent well-defined biological states or processes.
+- **C2**: **curated gene sets** from online pathway databases, publications in PubMed, and knowledge of domain experts.
+- **C7**: **immunologic signature gene sets** represent cell states and perturbations within the immune system.
 
-genes_df <- data.frame(
-  `Gene name supplied by Dan` = ifelse(names(genes) == "", genes, names(genes)),
-  `Gene name in dataset` = unname(genes),
-  Detected = genes %in% rownames(y_),
-  Tested = genes %in% rownames(y),
-  check.names = FALSE)
-knitr::kable(
-  genes_df,
-  caption = "Genes requested by Dan for violin plots, their corresponding name in the dataset, whether they are detected in the mini-bulk data (`Detected`), and whether they are sufficiently expressed to be tested in the DE analysis (`Tested`).")
+```{r}
+# NOTE: Using BiocFileCache to avoid re-downloading these gene sets everytime 
+#       the report is rendered.
+library(BiocFileCache)
+bfc <- BiocFileCache()
+# NOTE: Creating list of gene sets in this slightly convoluted way so that each 
+#       gene set name is prepended by its origin (e.g. H, C2, or C7).
+msigdb <- do.call(
+  c, 
+  list(
+    H = readRDS(
+      bfcadd(
+        bfc,
+        "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.h.all.v7.1.entrez.rds")),
+    C2 = readRDS(
+      bfcadd(
+        bfc, 
+        "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c2.all.v7.1.entrez.rds")),
+    C7 = readRDS(
+      bfcadd(
+        bfc, 
+        "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c7.all.v7.1.entrez.rds"))))
+
+y_idx <- ids2indices(
+  msigdb, 
+  id = sapply(strsplit(y$genes$NCBI.ENTREZID, ","), "[[", 1))
+list_of_camera <- lapply(colnames(y_contrast), function(j) {
+  cam <- camera(
+    y = y, 
+    index = y_idx,
+    design = y_design, 
+    contrast = y_contrast[, j])
+  gzout <- gzfile(
+    description = file.path(
+      outdir,
+      paste0(j, ".aggregated_tech_reps.camera.csv.gz")),
+    open = "wb")
+  write.csv(
+    cam,
+    gzout,
+    row.names = TRUE)
+  close(gzout)
+  cam
+})
 ```
 
-Figures \@ref(fig:dan-logcpm) and \@ref(fig:dan-batch-corrected-logcpm) show the expression of the `Detected` genes, either as $log(CPM)$ or as batch-corrected $log(CPM)$.
+CSV files of the results are available from [`output/DEGs/excluding_donors_1-3/`](../output/DEGs/excluding_donors_1-3/).
+
+An example of the results are shown below.
+
+```{r}
+head(list_of_camera[[1]]) %>%
+  knitr::kable(
+    caption = '`camera()` produces a table with a row for each gene set (prepended by which MSigDB collection it comes from) and the following columns: **NGenes** (number of genes in set); **Direction** (direction of change); **PValue** (two-tailed p-value); **FDR** (Benjamini and Hochberg FDR adjusted p-value).')
+```
+
+### Dan's gene lists
+
+```{r}
+dan <- list(
+  `SLAM-SAP-FYN pathway` = 
+    c("SLAMF1", "SLAMF2" = "CD48", "SLAMF3" = "LY9", "SLAMF4" = "CD244", "SLAMF5" = "CD84", "SLAMF6", "SLAMF7", "SLAMF8", "SLAMF9", "FYN", "SAP" = "SH2D1A"))
+y_index <- ids2indices(dan, rownames(y))
+```
+
+Dan requested testing if the 'SLAM-SAP-FYN pathway' was differentially expressed in each comparison.
+Genes in this pathway are listed below.
+
+```{r}
+dan_df <- data.frame(
+  `Gene name supplied by Dan` = unname(
+    ifelse(
+      unlist(lapply(dan, names)) == "", 
+      unlist(dan), 
+      unlist(lapply(dan, names)))),
+  `Gene name in dataset` = unname(unlist(dan)),
+  Detected = unlist(dan) %in% rownames(y_),
+  Tested = unlist(dan) %in% rownames(y),
+  check.names = FALSE)
+knitr::kable(
+  dan_df,
+  caption = "Genes in 'SLAM-SAP-FYN' pathway requested by Dan for gene set analysis, their corresponding name in the dataset, whether they are detected in the mini-bulk data (`Detected`), and whether they are sufficiently expressed to be tested in the DE analysis (`Tested`).")
+```
+
+We use the `fry()` function from the `r BiocStyle::Biocpkg("edgeR")` R/Bioconductor package to perform a self-contained gene set test against the null hypothesis that none of the genes in the set are differentially expressed.
 
 ```{r, echo = FALSE}
 # NOTE: The following is a workaround to the lack of support for tabsets in 
@@ -950,95 +1231,111 @@ xaringanExtra::use_panelset()
 
 ::: {.panel}
 
-#### logCPM {.panel-name}
+#### `Thymus.S3_vs_Thymus.S1` {.panel-name}
 
-```{r dan-logcpm, fig.cap = "Expression of Dan's requested genes."}
-scater::plotExpression(
-  se,
-  features = intersect(genes_df$`Gene name in dataset`, rownames(se)),
-  x = "group",
-  exprs_values = "logCPM",
-  scales = "free_y",
-  ncol = 4,
-  colour_by = "group",
-  point_alpha = 1) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
-  scale_colour_manual(values = group_colours, name = "group")
-```
-
-```{r, results = "hide"}
-pdf(file.path(outdir, "violin_plots", "logCPM.pdf"), height = 5, width = 6)
-for (i in seq_len(nrow(genes_df))) {
-  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(se))
-  if (length(g)) {
-    p <- scater::plotExpression(
-      se,
-      features = g,
-      x = "group",
-      exprs_values = "logCPM",
-      colour_by = "group",
-      point_alpha = 1,
-      point_size = 3,
-      show_violin = FALSE,
-      show_median = TRUE) +
-      scale_colour_manual(values = group_colours, name = "group")
-    print(p)
-  }
-}
-dev.off()
+```{r}
+j <- "Thymus.S3_vs_Thymus.S1"
+fry(
+  y,
+  index = y_index,
+  design = y_design,
+  contrast = y_contrast[, j]) %>%
+  knitr::kable(
+    caption = "Results of applying `fry()` to the RNA-seq differential expression results using the supplied gene sets. A significant 'Up' P-value means that the differential expression results found in the RNA-seq data are positively correlated with the expression signature from the corresponding gene set. Conversely, a significant 'Down' P-value means that the differential expression log-fold-changes are negatively correlated with the expression signature from the corresponding gene set. A significant 'Mixed' P-value means that the genes in the set tend to be differentially expressed without regard for direction.")
 ```
 
 :::
 
 ::: {.panel}
 
-#### Batch-corrected logCPM {.panel-name}
+#### `Thymus.S2_vs_Thymus.S1` {.panel-name}
 
-
-```{r dan-batch-corrected-logcpm, fig.cap = "Expression of Dan's requested genes."}
-scater::plotExpression(
-  se,
-  features = intersect(genes_df$`Gene name in dataset`, rownames(se)),
-  x = "group",
-  exprs_values = "batch-corrected logCPM",
-  scales = "free_y",
-  ncol = 4,
-  colour_by = "group",
-  point_alpha = 1) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
-  scale_colour_manual(values = group_colours, name = "group")
+```{r}
+j <- "Thymus.S2_vs_Thymus.S1"
+fry(
+  y,
+  index = y_index,
+  design = y_design,
+  contrast = y_contrast[, j]) %>%
+  knitr::kable(
+    caption = "Results of applying `fry()` to the RNA-seq differential expression results using the supplied gene sets. A significant 'Up' P-value means that the differential expression results found in the RNA-seq data are positively correlated with the expression signature from the corresponding gene set. Conversely, a significant 'Down' P-value means that the differential expression log-fold-changes are negatively correlated with the expression signature from the corresponding gene set. A significant 'Mixed' P-value means that the genes in the set tend to be differentially expressed without regard for direction.")
 ```
 
-```{r, results = "hide"}
-pdf(
-  file.path(outdir, "violin_plots", "batch-corrected_logCPM.pdf"),
-  height = 5, 
-  width = 6)
-for (i in seq_len(nrow(genes_df))) {
-  g <- intersect(genes_df$`Gene name in dataset`[i], rownames(se))
-  if (length(g)) {
-    p <- scater::plotExpression(
-      se,
-      features = g,
-      x = "group",
-      exprs_values = "batch-corrected logCPM",
-      scales = "free_y",
-      ncol = 4,
-      colour_by = "group",
-      point_alpha = 1,
-      point_size = 3,
-      show_violin = FALSE,
-      show_median = TRUE) +
-      scale_colour_manual(values = group_colours, name = "group")
-    print(p)
-  }
-}
-dev.off()
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Thymus.S2` {.panel-name}
+
+```{r}
+j <- "Thymus.S3_vs_Thymus.S2"
+fry(
+  y,
+  index = y_index,
+  design = y_design,
+  contrast = y_contrast[, j]) %>%
+  knitr::kable(
+    caption = "Results of applying `fry()` to the RNA-seq differential expression results using the supplied gene sets. A significant 'Up' P-value means that the differential expression results found in the RNA-seq data are positively correlated with the expression signature from the corresponding gene set. Conversely, a significant 'Down' P-value means that the differential expression log-fold-changes are negatively correlated with the expression signature from the corresponding gene set. A significant 'Mixed' P-value means that the genes in the set tend to be differentially expressed without regard for direction.")
+```
+
+:::
+
+::: {.panel}
+
+#### `Thymus.S3_vs_Blood.S3` {.panel-name}
+
+```{r}
+j <- "Thymus.S3_vs_Blood.S3"
+fry(
+  y,
+  index = y_index,
+  design = y_design,
+  contrast = y_contrast[, j]) %>%
+  knitr::kable(
+    caption = "Results of applying `fry()` to the RNA-seq differential expression results using the supplied gene sets. A significant 'Up' P-value means that the differential expression results found in the RNA-seq data are positively correlated with the expression signature from the corresponding gene set. Conversely, a significant 'Down' P-value means that the differential expression log-fold-changes are negatively correlated with the expression signature from the corresponding gene set. A significant 'Mixed' P-value means that the genes in the set tend to be differentially expressed without regard for direction.")
 ```
 
 :::
 
 :::::
+
+### Visualisation
+
+```{r}
+j <- "Thymus.S3_vs_Thymus.S1"
+dgelrt <- glmLRT(y_dgeglm, contrast = y_contrast[, j])
+
+term <- "C2.REACTOME_INTERFERON_ALPHA_BETA_SIGNALING"
+library(org.Hs.eg.db)
+key <- msigdb[[term]]
+tmp <- AnnotationDbi::select(
+  org.Hs.eg.db,
+  key = key,
+  columns = "SYMBOL",
+  keytype = "ENTREZID")
+y_index <- ids2indices(unique(tmp$SYMBOL), rownames(y))
+```
+
+We can visualise the expression of the genes in any given set and in any given comparison using a 'barcode plot' and/or by highlighting those genes on the MD plot.
+Such figures are often included in publications.
+
+Figure \@ref(fig:gsea-vis) gives an example showing the expression of genes in the [`r term`](https://www.gsea-msigdb.org/gsea/msigdb/cards/REACTOME_INTERFERON_ALPHA_BETA_SIGNALING) MSigDB gene set in the `Thymus.S3_vs_Thymus.S1` comparison.
+
+```{r gsea-vis, fig.asp = 1 / 2, fig.cap = "MD-plot and barcode plot of genes in MSigDB set `C2.REACTOME_INTERFERON_ALPHA_BETA_SIGNALING`. For the barcode plot, genes are represented by bars and are ranked from left to right by increasing log-fold change. This forms the barcode-like pattern. The line (or *worm*) above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The dotted horizontal line indicates neutral enrichment; the worm above the dotted line shows enrichment while the worm below the dotted line shows depletion."}
+par(mfrow = c(1, 2))
+y_status <- rep("Other", nrow(dgelrt))
+y_status[y_index[[1]]] <- "In"
+plotMD(
+  dgelrt,
+  status = y_status,
+  values = "In",
+  hl.col = "red",
+  legend = "bottomright",
+  main = term,
+  cex.main = 0.6)
+abline(h = 0, col = "darkgrey")
+barcodeplot(statistics = dgelrt$table$logFC, index = y_index[[1]])
+```
 
 # Session info {.appendix}
 
