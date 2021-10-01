@@ -52,71 +52,6 @@ protein_coding_gene_set <- rownames(sce)[
 
 # Obtaining pseudotime orderings
 
-## Cluster-based minimum spanning tree
-
-Analysis using `r BiocStyle::Biocpkg("TSCAN")`; see [https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#cluster-based-minimum-spanning-tree](https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#cluster-based-minimum-spanning-tree) for inspiration.
-
-```{r, fig.asp = 0.7}
-plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster") +
-  plotReducedDim(sce, "UMAP_corrected", colour_by = "tissue") +
-  plotReducedDim(sce, "UMAP_corrected", colour_by = "stage") +
-  plot_layout(ncol = 2)
-```
-
-```{r}
-by.cluster <- aggregateAcrossCells(
-  sce,
-  ids = sce$cluster,
-  use_altexps = FALSE)
-centroids <- reducedDim(by.cluster, "corrected")
-
-library(TSCAN)
-mst <- createClusterMST(centroids, clusters = NULL)
-
-line.data <- reportEdges(
-  by.cluster,
-  mst = mst,
-  clusters = NULL,
-  use.dimred = "UMAP_corrected")
-```
-
-```{r, fig.asp = 0.8}
-plotReducedDim(sce, "UMAP_corrected", colour_by = "cluster") +
-  geom_line(data = line.data, mapping = aes(x = dim1, y = dim2, group = edge))
-```
-
-```{r}
-map.tscan <- mapCellsToEdges(
-  sce,
-  mst = mst,
-  clusters = sce$cluster, 
-  use.dimred = "corrected")
-# NOTE: Manually set starting node using prior biological knowledge.
-tscan.pseudo <- orderCells(map.tscan, mst, start = "3")
-
-# Taking the rowMeans just gives us a single pseudo-time for all cells. Cells
-# in segments that are shared across paths have the same pseudo-time value for
-# those paths anyway, so the rowMeans doesn't change anything.
-common.pseudo <- rowMeans(tscan.pseudo, na.rm = TRUE)
-```
-
-```{r, fig.asp = 0.8}
-plotReducedDim(
-  sce,
-  "UMAP_corrected",
-  colour_by = I(common.pseudo),
-  text_by = "cluster",
-  text_colour = "red") +
-  geom_line(data = line.data, mapping = aes(x = dim1, y = dim2, group = edge))
-```
-
-Summary
-
-- Forcing the pseudotime to respect the clusters seems suboptimal since the clusters themselves aren't that useful
-- Prefer the slingshot results which don't require this but does recapitulates a similar trajectory (see below)
-
-## Principal curves
-
 Analysis using `r BiocStyle::Biocpkg("slingshot")`; see [https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#principal-curves](https://bioconductor.org/books/release/OSCA/trajectory-analysis.html#principal-curves) for inspiration.
 
 ```{r, fig.asp = 0.7}
@@ -170,84 +105,13 @@ plotReducedDim(
 
 # Changes along a trajectory
 
-We apply two different methods to look for genes that change in expression along the trajectory.
 We only test genes that are detected in at least 10 cells.
 
 ```{r}
 sce_pseudo <- sce[rowSums(counts(sce) > 0) >= 10, ]
 ```
 
-## A simple method
-
-A simple method of testing for significant differences with respect to pseudotime, based on fitting linear models with a spline basis matrix, as implemented in `TSCAN::testPseudotime()`.
-
-```{r}
-pseudo <- testPseudotime(
-  sce_pseudo,
-  pseudotime = sce_pseudo$slingPseudotime_1,
-  block = sce_pseudo$plate_number)
-sorted <- pseudo[order(pseudo$p.value), ]
-```
-
-Examples of genes upregulated at the beginning of pseudotime.
-
-```{r, fig.asp = 1}
-up.left <- sorted[sorted$logFC < 0,]
-best <- head(rownames(up.left), 9)
-plotExpression(
-  sce,
-  features = best,
-  x = "slingPseudotime_1",
-  colour_by = "stage",
-  show_smooth = TRUE,
-  ncol = 3)
-```
-
-Heatmap of some genes upregulated at the beginning of pseudotime.
-
-```{r, fig.asp = 1}
-plotHeatmap(
-  sce,
-  order_columns_by = "slingPseudotime_1",
-  colour_columns_by = c("stage", "tissue"),
-  features = head(rownames(up.left), 50),
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6)
-```
-
-Examples of genes upregulated at the end of pseudotime.
-
-```{r, fig.asp = 1}
-up.right <- sorted[sorted$logFC > 0,]
-best <- head(rownames(up.right), 9)
-plotExpression(
-  sce,
-  features = best,
-  x = "slingPseudotime_1",
-  colour_by = "stage",
-  show_smooth = TRUE,
-  ncol = 3)
-```
-
-Heatmap of some genes upregulated at the end of pseudotime.
-
-```{r, fig.asp = 1}
-plotHeatmap(
-  sce,
-  order_columns_by = "slingPseudotime_1",
-  colour_columns_by = c("stage", "tissue"),
-  features = head(rownames(up.right), 50),
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6)
-```
-
-## tradeSeq
+We use methods from the `r BiocStyle::Biocpkg("tradeSeq")` R/Bioconductor package.
 
 ```{r}
 library(tradeSeq)
@@ -260,7 +124,7 @@ storage.mode(cell.weights) <- "numeric"
 
 ```{r, eval = FALSE}
 set.seed(666)
-# NOTE: Takes ~1 hour and can crash due to memory constraints.
+# NOTE: Takes ~30 mins and can crash due to memory constraints.
 fit <- fitGAM(
   counts(sce_pseudo),
   pseudotime = nonna.pseudo,
@@ -274,47 +138,19 @@ saveRDS(fit, file.path(outdir, "tradeSeq_fit.rds"))
 fit <- readRDS(file.path(outdir, "tradeSeq_fit.rds"))
 ```
 
-```{r}
-res <- associationTest(fit)
-res <- res[order(res$pvalue), ]
-res$FDR <- p.adjust(res$pvalue, method = "BH")
-```
-
-```{r, fig.asp = 1}
-# TODO: Explain that this shows genes with any sort of association between 
-#       trajectory and expression.
-plotHeatmap(
-  sce,
-  order_columns_by = "slingPseudotime_1",
-  colour_columns_by = c("stage", "tissue"),
-  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 50),
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6)
-```
-
-```{r}
-write.csv(
-  res,
-  file.path(outdir, "C094_Pellicci.tradeSeq_results.csv"),
-  row.names = TRUE,
-  quote = FALSE)
-```
-
-## DE between start and end of trajectory
-
-We perform a statistic test to check for DE between the starting point and the end stage of the trajectory.
+We perform a statistical test to check for DE between the starting point and the end stage of the trajectory.
 
 ```{r}
 svet <- startVsEndTest(fit)
 svet <- svet[order(svet$pvalue), ]
 svet$FDR <- p.adjust(svet$pvalue, method = "BH")
-# NOTE: Using the signed Wald statistic as the statistic, following by
-#       analogy what Gordon recommends
-#       (https://support.bioconductor.org/p/112937/#112938).
-svet$statistic <- svet$waldStat * sign(svet$logFClineage1)
+
+write.csv(
+  svet[, c("logFC", "p.value", "FDR")],
+  file.path(outdir, "tradeSeq_results.DEGs.csv"),
+  row.names = TRUE,
+  quote = FALSE)
+
 svet$ENTREZID <- sapply(
   rowData(sce[rownames(svet), ])$NCBI.ENTREZID,
   "[[",
@@ -333,12 +169,10 @@ pseudotime_degs <- list(
       sce[rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), ])$NCBI.ENTREZID,
     "[[",
     1))
-
-# TODO: CSV of results
-# TODO: Remove associationFit() results?
 ```
 
-There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")`  genes that are significantly upregulated at the start and end of the trajectory, respectively.
+There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")` genes that are significantly upregulated at the start and end of the trajectory, respectively.
+CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
 Figures \@ref(fig:up-at-start) and \@ref(fig:up-at-end) highlight some of these genes.
 
 ```{r up-at-start, fig.cap = "Selected genes that are upregulated at the start of the inferred trajectory.", fig.asp = 1}
@@ -394,7 +228,6 @@ close(gzout)
 ```
 
 CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
-
 An example of the results are shown below, here ordered by `P.up_at_end` to highlight GO terms that are enriched in the `up_at_end` DEG list.
 
 ```{r}
@@ -420,7 +253,6 @@ close(gzout)
 ```
 
 CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
-
 An example of the results are shown below, here ordered by `P.up_at_end` to highlight GO terms that are enriched in the `up_at_end` DEG list.
 
 ```{r}
@@ -465,6 +297,10 @@ msigdb <- do.call(
         bfc,
         "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c7.all.v7.1.entrez.rds"))))
 
+# NOTE: Using the signed Wald statistic as the statistic, following by
+#       analogy what Gordon recommends
+#       (https://support.bioconductor.org/p/112937/#112938).
+svet$statistic <- svet$waldStat * sign(svet$logFClineage1)
 y_idx <- ids2indices(msigdb, id = svet$ENTREZID)
 cam <- cameraPR(
   statistic = setNames(svet$statistic, svet$ENTREZID),
@@ -482,10 +318,9 @@ close(gzout)
 ```
 
 CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
-
 An example of the results are shown below, here filtered to highlight those gene sets with `Direction = Up` meaning `up_at_end`.
+
 ```{r}
-# TODO: Describe `Direction`
 head(cam[cam$Direction == "Up", ]) %>%
   knitr::kable(
     caption = '`camera()` produces a table with a row for each gene set (prepended by which MSigDB collection it comes from) and the following columns: **NGenes** (number of genes in set); **Direction** (direction of change, `Up` = `up_at_end` and `Down` = `up_at_start`); **PValue** (two-tailed p-value); **FDR** (Benjamini and Hochberg FDR adjusted p-value).')
@@ -505,10 +340,10 @@ tmp <- AnnotationDbi::select(
 y_index <- ids2indices(msigdb[[term]], svet$ENTREZID)
 ```
 
-We can visualise the expression of the genes in any given set and in any given comparison using a 'barcode plot'.
+We can visualise the expression of the genes in any given set using a 'barcode plot'.
 Such figures are often included in publications.
 
-Figure \@ref(fig:gsea-vis) gives an example showing the expression of genes in the [`r term`](https://www.gsea-msigdb.org/gsea/msigdb/cards/REACTOME_INTERFERON_ALPHA_BETA_SIGNALING) MSigDB gene set
+Figure \@ref(fig:gsea-vis) gives an example showing the expression of genes in the [`r term`](https://www.gsea-msigdb.org/gsea/msigdb/cards/REACTOME_INTERFERON_ALPHA_BETA_SIGNALING) MSigDB gene set.
 
 ```{r gsea-vis, fig.asp = 1 / 2, fig.cap = "Barcode plot of genes in MSigDB set `C2.REACTOME_INTERFERON_ALPHA_BETA_SIGNALING`. Genes are represented by bars and are ranked from left to right by increasing signed Wald statistic from the trajectory DE analysis. This forms the barcode-like pattern. The line (or *worm*) above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The dotted horizontal line indicates neutral enrichment; the worm above the dotted line shows enrichment while the worm below the dotted line shows depletion."}
 barcodeplot(statistics = svet$statistic, index = y_index[[1]])
@@ -799,10 +634,6 @@ p1 + p2 + p3 + p4a$gtable +
     subtitle = "Excluding 'Unknown'-stage cells",
     tag_levels = "a")
 ```
-
-# TODOs
-
-- [ ] Remove all TSCAN stuff
 
 # Additional information {.appendix}
 

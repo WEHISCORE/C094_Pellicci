@@ -230,13 +230,6 @@
       "Source": "Bioconductor",
       "Hash": "21b3bc3dfb55cb9501c5f3413b35388c"
     },
-    "KernSmooth": {
-      "Package": "KernSmooth",
-      "Version": "2.23-17",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "bbff70c8c0357b5b88238c83f680fcd3"
-    },
     "MASS": {
       "Package": "MASS",
       "Version": "7.3-53",
@@ -455,12 +448,6 @@
       "Source": "Bioconductor",
       "Hash": "2da24c5f66521d18cff602d324834b20"
     },
-    "TSCAN": {
-      "Package": "TSCAN",
-      "Version": "1.28.0",
-      "Source": "Bioconductor",
-      "Hash": "ee7b578a3f7987e20c93ed479bc510c5"
-    },
     "TxDb.Hsapiens.UCSC.hg19.knownGene": {
       "Package": "TxDb.Hsapiens.UCSC.hg19.knownGene",
       "Version": "3.2.2",
@@ -606,13 +593,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "4830a372b241d78ed6f53731ee3023ac"
-    },
-    "caTools": {
-      "Package": "caTools",
-      "Version": "1.18.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "34d90fa5845004236b9eacafc51d07b2"
     },
     "cachem": {
       "Package": "cachem",
@@ -931,13 +911,6 @@
       "Repository": "CRAN",
       "Hash": "6efd734b14c6471cfe443345f3e35e29"
     },
-    "gplots": {
-      "Package": "gplots",
-      "Version": "3.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "e65e5d5dea4cbb9ba822dcd782b2ee1f"
-    },
     "graph": {
       "Package": "graph",
       "Version": "1.68.0",
@@ -957,13 +930,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "ac5c6baf7822ce8732b343f14c072c4d"
-    },
-    "gtools": {
-      "Package": "gtools",
-      "Version": "3.9.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "2ace6c4a06297d0b364e0444384a2b82"
     },
     "hash": {
       "Package": "hash",
