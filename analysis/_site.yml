@@ -40,7 +40,7 @@ navbar:
         - text: "Single cell (thymus.S1 and thymus.S2 only)"
           href: C094_Pellicci.single-cell.annotate.thymusS1_thymusS2_only.html
     - text: "Trajectory analysis"
-      href: C094_Pellicci.single-cell.trajectory.Rmd
+      href: C094_Pellicci.single-cell.trajectory.html
     - text: "Mini-bulk differential analyses"
       menu:
         - text: "All samples"
