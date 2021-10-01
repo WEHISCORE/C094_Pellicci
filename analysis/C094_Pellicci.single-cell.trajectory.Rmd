@@ -105,11 +105,12 @@ plotReducedDim(
 
 # Changes along a trajectory
 
-We only test genes that are detected in at least 10 cells.
-
 ```{r}
-sce_pseudo <- sce[rowSums(counts(sce) > 0) >= 10, ]
+keep <- rowSums(counts(sce) > 0) >= 10
+sce_pseudo <- sce[keep, ]
 ```
+
+We only test genes that are detected in at least 10 cells ($n$ = `r scales::number(sum(keep), big.mark = ",")`).
 
 We use methods from the `r BiocStyle::Biocpkg("tradeSeq")` R/Bioconductor package.
 
@@ -144,18 +145,17 @@ We perform a statistical test to check for DE between the starting point and the
 svet <- startVsEndTest(fit)
 svet <- svet[order(svet$pvalue), ]
 svet$FDR <- p.adjust(svet$pvalue, method = "BH")
-
-write.csv(
-  svet[, c("logFC", "p.value", "FDR")],
-  file.path(outdir, "tradeSeq_results.DEGs.csv"),
-  row.names = TRUE,
-  quote = FALSE)
-
 svet$ENTREZID <- sapply(
   rowData(sce[rownames(svet), ])$NCBI.ENTREZID,
   "[[",
   1)
 svet$logFC <- svet$logFClineage1
+
+write.csv(
+  svet[, c("logFC", "pvalue", "FDR")],
+  file.path(outdir, "tradeSeq_results.DEGs.csv"),
+  row.names = TRUE,
+  quote = FALSE)
 
 pseudotime_degs <- list(
   up_at_start =
@@ -171,7 +171,7 @@ pseudotime_degs <- list(
     1))
 ```
 
-There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")` genes that are significantly upregulated at the start and end of the trajectory, respectively.
+There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")` genes that are significantly upregulated ($FDR < 0.05$) at the start and end of the trajectory, respectively.
 CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
 Figures \@ref(fig:up-at-start) and \@ref(fig:up-at-end) highlight some of these genes.
 
@@ -180,7 +180,11 @@ plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("stage", "tissue"),
-  features = head(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), 25),
+  features = head(
+    setdiff(
+      rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), 
+      mito_set),
+    50),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -194,7 +198,11 @@ plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("stage", "tissue"),
-  features = head(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), 25),
+  features = head(
+    setdiff(
+      rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), 
+      mito_set),
+    50),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
