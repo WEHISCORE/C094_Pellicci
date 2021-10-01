@@ -19,6 +19,9 @@ library(here)
 library(SingleCellExperiment)
 library(scater)
 library(patchwork)
+
+outdir <- here("output", "trajectory")
+dir.create(outdir)
 ```
 
 Need to start from this *SCE* object in order to have consistency with William's analyses.
@@ -167,19 +170,22 @@ plotReducedDim(
 
 # Changes along a trajectory
 
+We apply two different methods to look for genes that change in expression along the trajectory.
+We only test genes that are detected in at least 10 cells.
+
+```{r}
+sce_pseudo <- sce[rowSums(counts(sce) > 0) >= 10, ]
+```
+
 ## A simple method
 
 A simple method of testing for significant differences with respect to pseudotime, based on fitting linear models with a spline basis matrix, as implemented in `TSCAN::testPseudotime()`.
 
 ```{r}
-pseudo <- testPseudotime(sce, pseudotime = sce$slingPseudotime_1)
-
 pseudo <- testPseudotime(
-  sce,
-  # NOTE: Excluding mitochondrial genes from testing
-  # sce2[!rownames(sce) %in% mito_set, ],
-  pseudotime = sce$slingPseudotime_1,
-  block = sce$plate_number)
+  sce_pseudo,
+  pseudotime = sce_pseudo$slingPseudotime_1,
+  block = sce_pseudo$plate_number)
 sorted <- pseudo[order(pseudo$p.value), ]
 ```
 
@@ -241,39 +247,31 @@ plotHeatmap(
   fontsize = 6)
 ```
 
-Summary:
-
-- Might need some filter on `aveLogCPM` to avoid genes for which only a handful of cells have non-zero expression.
-
 ## tradeSeq
 
 ```{r}
 library(tradeSeq)
-dir.create(here("output/trajectory"))
 
-nonna.pseudo <- sce$slingPseudotime_1
+nonna.pseudo <- sce_pseudo$slingPseudotime_1
 nonna.pseudo[is.na(nonna.pseudo)] <- 0
-cell.weights <- !is.na(sce$slingPseudotime_1)
+cell.weights <- !is.na(sce_pseudo$slingPseudotime_1)
 storage.mode(cell.weights) <- "numeric"
-
-# Remove genes with zero counts
-sce <- sce[rowSums(counts(sce)) > 0, ]
 ```
 
 ```{r, eval = FALSE}
 set.seed(666)
 # NOTE: Takes ~1 hour and can crash due to memory constraints.
 fit <- fitGAM(
-  counts(sce),
+  counts(sce_pseudo),
   pseudotime = nonna.pseudo,
   cellWeights = cell.weights,
   parallel = TRUE,
   BPPARAM = BiocParallel::MulticoreParam(4))
-saveRDS(fit, here("output/trajectory/tradeSeq_fit.rds"))
+saveRDS(fit, file.path(outdir, "tradeSeq_fit.rds"))
 ```
 
 ```{r}
-fit <- readRDS(here("output/trajectory/tradeSeq_fit.rds"))
+fit <- readRDS(file.path(outdir, "tradeSeq_fit.rds"))
 ```
 
 ```{r}
@@ -283,6 +281,8 @@ res$FDR <- p.adjust(res$pvalue, method = "BH")
 ```
 
 ```{r, fig.asp = 1}
+# TODO: Explain that this shows genes with any sort of association between 
+#       trajectory and expression.
 plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
@@ -298,14 +298,225 @@ plotHeatmap(
 ```{r}
 write.csv(
   res,
-  here("output/trajectory/C094_Pellicci.tradeSeq_results.csv"),
+  file.path(outdir, "C094_Pellicci.tradeSeq_results.csv"),
   row.names = TRUE,
   quote = FALSE)
 ```
 
+## DE between start and end of trajectory
+
+We perform a statistic test to check for DE between the starting point and the end stage of the trajectory.
+
+```{r}
+svet <- startVsEndTest(fit)
+svet <- svet[order(svet$pvalue), ]
+svet$FDR <- p.adjust(svet$pvalue, method = "BH")
+# NOTE: Using the signed Wald statistic as the statistic, following by
+#       analogy what Gordon recommends
+#       (https://support.bioconductor.org/p/112937/#112938).
+svet$statistic <- svet$waldStat * sign(svet$logFClineage1)
+svet$ENTREZID <- sapply(
+  rowData(sce[rownames(svet), ])$NCBI.ENTREZID,
+  "[[",
+  1)
+svet$logFC <- svet$logFClineage1
+
+pseudotime_degs <- list(
+  up_at_start =
+    sapply(
+      rowData(
+        sce[rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), ])$NCBI.ENTREZID,
+      "[[",
+      1),
+  up_at_end = sapply(
+    rowData(
+      sce[rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), ])$NCBI.ENTREZID,
+    "[[",
+    1))
+
+# TODO: CSV of results
+# TODO: Remove associationFit() results?
+```
+
+There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")`  genes that are significantly upregulated at the start and end of the trajectory, respectively.
+Figures \@ref(fig:up-at-start) and \@ref(fig:up-at-end) highlight some of these genes.
+
+```{r up-at-start, fig.cap = "Selected genes that are upregulated at the start of the inferred trajectory.", fig.asp = 1}
+plotHeatmap(
+  sce,
+  order_columns_by = "slingPseudotime_1",
+  colour_columns_by = c("stage", "tissue"),
+  features = head(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), 25),
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 6,
+  main = "Up at start")
+```
+
+```{r up-at-end, fig.cap = "Selected genes that are upregulated at the end of the inferred trajectory.", fig.asp = 1}
+plotHeatmap(
+  sce,
+  order_columns_by = "slingPseudotime_1",
+  colour_columns_by = c("stage", "tissue"),
+  features = head(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), 25),
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 6,
+  main = "Up at end")
+```
+
+# Gene set testing
+
+```{r}
+library(limma)
+```
+
+We opt to use the `r BiocStyle::Biocpkg("tradeSeq")` results and seek to identify gene sets that are differentially expressed with respect to the trajectory.
+
+## goana
+
+We use the `goana()` function from the `r BiocStyle::Biocpkg("limma")` R/Bioconductor package to test for over-representation of gene ontology (GO) terms in each of the `up_at_start` and `up_at_end` DEG lists.
+
+```{r}
+go <- goana(de = pseudotime_degs, species = "Hs")
+gzout <- gzfile(
+  description = file.path(outdir, "tradeSeq_results.goana.csv.gz"),
+  open = "wb")
+write.csv(
+  topGO(go, number = Inf),
+  gzout,
+  row.names = TRUE)
+close(gzout)
+```
+
+CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
+
+An example of the results are shown below, here ordered by `P.up_at_end` to highlight GO terms that are enriched in the `up_at_end` DEG list.
+
+```{r}
+topGO(go, sort = "up_at_end") %>%
+  knitr::kable(
+    caption = '`goana()` produces a table with a row for each GO term and the following columns: **Term** (GO term); **Ont** (ontology that the GO term belongs to. Possible values are "BP", "CC" and "MF"); **N** (number of genes in the GO term); **up_at_start** (number of `up_at_start`-regulated differentially expressed genes); **up_at_end** (number of `up_at_end`-regulated differentially expressed genes); **P.up_at_start** (p-value for over-representation of GO term in `up_at_start`-regulated genes); **P.up_at_end** (p-value for over-representation of GO term in `up_at_end`-regulated genes)')
+```
+
+## kegga
+
+We use the `kegga()` function from the `r BiocStyle::Biocpkg("limma")` R/Bioconductor package to test for over-representation of KEGG pathways in each of the `up_at_start` and `up_at_end` DEG lists.
+
+```{r}
+kegg <- kegga(de = pseudotime_degs, species = "Hs")
+gzout <- gzfile(
+  description = file.path(outdir, "tradeSeq_results.kegga.csv.gz"),
+  open = "wb")
+write.csv(
+  topKEGG(kegg, number = Inf),
+  gzout,
+  row.names = TRUE)
+close(gzout)
+```
+
+CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
+
+An example of the results are shown below, here ordered by `P.up_at_end` to highlight GO terms that are enriched in the `up_at_end` DEG list.
+
+```{r}
+topKEGG(kegg, sort = "up_at_end") %>%
+  knitr::kable(
+    caption = '`kegga()` produces a table with a row for each KEGG pathway ID and the following columns: **Pathway** (KEGG pathway); **N** (number of genes in the GO term);; **up_at_start** (number of `up_at_start`-regulated differentially expressed genes); **up_at_end** (number of `up_at_end`-regulated differentially expressed genes); **P.up_at_start** (p-value for over-representation of KEGG pathway in `up_at_start`-regulated genes); **P.up_at_end** (p-value for over-representation of KEGG pathway in `up_at_end`-regulated genes)')
+```
+
+## camera
+
+We use the `cameraPR()` function^[`cameraPR()` is a "pre-ranked" version of `camera()` where the genes are pre-ranked according to a pre-computed statistic. We cannot use the regular `camera()` function because the pseudotime DE analysis does not provide the standard limma/edgeR output required for `camera()`, but `cameraPR()` is a suitable replacement in this case.] from the `r BiocStyle::Biocpkg("limma")` R/Bioconductor package to test whether a set of genes is highly ranked relative to other genes in terms of differential expression, accounting for inter-gene correlation.
+Specifically, we test using gene sets from [MSigDB](https://www.gsea-msigdb.org/gsea/msigdb), namely:
+
+<aside>
+We download these gene sets from [http://bioinf.wehi.edu.au/MSigDB/index.html](http://bioinf.wehi.edu.au/MSigDB/index.html)
+</aside>
+
+- **H**: **hallmark gene sets** are coherently expressed signatures derived by aggregating many MSigDB gene sets to represent well-defined biological states or processes.
+- **C2**: **curated gene sets** from online pathway databases, publications in PubMed, and knowledge of domain experts.
+- **C7**: **immunologic signature gene sets** represent cell states and perturbations within the immune system.
+
+```{r}
+# NOTE: Using BiocFileCache to avoid re-downloading these gene sets everytime
+#       the report is rendered.
+library(BiocFileCache)
+bfc <- BiocFileCache()
+# NOTE: Creating list of gene sets in this slightly convoluted way so that each
+#       gene set name is prepended by its origin (e.g. H, C2, or C7).
+msigdb <- do.call(
+  c,
+  list(
+    H = readRDS(
+      bfcrpath(
+        bfc,
+        "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.h.all.v7.1.entrez.rds")),
+    C2 = readRDS(
+      bfcrpath(
+        bfc,
+        "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c2.all.v7.1.entrez.rds")),
+    C7 = readRDS(
+      bfcrpath(
+        bfc,
+        "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c7.all.v7.1.entrez.rds"))))
+
+y_idx <- ids2indices(msigdb, id = svet$ENTREZID)
+cam <- cameraPR(
+  statistic = setNames(svet$statistic, svet$ENTREZID),
+  index = y_idx,
+  use.ranks = FALSE)
+
+gzout <- gzfile(
+  description = file.path(outdir, "tradeSeq_results.camera.csv.gz"),
+  open = "wb")
+write.csv(
+  cam,
+  gzout,
+  row.names = TRUE)
+close(gzout)
+```
+
+CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
+
+An example of the results are shown below, here filtered to highlight those gene sets with `Direction = Up` meaning `up_at_end`.
+```{r}
+# TODO: Describe `Direction`
+head(cam[cam$Direction == "Up", ]) %>%
+  knitr::kable(
+    caption = '`camera()` produces a table with a row for each gene set (prepended by which MSigDB collection it comes from) and the following columns: **NGenes** (number of genes in set); **Direction** (direction of change, `Up` = `up_at_end` and `Down` = `up_at_start`); **PValue** (two-tailed p-value); **FDR** (Benjamini and Hochberg FDR adjusted p-value).')
+```
+
+## Visualisation
+
+```{r}
+term <- "C2.REACTOME_INTERFERON_ALPHA_BETA_SIGNALING"
+library(org.Hs.eg.db)
+key <- msigdb[[term]]
+tmp <- AnnotationDbi::select(
+  org.Hs.eg.db,
+  key = key,
+  columns = "SYMBOL",
+  keytype = "ENTREZID")
+y_index <- ids2indices(msigdb[[term]], svet$ENTREZID)
+```
+
+We can visualise the expression of the genes in any given set and in any given comparison using a 'barcode plot'.
+Such figures are often included in publications.
+
+Figure \@ref(fig:gsea-vis) gives an example showing the expression of genes in the [`r term`](https://www.gsea-msigdb.org/gsea/msigdb/cards/REACTOME_INTERFERON_ALPHA_BETA_SIGNALING) MSigDB gene set
+
+```{r gsea-vis, fig.asp = 1 / 2, fig.cap = "Barcode plot of genes in MSigDB set `C2.REACTOME_INTERFERON_ALPHA_BETA_SIGNALING`. Genes are represented by bars and are ranked from left to right by increasing signed Wald statistic from the trajectory DE analysis. This forms the barcode-like pattern. The line (or *worm*) above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The dotted horizontal line indicates neutral enrichment; the worm above the dotted line shows enrichment while the worm below the dotted line shows depletion."}
+barcodeplot(statistics = svet$statistic, index = y_index[[1]])
+```
+
 # Figures for paper
 
-Exact figure numbers may change.
+Note that exact figure numbers may change.
 
 ```{r}
 # Some useful colours
@@ -377,7 +588,13 @@ plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
-  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 50),
+  features = c(
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
+      25),
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
+      25)),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -425,7 +642,13 @@ plotHeatmap(
   sce[, sce$stage != "Unknown"],
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
-  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 50),
+  features = c(
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
+      25),
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
+      25)),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -515,7 +738,13 @@ p4 <- plotHeatmap(
   sce[, sce$stage != "Unknown"],
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
-  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 100),
+  features = c(
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
+      50),
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
+      50)),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -531,7 +760,13 @@ p4a <- plotHeatmap(
   sce[, sce$stage != "Unknown"],
   order_columns_by = c("stage", "slingPseudotime_1"),
   colour_columns_by = c("stage", "slingPseudotime_1", "CD4", "CD161", "tissue"),
-  features = head(setdiff(rownames(res[res$FDR < 0.05, ]), mito_set), 100),
+  features = c(
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
+      50),
+    head(
+      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
+      50)),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
@@ -564,6 +799,10 @@ p1 + p2 + p3 + p4a$gtable +
     subtitle = "Excluding 'Unknown'-stage cells",
     tag_levels = "a")
 ```
+
+# TODOs
+
+- [ ] Remove all TSCAN stuff
 
 # Additional information {.appendix}
 
