@@ -1056,7 +1056,7 @@ list_of_go <- lapply(colnames(y_contrast), function(j) {
   
   go <- goana(
     de = dgelrt,
-    geneid = sapply(strsplit(dgelrt$genes$NCBI.ENTREZID, ","), "[[", 1),
+    geneid = sapply(strsplit(dgelrt$genes$NCBI.ENTREZID, ";"), "[[", 1),
     species = "Hs")
   gzout <- gzfile(
     description = file.path(
@@ -1093,7 +1093,7 @@ list_of_kegg <- lapply(colnames(y_contrast), function(j) {
   
   kegg <- kegga(
     de = dgelrt,
-    geneid = sapply(strsplit(dgelrt$genes$NCBI.ENTREZID, ","), "[[", 1),
+    geneid = sapply(strsplit(dgelrt$genes$NCBI.ENTREZID, ";"), "[[", 1),
     species = "Hs")
   gzout <- gzfile(
     description = file.path(
@@ -1158,7 +1158,7 @@ msigdb <- do.call(
 
 y_idx <- ids2indices(
   msigdb, 
-  id = sapply(strsplit(y$genes$NCBI.ENTREZID, ","), "[[", 1))
+  id = sapply(strsplit(y$genes$NCBI.ENTREZID, ";"), "[[", 1))
 list_of_camera <- lapply(colnames(y_contrast), function(j) {
   cam <- camera(
     y = y, 
