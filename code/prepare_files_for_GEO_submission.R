@@ -16,12 +16,12 @@ for (rpi in c("1", "2", "3", "10", "12", "15", "16")) {
   message(rpi)
   rpi <- paste0("RPI-", rpi)
   file.copy(
-    from = here("extdata/NN215/scPipe", rpi, paste0(rpi, ".R1.fastq.gz")),
+    from = here("extdata/scPipe/NN215", rpi, paste0(rpi, ".R1.fastq.gz")),
     to = file.path(outdir, "FASTQ"),
     recursive = FALSE,
     overwrite = FALSE)
   file.copy(
-    from = here("extdata/NN215/scPipe", rpi, paste0(rpi, ".R2.fastq.gz")),
+    from = here("extdata/scPipe/NN215", rpi, paste0(rpi, ".R2.fastq.gz")),
     to = file.path(outdir, "FASTQ"),
     recursive = FALSE,
     overwrite = FALSE)
@@ -30,12 +30,12 @@ for (rpi in c("5", "9")) {
   message(rpi)
   rpi <- paste0("RPI-", rpi)
   file.copy(
-    from = here("extdata/NN227/scPipe", rpi, paste0(rpi, ".R1.fastq.gz")),
+    from = here("extdata/scPipe/NN227", rpi, paste0(rpi, ".R1.fastq.gz")),
     to = file.path(outdir, "FASTQ"),
     recursive = FALSE,
     overwrite = FALSE)
   file.copy(
-    from = here("extdata/NN227/scPipe", rpi, paste0(rpi, ".R2.fastq.gz")),
+    from = here("extdata/scPipe/NN227", rpi, paste0(rpi, ".R2.fastq.gz")),
     to = file.path(outdir, "FASTQ"),
     recursive = FALSE,
     overwrite = FALSE)

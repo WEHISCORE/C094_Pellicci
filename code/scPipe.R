@@ -1,6 +1,6 @@
 # Process C118 (NN215 and NN227) with scPipe
 # Peter Hickey
-# 2021-07-13
+# 2022-04-07
 
 # Setup ------------------------------------------------------------------------
 
@@ -172,7 +172,7 @@ sequencing_runs <- tapply(
   unique)
 outdir <- here("data", "SCEs")
 dir.create(outdir, recursive = TRUE)
-extdir <- here("extdata", sequencing_runs, "scPipe", rpis)
+extdir <- here("extdata", "scPipe", sequencing_runs, rpis)
 names(extdir) <- rpis
 sapply(extdir, dir.create, recursive = TRUE)
 # NOTE: Only using first 7 nt of barcode.
