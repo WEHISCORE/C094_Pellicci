@@ -112,103 +112,98 @@ sce_pseudo <- sce[keep, ]
 
 We only test genes that are detected in at least 10 cells ($n$ = `r scales::number(sum(keep), big.mark = ",")`).
 
-We use methods from the `r BiocStyle::Biocpkg("tradeSeq")` R/Bioconductor package.
+We use methods from the `r BiocStyle::Biocpkg("TSCAN")` R/Bioconductor package.
+This is a simple method of testing for significant differences with respect to pseudotime, based on fitting linear models with a spline basis matrix.
 
 ```{r}
-library(tradeSeq)
-
-nonna.pseudo <- sce_pseudo$slingPseudotime_1
-nonna.pseudo[is.na(nonna.pseudo)] <- 0
-cell.weights <- !is.na(sce_pseudo$slingPseudotime_1)
-storage.mode(cell.weights) <- "numeric"
-```
-
-```{r, eval = FALSE}
-set.seed(666)
-# NOTE: Takes ~30 mins and can crash due to memory constraints.
-fit <- fitGAM(
-  counts(sce_pseudo),
-  pseudotime = nonna.pseudo,
-  cellWeights = cell.weights,
-  parallel = TRUE,
-  BPPARAM = BiocParallel::MulticoreParam(4))
-saveRDS(fit, file.path(outdir, "tradeSeq_fit.rds"))
-```
-
-```{r}
-fit <- readRDS(file.path(outdir, "tradeSeq_fit.rds"))
-```
-
-We perform a statistical test to check for DE between the starting point and the end stage of the trajectory.
-
-```{r}
-svet <- startVsEndTest(fit)
-svet <- svet[order(svet$pvalue), ]
-svet$FDR <- p.adjust(svet$pvalue, method = "BH")
-svet$ENTREZID <- sapply(
-  rowData(sce[rownames(svet), ])$NCBI.ENTREZID,
-  "[[",
-  1)
-svet$logFC <- svet$logFClineage1
-
-write.csv(
-  svet[, c("logFC", "pvalue", "FDR")],
-  file.path(outdir, "tradeSeq_results.DEGs.csv"),
-  row.names = TRUE,
-  quote = FALSE)
+library(TSCAN)
+pseudo <- testPseudotime(
+  sce_pseudo,
+  pseudotime = sce_pseudo$slingPseudotime_1,
+  block = sce_pseudo$plate_number)
+pseudo <- pseudo[order(pseudo$p.value), ]
 
 pseudotime_degs <- list(
   up_at_start =
     sapply(
       rowData(
-        sce[rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), ])$NCBI.ENTREZID,
+        sce[rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC < 0, ]), ])$NCBI.ENTREZID,
       "[[",
       1),
   up_at_end = sapply(
     rowData(
-      sce[rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), ])$NCBI.ENTREZID,
+      sce[rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC > 0, ]), ])$NCBI.ENTREZID,
     "[[",
     1))
 ```
 
-There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")` genes that are significantly upregulated ($FDR < 0.05$) at the start and end of the trajectory, respectively.
+There are `r scales::number(length(pseudotime_degs$up_at_start), big.mark = ",")` and `r scales::number(length(pseudotime_degs$up_at_end), big.mark = ",")` genes that are significantly upregulated at the start and end of the trajectory, respectively.
 CSV files of the results are available from [`output/trajectory/`](../output/trajectory/).
-Figures \@ref(fig:up-at-start) and \@ref(fig:up-at-end) highlight some of these genes.
 
-```{r up-at-start, fig.cap = "Selected genes that are upregulated at the start of the inferred trajectory.", fig.asp = 1}
-plotHeatmap(
-  sce,
-  order_columns_by = "slingPseudotime_1",
-  colour_columns_by = c("stage", "tissue"),
-  features = head(
-    setdiff(
-      rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), 
-      mito_set),
-    50),
-  center = TRUE,
-  symmetric = TRUE,
-  zlim = c(-3, 3),
-  color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6,
-  main = "Up at start")
+```{r}
+write.csv(
+  pseudo[, c("logFC", "p.value", "FDR")],
+  file.path(outdir, "TSCAN_results.DEGs.csv"),
+  row.names = TRUE,
+  quote = FALSE)
 ```
 
-```{r up-at-end, fig.cap = "Selected genes that are upregulated at the end of the inferred trajectory.", fig.asp = 1}
+Examples of genes upregulated at the beginning of pseudotime.
+
+```{r, fig.asp = 1}
+up.right <- pseudo[pseudo$logFC < 0, ]
+best <- head(rownames(up.right), 9)
+plotExpression(
+  sce,
+  features = best,
+  x = "slingPseudotime_1",
+  colour_by = "stage",
+  show_smooth = TRUE,
+  ncol = 3)
+```
+
+Heatmap of some genes upregulated at the beginning of pseudotime.
+
+```{r, fig.asp = 1}
 plotHeatmap(
   sce,
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("stage", "tissue"),
-  features = head(
-    setdiff(
-      rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), 
-      mito_set),
-    50),
+  features = head(rownames(up.right), 50),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 6,
-  main = "Up at end")
+  fontsize = 6)
+```
+
+Examples of genes upregulated at the end of pseudotime.
+
+```{r, fig.asp = 1}
+up.right <- pseudo[pseudo$logFC > 0,]
+best <- head(rownames(up.right), 9)
+plotExpression(
+  sce,
+  features = best,
+  x = "slingPseudotime_1",
+  colour_by = "stage",
+  show_smooth = TRUE,
+  ncol = 3)
+```
+
+Heatmap of some genes upregulated at the end of pseudotime.
+
+```{r, fig.asp = 1}
+plotHeatmap(
+  sce,
+  order_columns_by = "slingPseudotime_1",
+  colour_columns_by = c("stage", "tissue"),
+  features = head(rownames(up.right), 50),
+  center = TRUE,
+  symmetric = TRUE,
+  zlim = c(-3, 3),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 6)
 ```
 
 # Gene set testing
@@ -217,7 +212,7 @@ plotHeatmap(
 library(limma)
 ```
 
-We opt to use the `r BiocStyle::Biocpkg("tradeSeq")` results and seek to identify gene sets that are differentially expressed with respect to the trajectory.
+We use the `r BiocStyle::Biocpkg("TSCAN")` results and seek to identify gene sets that are differentially expressed with respect to the trajectory.
 
 ## goana
 
@@ -226,7 +221,7 @@ We use the `goana()` function from the `r BiocStyle::Biocpkg("limma")` R/Biocond
 ```{r}
 go <- goana(de = pseudotime_degs, species = "Hs")
 gzout <- gzfile(
-  description = file.path(outdir, "tradeSeq_results.goana.csv.gz"),
+  description = file.path(outdir, "TSCAN_results.goana.csv.gz"),
   open = "wb")
 write.csv(
   topGO(go, number = Inf),
@@ -251,7 +246,7 @@ We use the `kegga()` function from the `r BiocStyle::Biocpkg("limma")` R/Biocond
 ```{r}
 kegg <- kegga(de = pseudotime_degs, species = "Hs")
 gzout <- gzfile(
-  description = file.path(outdir, "tradeSeq_results.kegga.csv.gz"),
+  description = file.path(outdir, "TSCAN_results.kegga.csv.gz"),
   open = "wb")
 write.csv(
   topKEGG(kegg, number = Inf),
@@ -305,18 +300,21 @@ msigdb <- do.call(
         bfc,
         "http://bioinf.wehi.edu.au/MSigDB/v7.1/Hs.c7.all.v7.1.entrez.rds"))))
 
-# NOTE: Using the signed Wald statistic as the statistic, following by
-#       analogy what Gordon recommends
-#       (https://support.bioconductor.org/p/112937/#112938).
-svet$statistic <- svet$waldStat * sign(svet$logFClineage1)
-y_idx <- ids2indices(msigdb, id = svet$ENTREZID)
+# Using the signed Z-score as the test statistic.
+pseudo$statistic <- qnorm(pseudo$p.value / 2, lower.tail = FALSE) *
+  sign(pseudo$logFC)
+pseudo$ENTREZID <- sapply(
+  rowData(sce[rownames(pseudo), ])$NCBI.ENTREZID,
+  "[[",
+  1)
+y_idx <- ids2indices(msigdb, id = pseudo$ENTREZID)
 cam <- cameraPR(
-  statistic = setNames(svet$statistic, svet$ENTREZID),
+  statistic = setNames(pseudo$statistic, pseudo$ENTREZID),
   index = y_idx,
   use.ranks = FALSE)
 
 gzout <- gzfile(
-  description = file.path(outdir, "tradeSeq_results.camera.csv.gz"),
+  description = file.path(outdir, "TSCAN_results.camera.csv.gz"),
   open = "wb")
 write.csv(
   cam,
@@ -345,7 +343,7 @@ tmp <- AnnotationDbi::select(
   key = key,
   columns = "SYMBOL",
   keytype = "ENTREZID")
-y_index <- ids2indices(msigdb[[term]], svet$ENTREZID)
+y_index <- ids2indices(msigdb[[term]], pseudo$ENTREZID)
 ```
 
 We can visualise the expression of the genes in any given set using a 'barcode plot'.
@@ -354,7 +352,7 @@ Such figures are often included in publications.
 Figure \@ref(fig:gsea-vis) gives an example showing the expression of genes in the [`r term`](https://www.gsea-msigdb.org/gsea/msigdb/cards/REACTOME_INTERFERON_ALPHA_BETA_SIGNALING) MSigDB gene set.
 
 ```{r gsea-vis, fig.asp = 1 / 2, fig.cap = "Barcode plot of genes in MSigDB set `C2.REACTOME_INTERFERON_ALPHA_BETA_SIGNALING`. Genes are represented by bars and are ranked from left to right by increasing signed Wald statistic from the trajectory DE analysis. This forms the barcode-like pattern. The line (or *worm*) above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The dotted horizontal line indicates neutral enrichment; the worm above the dotted line shows enrichment while the worm below the dotted line shows depletion."}
-barcodeplot(statistics = svet$statistic, index = y_index[[1]])
+barcodeplot(statistics = pseudo$statistic, index = y_index[[1]])
 ```
 
 # Figures for paper
@@ -433,10 +431,14 @@ plotHeatmap(
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
   features = c(
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC < 0, ]), 
+        mito_set), 
       25),
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC > 0, ]),
+        mito_set), 
       25)),
   center = TRUE,
   symmetric = TRUE,
@@ -487,10 +489,14 @@ plotHeatmap(
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
   features = c(
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC < 0, ]), 
+        mito_set), 
       25),
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC > 0, ]), 
+        mito_set), 
       25)),
   center = TRUE,
   symmetric = TRUE,
@@ -509,13 +515,26 @@ Heatmaps sorted by CD4 and CD161 FACS expression "showing the DEGs across the ga
 This is an example, but, as I explained to Dan, I don't think these are very useful plots.
 
 ```{r}
-tmp <- sce[, sce$group %in% c("Thymus.S1 (CD4+/CD161-)", "Thymus.S2 (CD4-/CD161-)", "Thymus.S3 (CD4-/CD161+)", "Blood.S3 (CD4-/CD161+)")]
+tmp <- sce[
+  , 
+  sce$group %in% 
+    c("Thymus.S1 (CD4+/CD161-)", 
+      "Thymus.S2 (CD4-/CD161-)", 
+      "Thymus.S3 (CD4-/CD161+)", 
+      "Blood.S3 (CD4-/CD161+)")]
 tmp$group <- factor(
   tmp$group,
-  c("Thymus.S1 (CD4+/CD161-)", "Thymus.S2 (CD4-/CD161-)", "Thymus.S3 (CD4-/CD161+)", "Blood.S3 (CD4-/CD161+)"))
+  c("Thymus.S1 (CD4+/CD161-)", 
+    "Thymus.S2 (CD4-/CD161-)", 
+    "Thymus.S3 (CD4-/CD161+)",
+    "Blood.S3 (CD4-/CD161+)"))
 
 x <- read.csv(
-  here("output/DEGs/excluding_donors_1-3/Thymus.S3_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
+  here(
+    "output", 
+    "DEGs", 
+    "excluding_donors_1-3",
+    "Thymus.S3_vs_Thymus.S1.aggregated_tech_reps.DEGs.csv.gz"))
 ```
 
 ```{r, fig.asp = 1}
@@ -578,49 +597,62 @@ p3 <- plotReducedDim(
 ggsave(here("output/figures/Fig5c.pdf"), p3, width = 6, height = 5)
 
 p4 <- plotHeatmap(
-  sce[, sce$stage != "Unknown"],
+  sce,
   order_columns_by = "slingPseudotime_1",
   colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
   features = c(
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
-      50),
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC < 0, ]), 
+        mito_set), 
+      25),
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
-      50)),
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC > 0, ]),
+        mito_set), 
+      25)),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 5,
+  fontsize = 6,
+  main = "All cells: Selected pseudotime-associated genes",
   column_annotation_colors = list(
-    stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
+    stage = stage_colours,
     tissue = tissue_colours),
   silent = TRUE)
 ggsave(here("output/figures/Fig5d.pdf"), p4$gtable, width = 6, height = 8)
 
 p4a <- plotHeatmap(
   sce[, sce$stage != "Unknown"],
-  order_columns_by = c("stage", "slingPseudotime_1"),
-  colour_columns_by = c("stage", "slingPseudotime_1", "CD4", "CD161", "tissue"),
+  order_columns_by = "slingPseudotime_1",
+  colour_columns_by = c("slingPseudotime_1", "CD4", "CD161", "stage", "tissue"),
   features = c(
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC < 0, ]), mito_set), 
-      50),
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC < 0, ]), 
+        mito_set), 
+      25),
     head(
-      setdiff(rownames(svet[svet$FDR < 0.05 & svet$logFC > 0, ]), mito_set), 
-      50)),
+      setdiff(
+        rownames(pseudo[pseudo$FDR < 0.05 & pseudo$logFC > 0, ]), 
+        mito_set), 
+      25)),
   center = TRUE,
   symmetric = TRUE,
   zlim = c(-3, 3),
   color = hcl.colors(101, "Blue-Red 3"),
-  fontsize = 5,
-  # main = "Excluding 'Unknown'-stage cells: Selected pseudotime-associated genes",
+  fontsize = 6,
+  main = "Excluding 'Unknown'-stage cells: Selected pseudotime-associated genes",
   column_annotation_colors = list(
     stage = stage_colours[levels(factor(sce[, sce$stage != "Unknown"]$stage))],
     tissue = tissue_colours),
   silent = TRUE)
-ggsave(here("output/figures/Fig5d_alternative.pdf"), p4a$gtable, width = 6, height = 8)
+ggsave(
+  here("output/figures/Fig5d_alternative.pdf"), 
+  p4a$gtable, 
+  width = 6, 
+  height = 8)
 ```
 
 Initial proposal:
