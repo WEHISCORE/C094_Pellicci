@@ -148,6 +148,16 @@ p6 <- plotReducedDim(sce, "UMAP_corrected", colour_by = "group", theme_size = 7,
 (p1 | p2) / (p3 | p4) / (p5 | p6)
 ```
 
+```{r}
+# NOTE: A potential figure for supplementary material.
+pdf(
+  here("tmp/clusterplot-umap.single-cell.annotate.S3_only.pdf"),
+  height = 7.5, 
+  width = 6)
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+dev.off()
+```
+
 ```{r cluster-barplot, fig.asp = 1, fig.cap = "Breakdown of clusters by experimental factors."}
 # summary - stacked barplot
 p1 <- ggcells(sce) +
@@ -200,6 +210,16 @@ p6 <- ggcells(sce) +
 (p1 | p2) / (p3 | p4) / (p5 | p6)
 ```
 
+```{r}
+# NOTE: A potential figure for supplementary material.
+pdf(
+  here("tmp/cluster-barplot.single-cell.annotate.S3_only.pdf"),
+  height = 6, 
+  width = 6)
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+dev.off()
+```
+
 **NOTE**: Considering the fact that SingleR with use of the annotation reference (Monaco Immune Cell Data) most relevant to the gamma-delta T cells (even annotated at `cell` level) could not further sub-classify the developmental stage/subtype of them (either annotating cluster as `Th1 cell`-/`Naive CD8`/`CD4 T cell` or `Vd2gd T cells`-alike) [ref: EDA_annotation_SingleR_MI_fine_cell_level.R], we decide to characterize the clusters by manual detection and curation of specific marker genes directly.
 
 # Marker gene detection
@@ -243,6 +263,54 @@ uniquely_up <- findMarkers(
   block = sce$block,
   pval.type = "all",
   direction = "up")
+```
+
+```{r}
+# NOTE: A potential figure for supplementary material.
+features <- lapply(uniquely_up, function(x) head(rownames(x), 20))
+pdf(
+  here("tmp/heat-uniquely-up-logExp.annotate.S3_only.pdf"), 
+  height = 12, 
+  width = 10)
+plotHeatmap(
+  sce,
+  features = unlist(features),
+  columns = order(
+    sce$cluster,
+    sce$stage,
+    sce$tissue,
+    sce$donor,
+    sce$group,
+    sce$plate_number,
+    sce$CD4,
+    sce$CD161),
+  colour_columns_by = c(
+    "cluster",
+    "stage",
+    "tissue",
+    "donor",
+    "group",
+    "plate_number",
+    "CD4",
+    "CD161"),
+  cluster_cols = FALSE,
+  center = TRUE,
+  zlim = c(-3, 3),
+  cluster_rows = FALSE,
+  show_colnames = FALSE,
+    annotation_row = data.frame(
+    cluster = rep(names(features), lengths(features)),
+    row.names = unlist(features)),
+  column_annotation_colors = list(
+    cluster = cluster_colours,
+    stage = stage_colours,
+    tissue = tissue_colours,
+    donor = donor_colours,
+    group = group_colours,
+    plate_number = plate_number_colours),
+  color = hcl.colors(101, "Blue-Red 3"),
+  fontsize = 7)
+dev.off()
 ```
 
 ```{r}
