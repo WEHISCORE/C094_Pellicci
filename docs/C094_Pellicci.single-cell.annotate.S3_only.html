@@ -2389,6 +2389,10 @@ is coloured according to the legend.
 </p>
 </div>
 </div>
+<aside>
+PDF version of this figure is available in <a
+href="../output/figures/clusterplot-umap.single-cell.annotate.S3_only.pdf"><code>output/figures/clusterplot-umap.single-cell.annotate.S3_only.pdf</code></a>.
+</aside>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2397,7 +2401,7 @@ Show code
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># NOTE: A potential figure for supplementary material.</span>
 <span class='fu'><a href='https://rdrr.io/r/grDevices/pdf.html'>pdf</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"tmp/clusterplot-umap.single-cell.annotate.S3_only.pdf"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output/figures/clusterplot-umap.single-cell.annotate.S3_only.pdf"</span><span class='op'>)</span>,
   height <span class='op'>=</span> <span class='fl'>7.5</span>, 
   width <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span>
 <span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='va'>p6</span><span class='op'>)</span>
@@ -2407,6 +2411,17 @@ Show code
 </details>
 <pre><code>png 
   2 </code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/grDevices/dev.html'>dev.off</a></span><span class='op'>(</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>null device 
+          1 </code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -2473,6 +2488,10 @@ Figure 2: Breakdown of clusters by experimental factors.
 </p>
 </div>
 </div>
+<aside>
+PDF version of this figure is available in <a
+href="../output/figures/cluster-barplot.single-cell.annotate.S3_only.pdf"><code>output/figures/cluster-barplot.single-cell.annotate.S3_only.pdf</code></a>.
+</aside>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2481,7 +2500,7 @@ Show code
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># NOTE: A potential figure for supplementary material.</span>
 <span class='fu'><a href='https://rdrr.io/r/grDevices/pdf.html'>pdf</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"tmp/cluster-barplot.single-cell.annotate.S3_only.pdf"</span><span class='op'>)</span>,
+  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output/figures/cluster-barplot.single-cell.annotate.S3_only.pdf"</span><span class='op'>)</span>,
   height <span class='op'>=</span> <span class='fl'>6</span>, 
   width <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span>
 <span class='op'>(</span><span class='va'>p1</span> <span class='op'>|</span> <span class='va'>p2</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p3</span> <span class='op'>|</span> <span class='va'>p4</span><span class='op'>)</span> <span class='op'>/</span> <span class='op'>(</span><span class='va'>p5</span> <span class='op'>|</span> <span class='va'>p6</span><span class='op'>)</span>
@@ -2491,6 +2510,17 @@ Show code
 </details>
 <pre><code>png 
   2 </code></pre>
+<details>
+<summary>
+Show code
+</summary>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='fu'><a href='https://rdrr.io/r/grDevices/dev.html'>dev.off</a></span><span class='op'>(</span><span class='op'>)</span>
+</code></pre>
+</div>
+</details>
+<pre><code>null device 
+          1 </code></pre>
 </div>
 <p><strong>NOTE</strong>: Considering the fact that SingleR with use of
 the annotation reference (Monaco Immune Cell Data) most relevant to the
@@ -2570,6 +2600,10 @@ Show code
 </div>
 </details>
 </div>
+<aside>
+A PDF showing the top-20 markers in each cluster is shown in <a
+href="../output/figures/heat-uniquely-up-logExp.annotate.S3_only.pdf"><code>output/figures/heat-uniquely-up-logExp.annotate.S3_only.pdf</code></a>.
+</aside>
 <div class="layout-chunk" data-layout="l-body">
 <details>
 <summary>
@@ -2578,10 +2612,6 @@ Show code
 <div class="sourceCode">
 <pre class="sourceCode r"><code class="sourceCode r"><span class='co'># NOTE: A potential figure for supplementary material.</span>
 <span class='va'>features</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>lapply</a></span><span class='op'>(</span><span class='va'>uniquely_up</span>, <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span> <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>rownames</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>, <span class='fl'>20</span><span class='op'>)</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/grDevices/pdf.html'>pdf</a></span><span class='op'>(</span>
-  <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"tmp/heat-uniquely-up-logExp.annotate.S3_only.pdf"</span><span class='op'>)</span>, 
-  height <span class='op'>=</span> <span class='fl'>12</span>, 
-  width <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
 <span class='fu'><a href='https://rdrr.io/pkg/scater/man/plotHeatmap.html'>plotHeatmap</a></span><span class='op'>(</span>
   <span class='va'>sce</span>,
   features <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/unlist.html'>unlist</a></span><span class='op'>(</span><span class='va'>features</span><span class='op'>)</span>,
@@ -2619,13 +2649,13 @@ Show code
     group <span class='op'>=</span> <span class='va'>group_colours</span>,
     plate_number <span class='op'>=</span> <span class='va'>plate_number_colours</span><span class='op'>)</span>,
   color <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/grDevices/palettes.html'>hcl.colors</a></span><span class='op'>(</span><span class='fl'>101</span>, <span class='st'>"Blue-Red 3"</span><span class='op'>)</span>,
-  fontsize <span class='op'>=</span> <span class='fl'>7</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/grDevices/dev.html'>dev.off</a></span><span class='op'>(</span><span class='op'>)</span>
+  fontsize <span class='op'>=</span> <span class='fl'>7</span>,
+  filename <span class='op'>=</span> <span class='fu'><a href='https://here.r-lib.org//reference/here.html'>here</a></span><span class='op'>(</span><span class='st'>"output/figures/heat-uniquely-up-logExp.annotate.S3_only.pdf"</span><span class='op'>)</span>,
+  height <span class='op'>=</span> <span class='fl'>12</span>, 
+  width <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
 </code></pre>
 </div>
 </details>
-<pre><code>pdf 
-  3 </code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 <details>
@@ -8901,7 +8931,7 @@ Show code
  P ── Loaded and on-disk path mismatch.</code></pre>
 </div>
 </details>
-<div class="sourceCode" id="cb8"><pre
+<div class="sourceCode" id="cb9"><pre
 class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <div id="refs" class="references csl-bib-body hanging-indent"
 role="doc-bibliography">
